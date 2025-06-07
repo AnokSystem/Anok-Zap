@@ -105,79 +105,6 @@ class EvolutionApiService {
         console.log('❌ Erro findContacts:', error);
       }
       
-      // Tentativa 2: endpoint /chat/fetchContacts (GET)
-      try {
-        console.log('📡 Tentando endpoint fetchContacts (GET)');
-        const response2 = await fetch(`${API_BASE_URL}/chat/fetchContacts/${instanceId}`, {
-          method: 'GET',
-          headers: this.headers,
-        });
-        
-        console.log(`📊 Status fetchContacts: ${response2.status}`);
-        
-        if (response2.ok) {
-          const data = await response2.json();
-          console.log('📦 Resposta fetchContacts:', data);
-          const contacts = this.extractAndFilterContacts(data, 'fetchContacts');
-          if (contacts.length > 0) {
-            return contacts;
-          }
-        }
-      } catch (error) {
-        console.log('❌ Erro fetchContacts:', error);
-      }
-      
-      // Tentativa 3: endpoint /chat/find com filtro
-      try {
-        console.log('📡 Tentando endpoint chat/find com filtro');
-        const response3 = await fetch(`${API_BASE_URL}/chat/find/${instanceId}`, {
-          method: 'POST',
-          headers: this.headers,
-          body: JSON.stringify({
-            where: {
-              id: {
-                endsWith: '@s.whatsapp.net'
-              }
-            }
-          })
-        });
-        
-        console.log(`📊 Status chat/find: ${response3.status}`);
-        
-        if (response3.ok) {
-          const data = await response3.json();
-          console.log('📦 Resposta chat/find:', data);
-          const contacts = this.extractAndFilterContacts(data, 'chat/find');
-          if (contacts.length > 0) {
-            return contacts;
-          }
-        }
-      } catch (error) {
-        console.log('❌ Erro chat/find:', error);
-      }
-      
-      // Tentativa 4: endpoint /contact/find
-      try {
-        console.log('📡 Tentando endpoint contact/find');
-        const response4 = await fetch(`${API_BASE_URL}/contact/find/${instanceId}`, {
-          method: 'GET',
-          headers: this.headers,
-        });
-        
-        console.log(`📊 Status contact/find: ${response4.status}`);
-        
-        if (response4.ok) {
-          const data = await response4.json();
-          console.log('📦 Resposta contact/find:', data);
-          const contacts = this.extractAndFilterContacts(data, 'contact/find');
-          if (contacts.length > 0) {
-            return contacts;
-          }
-        }
-      } catch (error) {
-        console.log('❌ Erro contact/find:', error);
-      }
-      
       console.log('❌ Nenhum endpoint retornou contatos válidos');
       return [];
       
@@ -228,11 +155,8 @@ class EvolutionApiService {
           return false;
         }
         
-        // Verificar se é contato pessoal (diferentes formatos possíveis)
-        const isPersonal = (
-          contactId.includes('@s.whatsapp.net') ||
-          contactId.includes('@c.us')
-        ) && !contactId.includes('@g.us');
+        // Verificar se é contato pessoal - ajustando a lógica
+        const isPersonal = contactId.includes('@s.whatsapp.net') && !contactId.includes('@g.us');
         
         // Excluir status e broadcasts
         const isStatusOrBroadcast = 
@@ -240,7 +164,10 @@ class EvolutionApiService {
           contactId.includes('broadcast') ||
           contactId === 'status@broadcast';
         
-        console.log(`📱 Contato ${contactId}: pessoal=${isPersonal}, status/broadcast=${isStatusOrBroadcast}`);
+        // Log apenas dos primeiros 10 para não poluir muito
+        if (contacts.indexOf(contact) < 10) {
+          console.log(`📱 Contato ${contactId}: pessoal=${isPersonal}, status/broadcast=${isStatusOrBroadcast}`);
+        }
         
         return isPersonal && !isStatusOrBroadcast;
       })
