@@ -9,6 +9,7 @@ class NocodbService {
 
   // Cache das bases descobertas
   private discoveredBases: any[] = [];
+  private targetBaseId: string | null = null;
 
   async discoverBases() {
     try {
@@ -23,6 +24,21 @@ class NocodbService {
         const data = await response.json();
         console.log('Bases descobertas:', data);
         this.discoveredBases = data.list || [];
+        
+        // Procurar especificamente pela base "Notificação Inteligente"
+        const notificationBase = this.discoveredBases.find(base => 
+          base.title === 'Notificação Inteligente' || 
+          base.title.toLowerCase().includes('notificação') ||
+          base.title.toLowerCase().includes('notificacao')
+        );
+        
+        if (notificationBase) {
+          this.targetBaseId = notificationBase.id;
+          console.log('✅ Base "Notificação Inteligente" encontrada:', notificationBase);
+        } else {
+          console.log('❌ Base "Notificação Inteligente" não encontrada nas bases disponíveis');
+        }
+        
         return data;
       } else {
         console.log('Erro ao descobrir bases:', response.status, response.statusText);
@@ -42,7 +58,12 @@ class NocodbService {
       
       if (bases && this.discoveredBases.length > 0) {
         console.log('NocoDB conectado com sucesso, bases disponíveis:', this.discoveredBases);
-        return { success: true, bases: this.discoveredBases };
+        
+        if (this.targetBaseId) {
+          return { success: true, bases: this.discoveredBases, targetBase: this.targetBaseId };
+        } else {
+          return { success: false, error: 'Base "Notificação Inteligente" não encontrada' };
+        }
       }
       
       return { success: false, error: 'Nenhuma base encontrada' };
@@ -57,8 +78,14 @@ class NocodbService {
       console.log('Salvando notificação Hotmart no NocoDB...');
       
       // Primeiro descobre as bases se ainda não foram descobertas
-      if (this.discoveredBases.length === 0) {
+      if (!this.targetBaseId) {
         await this.discoverBases();
+      }
+      
+      if (!this.targetBaseId) {
+        console.log('❌ Base "Notificação Inteligente" não encontrada');
+        this.saveLocalFallback('hotmart_notifications', notificationData);
+        return true;
       }
       
       const data = {
@@ -68,49 +95,42 @@ class NocodbService {
         hotmart_profile: notificationData.hotmartProfile,
         webhook_url: notificationData.webhookUrl,
         message_count: notificationData.messages.length,
-        notification_phone: notificationData.notificationPhone,
+        notification_phone: notificationData.notificationPhone || '',
         created_at: notificationData.timestamp,
         data: JSON.stringify(notificationData)
       };
       
-      // Estratégia 1: Tentar usar qualquer base disponível
-      console.log('Tentando salvar em bases descobertas...');
-      for (const base of this.discoveredBases) {
-        console.log(`Tentando base: ${base.title} (ID: ${base.id})`);
-        
-        // Descobrir tabelas nesta base
-        const tables = await this.getTablesFromBase(base.id);
-        console.log(`Tabelas encontradas na base ${base.title}:`, tables);
-        
-        if (tables && tables.length > 0) {
-          // Tentar salvar na primeira tabela disponível
-          for (const table of tables) {
-            try {
-              const success = await this.saveToSpecificTable(base.id, table.table_name, data);
-              if (success) {
-                console.log(`✅ Dados salvos com sucesso na base ${base.title}, tabela ${table.title}`);
-                return true;
-              }
-            } catch (error) {
-              console.log(`❌ Erro ao salvar na tabela ${table.title}:`, error);
-              continue;
+      console.log(`Tentando salvar na base "Notificação Inteligente" (ID: ${this.targetBaseId})...`);
+      
+      // Descobrir tabelas na base "Notificação Inteligente"
+      const tables = await this.getTablesFromBase(this.targetBaseId);
+      console.log(`Tabelas encontradas na base "Notificação Inteligente":`, tables);
+      
+      if (tables && tables.length > 0) {
+        // Tentar salvar na primeira tabela disponível
+        for (const table of tables) {
+          try {
+            const success = await this.saveToSpecificTable(this.targetBaseId, table.table_name, data);
+            if (success) {
+              console.log(`✅ Dados salvos com sucesso na base "Notificação Inteligente", tabela ${table.title}`);
+              return true;
             }
+          } catch (error) {
+            console.log(`❌ Erro ao salvar na tabela ${table.title}:`, error);
+            continue;
           }
         }
       }
       
-      // Estratégia 2: Tentar criar uma nova tabela se possível
-      console.log('Tentando criar nova tabela para notificações...');
-      if (this.discoveredBases.length > 0) {
-        const firstBase = this.discoveredBases[0];
-        const success = await this.createNotificationTable(firstBase.id, data);
-        if (success) {
-          console.log(`✅ Nova tabela criada e dados salvos na base ${firstBase.title}`);
-          return true;
-        }
+      // Se não conseguiu salvar em nenhuma tabela existente, tentar criar uma nova
+      console.log('Tentando criar nova tabela para notificações na base "Notificação Inteligente"...');
+      const success = await this.createNotificationTable(this.targetBaseId, data);
+      if (success) {
+        console.log(`✅ Nova tabela criada e dados salvos na base "Notificação Inteligente"`);
+        return true;
       }
       
-      // Estratégia 3: Salvar localmente como fallback
+      // Se chegou aqui, todas as tentativas falharam
       console.log('❌ Todas as tentativas falharam, salvando localmente como fallback');
       this.saveLocalFallback('hotmart_notifications', data);
       return true;
@@ -158,7 +178,7 @@ class NocodbService {
       }
       
       // Se v1 falhou, tentar v2
-      url = `${this.baseUrl}/api/v2/db/data/noco/${baseId}/${tableName}`;
+      url = `${this.baseUrl}/api/v2/tables/${tableName}/records`;
       console.log('Tentando salvar (v2):', url);
       
       response = await fetch(url, {
