@@ -1,3 +1,4 @@
+
 const API_BASE_URL = 'https://api.novahagencia.com.br';
 const API_KEY = '26bda82495a95caeae71f96534841285';
 
@@ -111,13 +112,14 @@ class EvolutionApiService {
         const personalContacts = chats
           .filter((chat: any) => {
             const chatId = chat.id || chat.remoteJid;
-            const isPersonal = chatId && !chatId.includes('@g.us') && chatId.includes('@s.whatsapp.net');
-            console.log('Chat:', chat.name || chat.pushName, 'É pessoal:', isPersonal);
+            // Contatos pessoais terminam com @s.whatsapp.net e não contêm @g.us
+            const isPersonal = chatId && chatId.includes('@s.whatsapp.net') && !chatId.includes('@g.us');
+            console.log('Chat:', chat.pushName || 'Sem nome', 'ID:', chatId, 'É pessoal:', isPersonal);
             return isPersonal;
           })
           .map((chat: any) => {
             const chatId = chat.id || chat.remoteJid;
-            const contactName = chat.name || chat.pushName || chat.notify || chat.verifiedName || 'Contato sem nome';
+            const contactName = chat.pushName || chat.name || chat.notify || chat.verifiedName || 'Contato sem nome';
             
             return {
               id: chatId,
