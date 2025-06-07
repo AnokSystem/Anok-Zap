@@ -1,4 +1,3 @@
-
 import { NocodbConfig } from './types';
 
 export class NocodbDataOperations {
@@ -25,6 +24,9 @@ export class NocodbDataOperations {
       }
       
       console.log(`📋 ID da tabela ${tableName}: ${tableId}`);
+      
+      // Verificar e remover duplicatas antes de salvar
+      await this.removeDuplicates(baseId, tableId, data, tableName);
       
       // Tentar API v1 com ID da tabela
       let url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}`;
@@ -69,6 +71,133 @@ export class NocodbDataOperations {
     } catch (error) {
       console.log('❌ Erro interno ao salvar:', error);
       return false;
+    }
+  }
+
+  private async removeDuplicates(baseId: string, tableId: string, newData: any, tableName: string): Promise<void> {
+    try {
+      console.log(`🔍 Verificando duplicatas na tabela ${tableName}...`);
+      
+      // Buscar registros existentes
+      const existingRecords = await this.getExistingRecords(baseId, tableId);
+      
+      if (!existingRecords || existingRecords.length === 0) {
+        console.log('✅ Nenhum registro existente encontrado');
+        return;
+      }
+      
+      // Identificar duplicatas baseado no tipo de tabela
+      const duplicateIds = this.findDuplicateIds(existingRecords, newData, tableName);
+      
+      if (duplicateIds.length > 0) {
+        console.log(`🗑️ Encontradas ${duplicateIds.length} duplicatas, removendo...`);
+        await this.deleteRecords(baseId, tableId, duplicateIds);
+      } else {
+        console.log('✅ Nenhuma duplicata encontrada');
+      }
+      
+    } catch (error) {
+      console.log('❌ Erro ao verificar duplicatas:', error);
+    }
+  }
+
+  private async getExistingRecords(baseId: string, tableId: string): Promise<any[]> {
+    try {
+      const url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}`;
+      const response = await fetch(url, {
+        headers: this.headers,
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        return data.list || [];
+      } else {
+        console.log(`❌ Erro ao buscar registros existentes: ${response.status}`);
+        return [];
+      }
+    } catch (error) {
+      console.log('❌ Erro ao buscar registros existentes:', error);
+      return [];
+    }
+  }
+
+  private findDuplicateIds(existingRecords: any[], newData: any, tableName: string): string[] {
+    const duplicateIds: string[] = [];
+    
+    existingRecords.forEach(record => {
+      let isDuplicate = false;
+      
+      // Verificar duplicatas baseado no tipo de tabela
+      switch (tableName) {
+        case 'NotificacoesHotmart':
+          // Considerar duplicata se: mesmo event_type, instance_id, user_role e hotmart_profile
+          isDuplicate = (
+            record['Tipo de Evento'] === newData.event_type &&
+            record['ID da Instância'] === newData.instance_id &&
+            record['Função do Usuário'] === newData.user_role &&
+            record['Perfil Hotmart'] === newData.hotmart_profile
+          );
+          break;
+          
+        case 'WhatsAppInstances':
+          // Considerar duplicata se: mesmo instance_id
+          isDuplicate = record['ID da Instância'] === newData.instance_id;
+          break;
+          
+        case 'WhatsAppContacts':
+          // Considerar duplicata se: mesmo contact_id e instance_id
+          isDuplicate = (
+            record['ID do Contato'] === newData.contact_id &&
+            record['ID da Instância'] === newData.instance_id
+          );
+          break;
+          
+        case 'MassMessagingLogs':
+          // Considerar duplicata se: mesmo campaign_id
+          isDuplicate = record['ID da Campanha'] === newData.campaign_id;
+          break;
+          
+        case 'WebhookLogs':
+          // Considerar duplicata se: mesmo webhook_url, event_type e timestamp muito próximo (mesmo minuto)
+          const existingTime = new Date(record['Criado em']).getTime();
+          const newTime = new Date(newData.created_at).getTime();
+          const timeDiff = Math.abs(existingTime - newTime);
+          isDuplicate = (
+            record['URL do Webhook'] === newData.webhook_url &&
+            record['Tipo de Evento'] === newData.event_type &&
+            timeDiff < 60000 // menos de 1 minuto de diferença
+          );
+          break;
+      }
+      
+      if (isDuplicate) {
+        duplicateIds.push(record.ID);
+        console.log(`🔍 Duplicata encontrada:`, record);
+      }
+    });
+    
+    return duplicateIds;
+  }
+
+  private async deleteRecords(baseId: string, tableId: string, recordIds: string[]): Promise<void> {
+    try {
+      for (const recordId of recordIds) {
+        console.log(`🗑️ Removendo registro duplicado ID: ${recordId}`);
+        
+        const url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}/${recordId}`;
+        const response = await fetch(url, {
+          method: 'DELETE',
+          headers: this.headers,
+        });
+        
+        if (response.ok) {
+          console.log(`✅ Registro ${recordId} removido com sucesso`);
+        } else {
+          console.log(`❌ Erro ao remover registro ${recordId}: ${response.status}`);
+        }
+      }
+    } catch (error) {
+      console.log('❌ Erro ao remover registros duplicados:', error);
     }
   }
 
