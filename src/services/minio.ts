@@ -1,3 +1,4 @@
+
 class MinioService {
   private serverUrl = 'https://s3.novahagencia.com.br';
   private accessKey = 'JMPKSCVbXS5bkgjNEoSQ';
@@ -44,6 +45,7 @@ class MinioService {
   private async hmacSha256(key: CryptoKey, message: string): Promise<string> {
     const msgBuffer = new TextEncoder().encode(message);
     const signature = await crypto.subtle.sign('HMAC', key, msgBuffer);
+    const signatureArray = Array.from(new Uint8Array(signature));
     return signatureArray.map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
