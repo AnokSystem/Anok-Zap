@@ -82,21 +82,103 @@ class EvolutionApiService {
     try {
       console.log('🔍 Buscando contatos pessoais para instância:', instanceId);
       
-      // Usar o endpoint correto baseado no exemplo do n8n
-      const response = await fetch(`${API_BASE_URL}/chat/find-contacts/${instanceId}`, {
-        method: 'GET',
-        headers: this.headers,
-      });
-      
-      console.log(`📊 Status find-contacts: ${response.status}`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('📦 Resposta find-contacts:', data);
-        return this.extractAndFilterContacts(data, 'find-contacts');
+      // Tentativa 1: endpoint /chat/findContacts (POST)
+      try {
+        console.log('📡 Tentando endpoint findContacts (POST)');
+        const response1 = await fetch(`${API_BASE_URL}/chat/findContacts/${instanceId}`, {
+          method: 'POST',
+          headers: this.headers,
+          body: JSON.stringify({})
+        });
+        
+        console.log(`📊 Status findContacts: ${response1.status}`);
+        
+        if (response1.ok) {
+          const data = await response1.json();
+          console.log('📦 Resposta findContacts:', data);
+          const contacts = this.extractAndFilterContacts(data, 'findContacts');
+          if (contacts.length > 0) {
+            return contacts;
+          }
+        }
+      } catch (error) {
+        console.log('❌ Erro findContacts:', error);
       }
       
-      console.log('❌ Endpoint find-contacts não retornou contatos válidos');
+      // Tentativa 2: endpoint /chat/fetchContacts (GET)
+      try {
+        console.log('📡 Tentando endpoint fetchContacts (GET)');
+        const response2 = await fetch(`${API_BASE_URL}/chat/fetchContacts/${instanceId}`, {
+          method: 'GET',
+          headers: this.headers,
+        });
+        
+        console.log(`📊 Status fetchContacts: ${response2.status}`);
+        
+        if (response2.ok) {
+          const data = await response2.json();
+          console.log('📦 Resposta fetchContacts:', data);
+          const contacts = this.extractAndFilterContacts(data, 'fetchContacts');
+          if (contacts.length > 0) {
+            return contacts;
+          }
+        }
+      } catch (error) {
+        console.log('❌ Erro fetchContacts:', error);
+      }
+      
+      // Tentativa 3: endpoint /chat/find com filtro
+      try {
+        console.log('📡 Tentando endpoint chat/find com filtro');
+        const response3 = await fetch(`${API_BASE_URL}/chat/find/${instanceId}`, {
+          method: 'POST',
+          headers: this.headers,
+          body: JSON.stringify({
+            where: {
+              id: {
+                endsWith: '@s.whatsapp.net'
+              }
+            }
+          })
+        });
+        
+        console.log(`📊 Status chat/find: ${response3.status}`);
+        
+        if (response3.ok) {
+          const data = await response3.json();
+          console.log('📦 Resposta chat/find:', data);
+          const contacts = this.extractAndFilterContacts(data, 'chat/find');
+          if (contacts.length > 0) {
+            return contacts;
+          }
+        }
+      } catch (error) {
+        console.log('❌ Erro chat/find:', error);
+      }
+      
+      // Tentativa 4: endpoint /contact/find
+      try {
+        console.log('📡 Tentando endpoint contact/find');
+        const response4 = await fetch(`${API_BASE_URL}/contact/find/${instanceId}`, {
+          method: 'GET',
+          headers: this.headers,
+        });
+        
+        console.log(`📊 Status contact/find: ${response4.status}`);
+        
+        if (response4.ok) {
+          const data = await response4.json();
+          console.log('📦 Resposta contact/find:', data);
+          const contacts = this.extractAndFilterContacts(data, 'contact/find');
+          if (contacts.length > 0) {
+            return contacts;
+          }
+        }
+      } catch (error) {
+        console.log('❌ Erro contact/find:', error);
+      }
+      
+      console.log('❌ Nenhum endpoint retornou contatos válidos');
       return [];
       
     } catch (error) {
