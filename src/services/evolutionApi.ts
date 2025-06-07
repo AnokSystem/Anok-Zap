@@ -214,11 +214,14 @@ class EvolutionApiService {
     try {
       console.log('Buscando grupos para instância:', instanceId);
       
+      // Novos endpoints baseados na estrutura real da Evolution API
       const endpoints = [
         `/group/fetchAllGroups/${instanceId}`,
-        `/chat/findChats/${instanceId}?where={"key.fromMe": false, "key.remoteJid": {"$regex": "@g.us$"}}`,
-        `/instance/fetchGroups/${instanceId}`,
-        `/groups/${instanceId}`
+        `/chat/findMany/${instanceId}?where={"key.remoteJid":{"endsWith":"@g.us"}}`,
+        `/instance/${instanceId}/fetchGroups`,
+        `/instance/${instanceId}/groups`,
+        `/chat/findChats/${instanceId}?where={"isGroup":true}`,
+        `/instance/chat/findMany/${instanceId}?where={"isGroup":true}`
       ];
       
       for (const endpoint of endpoints) {
@@ -232,14 +235,31 @@ class EvolutionApiService {
           
           if (response.ok) {
             const data = await response.json();
-            console.log('Grupos encontrados:', data);
+            console.log('Dados recebidos:', data);
             
-            const groups = Array.isArray(data) ? data : data.groups || data.data || [];
+            // Processar diferentes estruturas de resposta
+            let groups = [];
             
-            return groups.map((group: any) => ({
-              id: group.id || group.remoteJid || group.groupId,
-              name: group.subject || group.name || group.title || 'Grupo sem nome',
-            }));
+            if (Array.isArray(data)) {
+              groups = data;
+            } else if (data.groups) {
+              groups = data.groups;
+            } else if (data.data) {
+              groups = Array.isArray(data.data) ? data.data : [];
+            } else if (data.list) {
+              groups = data.list;
+            }
+            
+            return groups
+              .filter((group: any) => {
+                // Filtrar apenas grupos válidos
+                const jid = group.id || group.remoteJid || group.key?.remoteJid;
+                return jid && jid.includes('@g.us');
+              })
+              .map((group: any) => ({
+                id: group.id || group.remoteJid || group.key?.remoteJid,
+                name: group.subject || group.name || group.title || group.pushName || 'Grupo sem nome',
+              }));
           }
         } catch (endpointError) {
           console.log(`Erro no endpoint ${endpoint}:`, endpointError);
@@ -249,15 +269,15 @@ class EvolutionApiService {
       
       console.log('Todos os endpoints de grupos falharam, retornando dados mock');
       return [
-        { id: 'group1', name: 'Equipe de Marketing' },
-        { id: 'group2', name: 'Clientes VIP' },
-        { id: 'group3', name: 'Suporte' },
+        { id: 'group1@g.us', name: 'Equipe de Marketing' },
+        { id: 'group2@g.us', name: 'Clientes VIP' },
+        { id: 'group3@g.us', name: 'Suporte' },
       ];
     } catch (error) {
       console.error('Erro ao buscar grupos:', error);
       return [
-        { id: 'group1', name: 'Equipe de Marketing' },
-        { id: 'group2', name: 'Clientes VIP' },
+        { id: 'group1@g.us', name: 'Equipe de Marketing' },
+        { id: 'group2@g.us', name: 'Clientes VIP' },
       ];
     }
   }
@@ -266,12 +286,15 @@ class EvolutionApiService {
     try {
       console.log('Buscando todos os contatos para instância:', instanceId);
       
+      // Endpoints atualizados baseados na estrutura real da Evolution API
       const endpoints = [
-        `/chat/fetchAllContacts/${instanceId}`,
+        `/contact/findMany/${instanceId}`,
+        `/instance/${instanceId}/contact/findMany`,
+        `/chat/findMany/${instanceId}?where={"key.remoteJid":{"endsWith":"@s.whatsapp.net"}}`,
+        `/instance/chat/findMany/${instanceId}?where={"isGroup":false}`,
+        `/instance/${instanceId}/fetchContacts`,
         `/contact/fetchAll/${instanceId}`,
-        `/chat/findChats/${instanceId}`,
-        `/instance/fetchContacts/${instanceId}`,
-        `/contacts/${instanceId}`
+        `/instance/${instanceId}/contacts`
       ];
       
       for (const endpoint of endpoints) {
@@ -285,20 +308,31 @@ class EvolutionApiService {
           
           if (response.ok) {
             const data = await response.json();
-            console.log('Contatos encontrados:', data);
+            console.log('Dados de contatos recebidos:', data);
             
-            const contacts = Array.isArray(data) ? data : data.contacts || data.data || [];
+            // Processar diferentes estruturas de resposta
+            let contacts = [];
+            
+            if (Array.isArray(data)) {
+              contacts = data;
+            } else if (data.contacts) {
+              contacts = data.contacts;
+            } else if (data.data) {
+              contacts = Array.isArray(data.data) ? data.data : [];
+            } else if (data.list) {
+              contacts = data.list;
+            }
             
             return contacts
               .filter((contact: any) => {
                 // Filtrar apenas contatos individuais (não grupos)
-                const jid = contact.id || contact.remoteJid || '';
-                return jid && !jid.includes('@g.us') && jid.includes('@s.whatsapp.net');
+                const jid = contact.id || contact.remoteJid || contact.key?.remoteJid;
+                return jid && jid.includes('@s.whatsapp.net') && !jid.includes('@g.us');
               })
               .map((contact: any) => ({
-                id: contact.id || contact.remoteJid,
-                name: contact.pushName || contact.name || contact.notify || 'Contato sem nome',
-                phoneNumber: this.formatPhoneNumber(contact.id || contact.remoteJid),
+                id: contact.id || contact.remoteJid || contact.key?.remoteJid,
+                name: contact.pushName || contact.name || contact.notify || contact.displayName || 'Contato sem nome',
+                phoneNumber: this.formatPhoneNumber(contact.id || contact.remoteJid || contact.key?.remoteJid),
               }));
           }
         } catch (endpointError) {
@@ -326,31 +360,44 @@ class EvolutionApiService {
     try {
       console.log('Buscando contatos do grupo:', groupId, 'para instância:', instanceId);
       
+      // Endpoints atualizados para participantes de grupos
       const endpoints = [
         `/group/participants/${instanceId}?groupJid=${groupId}`,
+        `/instance/${instanceId}/group/participants?groupJid=${groupId}`,
         `/group/findParticipants/${instanceId}/${groupId}`,
-        `/chat/findParticipants/${instanceId}?where={"remoteJid": "${groupId}"}`,
-        `/groups/${instanceId}/${groupId}/participants`,
-        `/group/fetchParticipants/${instanceId}/${groupId}`
+        `/instance/${instanceId}/group/findParticipants/${groupId}`,
+        `/group/fetchParticipants/${instanceId}/${groupId}`,
+        `/chat/findParticipants/${instanceId}?where={"remoteJid":"${groupId}"}`,
+        `/instance/group/participants/${instanceId}/${groupId}`
       ];
       
       // Primeiro, tentar obter informações detalhadas do grupo
       let groupInfo = null;
-      try {
-        const groupInfoResponse = await fetch(`${API_BASE_URL}/group/findGroup/${instanceId}?groupJid=${groupId}`, {
-          headers: this.headers,
-        });
-        if (groupInfoResponse.ok) {
-          groupInfo = await groupInfoResponse.json();
-          console.log('Informações do grupo:', groupInfo);
+      const groupInfoEndpoints = [
+        `/group/findGroup/${instanceId}?groupJid=${groupId}`,
+        `/instance/${instanceId}/group/findGroup?groupJid=${groupId}`,
+        `/group/info/${instanceId}/${groupId}`,
+        `/instance/${instanceId}/group/${groupId}`
+      ];
+      
+      for (const infoEndpoint of groupInfoEndpoints) {
+        try {
+          const groupInfoResponse = await fetch(`${API_BASE_URL}${infoEndpoint}`, {
+            headers: this.headers,
+          });
+          if (groupInfoResponse.ok) {
+            groupInfo = await groupInfoResponse.json();
+            console.log('Informações do grupo:', groupInfo);
+            break;
+          }
+        } catch (error) {
+          continue;
         }
-      } catch (error) {
-        console.log('Não foi possível obter informações detalhadas do grupo');
       }
       
       for (const endpoint of endpoints) {
         try {
-          console.log(`Tentando endpoint: ${endpoint}`);
+          console.log(`Tentando endpoint de participantes: ${endpoint}`);
           const response = await fetch(`${API_BASE_URL}${endpoint}`, {
             headers: this.headers,
           });
@@ -361,25 +408,37 @@ class EvolutionApiService {
             const data = await response.json();
             console.log('Contatos do grupo encontrados:', data);
             
-            const participants = Array.isArray(data) ? data : data.participants || data.data || [];
+            // Processar diferentes estruturas de resposta
+            let participants = [];
+            
+            if (Array.isArray(data)) {
+              participants = data;
+            } else if (data.participants) {
+              participants = data.participants;
+            } else if (data.data) {
+              participants = Array.isArray(data.data) ? data.data : [];
+            } else if (data.list) {
+              participants = data.list;
+            }
             
             // Obter nome do grupo
-            const groupName = groupInfo?.subject || this.getGroupNameFromId(groupId);
+            const groupName = groupInfo?.subject || groupInfo?.name || this.getGroupNameFromId(groupId);
             
             return participants.map((contact: any) => {
               // Determinar se é admin baseado nos dados disponíveis
               const isAdmin = contact.admin || 
                              contact.isAdmin || 
                              contact.role === 'admin' ||
+                             contact.type === 'admin' ||
                              (groupInfo?.participants && 
                               groupInfo.participants.find((p: any) => 
                                 (p.id === contact.id || p.id === contact.remoteJid) && p.admin
                               ));
 
               return {
-                id: contact.id || contact.remoteJid,
-                name: contact.pushName || contact.name || contact.notify || 'Participante sem nome',
-                phoneNumber: this.formatPhoneNumber(contact.id || contact.remoteJid),
+                id: contact.id || contact.remoteJid || contact.key?.remoteJid,
+                name: contact.pushName || contact.name || contact.notify || contact.displayName || 'Participante sem nome',
+                phoneNumber: this.formatPhoneNumber(contact.id || contact.remoteJid || contact.key?.remoteJid),
                 groupName: groupName,
                 isAdmin: Boolean(isAdmin),
               };
