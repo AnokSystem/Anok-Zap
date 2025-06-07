@@ -79,23 +79,32 @@ const IntegrationStatus = () => {
     try {
       console.log('Verificando Minio S3...');
       const isConnected = await minioService.testConnection();
+      
+      // Testar upload para verificar se está funcionando completamente
+      let uploadTest = false;
+      try {
+        uploadTest = await minioService.testUpload();
+      } catch (uploadError) {
+        console.log('Teste de upload falhou:', uploadError);
+      }
+      
       const files = await minioService.listFiles();
       
       newIntegrations[2] = {
         name: 'Minio S3',
-        status: isConnected ? 'conectado' : 'erro',
-        message: isConnected 
-          ? `Sistema de arquivos operacional (${files.length} arquivos)` 
-          : 'Erro na conexão com servidor de arquivos',
+        status: isConnected && uploadTest ? 'conectado' : 'erro',
+        message: isConnected && uploadTest 
+          ? `Sistema de arquivos operacional (bucket: dispador-inteligente, ${files.length} arquivos)` 
+          : 'Erro na conexão com servidor de arquivos ou bucket não acessível',
         lastCheck: new Date()
       };
-      console.log('Minio:', isConnected ? 'Conectado' : 'Erro');
+      console.log('Minio:', isConnected && uploadTest ? 'Conectado' : 'Erro');
     } catch (error) {
       console.error('Minio: Erro', error);
       newIntegrations[2] = {
         name: 'Minio S3',
         status: 'erro',
-        message: 'Erro no sistema de arquivos',
+        message: 'Erro no sistema de arquivos - bucket: dispador-inteligente',
         lastCheck: new Date()
       };
     }
