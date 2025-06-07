@@ -12,6 +12,33 @@ export class NocodbDataOperations {
     };
   }
 
+  async getNotifications(baseId: string, tableId: string): Promise<any[]> {
+    try {
+      console.log('Buscando notificações no NocoDB...');
+      
+      const url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=100&sort=-created_at`;
+      console.log('URL de consulta:', url);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: this.headers,
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Notificações encontradas:', data);
+        return data.list || [];
+      } else {
+        const errorText = await response.text();
+        console.log(`❌ Erro ao buscar notificações: ${response.status}`, errorText);
+        return [];
+      }
+    } catch (error) {
+      console.log('❌ Erro ao buscar notificações:', error);
+      return [];
+    }
+  }
+
   async saveToSpecificTable(baseId: string, tableName: string, data: any): Promise<boolean> {
     try {
       console.log(`Salvando dados na tabela ${tableName}:`, data);

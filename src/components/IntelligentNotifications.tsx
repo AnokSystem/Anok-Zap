@@ -5,11 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Bell, Copy, Plus, Trash2, Upload, Database } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Bell, Copy, Plus, Trash2, Upload, Database, List } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { evolutionApiService } from '@/services/evolutionApi';
 import { minioService } from '@/services/minio';
 import { nocodbService } from '@/services/nocodb';
+import NotificationsList from './NotificationsList';
 
 interface NotificationMessage {
   id: string;
@@ -236,227 +238,246 @@ const IntelligentNotifications = () => {
             </div>
           </CardTitle>
           <CardDescription>
-            Configure notificações automáticas do WhatsApp para eventos do Hotmart
+            Configure e visualize notificações automáticas do WhatsApp para eventos do Hotmart
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Basic Configuration */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Instância WhatsApp</Label>
-              <Select value={selectedInstance} onValueChange={setSelectedInstance}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma instância" />
-                </SelectTrigger>
-                <SelectContent>
-                  {instances.map((instance) => (
-                    <SelectItem key={instance.id} value={instance.id}>
-                      {instance.name} ({instance.status})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+        <CardContent>
+          <Tabs defaultValue="create" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="create" className="flex items-center space-x-2">
+                <Plus className="w-4 h-4" />
+                <span>Criar Notificação</span>
+              </TabsTrigger>
+              <TabsTrigger value="list" className="flex items-center space-x-2">
+                <List className="w-4 h-4" />
+                <span>Ver Notificações</span>
+              </TabsTrigger>
+            </TabsList>
 
-            <div className="space-y-2">
-              <Label>Função do Usuário</Label>
-              <Select value={userRole} onValueChange={setUserRole}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione sua função" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="affiliate">Afiliado</SelectItem>
-                  <SelectItem value="producer">Produtor</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <TabsContent value="create" className="space-y-6">
+              {/* Basic Configuration */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Instância WhatsApp</Label>
+                  <Select value={selectedInstance} onValueChange={setSelectedInstance}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma instância" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {instances.map((instance) => (
+                        <SelectItem key={instance.id} value={instance.id}>
+                          {instance.name} ({instance.status})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="space-y-2">
-              <Label>Nome do Perfil Hotmart</Label>
-              <Input
-                value={hotmartProfile}
-                onChange={(e) => setHotmartProfile(e.target.value)}
-                placeholder="Digite o nome do seu perfil Hotmart"
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label>Função do Usuário</Label>
+                  <Select value={userRole} onValueChange={setUserRole}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione sua função" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="affiliate">Afiliado</SelectItem>
+                      <SelectItem value="producer">Produtor</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="space-y-2">
-              <Label>Tipo de Evento</Label>
-              <Select value={eventType} onValueChange={setEventType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o tipo de evento" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="purchase-approved">Compra Aprovada</SelectItem>
-                  <SelectItem value="awaiting-payment">Aguardando Pagamento</SelectItem>
-                  <SelectItem value="cart-abandoned">Carrinho Abandonado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+                <div className="space-y-2">
+                  <Label>Nome do Perfil Hotmart</Label>
+                  <Input
+                    value={hotmartProfile}
+                    onChange={(e) => setHotmartProfile(e.target.value)}
+                    placeholder="Digite o nome do seu perfil Hotmart"
+                  />
+                </div>
 
-          {/* Messages Configuration */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label>Mensagens de Notificação (até 5)</Label>
-              {messages.length < 5 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addMessage}
-                  className="flex items-center space-x-1"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Adicionar Mensagem</span>
-                </Button>
-              )}
-            </div>
+                <div className="space-y-2">
+                  <Label>Tipo de Evento</Label>
+                  <Select value={eventType} onValueChange={setEventType}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo de evento" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="purchase-approved">Compra Aprovada</SelectItem>
+                      <SelectItem value="awaiting-payment">Aguardando Pagamento</SelectItem>
+                      <SelectItem value="cart-abandoned">Carrinho Abandonado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-            {messages.map((message, index) => (
-              <Card key={message.id} className="p-4">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label>Mensagem {index + 1}</Label>
-                    {messages.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeMessage(message.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Tipo de Mensagem</Label>
-                      <Select
-                        value={message.type}
-                        onValueChange={(value: any) => updateMessage(message.id, { type: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="text">Texto</SelectItem>
-                          <SelectItem value="audio">Áudio</SelectItem>
-                          <SelectItem value="video">Vídeo</SelectItem>
-                          <SelectItem value="image">Imagem</SelectItem>
-                          <SelectItem value="document">Documento</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {message.type !== 'text' && (
-                      <div>
-                        <Label>Enviar Arquivo</Label>
-                        <div className="flex items-center space-x-2">
-                          <Input
-                            type="file"
-                            accept={message.type === 'audio' ? '.mp3,.wav' : 
-                                   message.type === 'video' ? '.mp4,.avi' :
-                                   message.type === 'image' ? '.jpg,.png,.gif' : 
-                                   '.pdf,.doc,.docx'}
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) handleFileUpload(message.id, file);
-                            }}
-                            className="flex-1"
-                          />
-                          <Upload className="w-4 h-4 text-gray-400" />
-                        </div>
-                        {message.fileUrl && (
-                          <p className="text-sm text-green-600 mt-1">Arquivo enviado com sucesso</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {message.type === 'text' && (
-                    <div>
-                      <Label>Conteúdo da Mensagem</Label>
-                      <Textarea
-                        value={message.content}
-                        onChange={(e) => updateMessage(message.id, { content: e.target.value })}
-                        placeholder="Digite sua mensagem de notificação aqui..."
-                        className="min-h-[100px]"
-                      />
-                      <p className="text-sm text-gray-500 mt-1">
-                        {message.content.length} caracteres
-                      </p>
-                    </div>
+              {/* Messages Configuration */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Mensagens de Notificação (até 5)</Label>
+                  {messages.length < 5 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={addMessage}
+                      className="flex items-center space-x-1"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Adicionar Mensagem</span>
+                    </Button>
                   )}
                 </div>
-              </Card>
-            ))}
-          </div>
 
-          {/* Notification Phone */}
-          <div className="space-y-2">
-            <Label>Telefone para Notificação de Conclusão (opcional)</Label>
-            <Input
-              value={notificationPhone}
-              onChange={(e) => setNotificationPhone(e.target.value)}
-              placeholder="+5511999999999"
-            />
-          </div>
+                {messages.map((message, index) => (
+                  <Card key={message.id} className="p-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <Label>Mensagem {index + 1}</Label>
+                        {messages.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeMessage(message.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
 
-          {/* Save Button */}
-          <Button
-            onClick={saveNotification}
-            disabled={isLoading}
-            className="w-full bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700"
-          >
-            <Bell className="w-4 h-4 mr-2" />
-            {isLoading ? (nocodbStatus === 'connected' ? 'Salvando no NocoDB...' : 'Salvando...') : 'Salvar Configuração de Notificação'}
-          </Button>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Tipo de Mensagem</Label>
+                          <Select
+                            value={message.type}
+                            onValueChange={(value: any) => updateMessage(message.id, { type: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="text">Texto</SelectItem>
+                              <SelectItem value="audio">Áudio</SelectItem>
+                              <SelectItem value="video">Vídeo</SelectItem>
+                              <SelectItem value="image">Imagem</SelectItem>
+                              <SelectItem value="document">Documento</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-          {/* Webhook URL Display */}
-          {showWebhookUrl && eventType && (
-            <Card className="bg-green-50 border-green-200">
-              <CardHeader>
-                <CardTitle className="text-lg text-green-800">
-                  ✅ Configuração Salva com Sucesso!
-                </CardTitle>
-                <CardDescription className="text-green-700">
-                  {nocodbStatus === 'connected' 
-                    ? 'Os dados foram salvos no NocoDB. Copie esta URL do webhook e cole na sua plataforma Hotmart'
-                    : 'Os dados foram salvos localmente (NocoDB temporariamente indisponível). Copie esta URL do webhook e cole na sua plataforma Hotmart'
-                  }
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center space-x-2">
-                  <Input
-                    value={webhookUrls[eventType as keyof typeof webhookUrls]}
-                    readOnly
-                    className="flex-1 bg-white"
-                  />
-                  <Button
-                    onClick={copyWebhookUrl}
-                    variant="outline"
-                    size="sm"
-                  >
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                </div>
-                <div className="mt-3 p-3 bg-green-100 rounded-lg">
-                  <p className="text-sm text-green-800 font-medium">
-                    📋 Evento configurado: {getEventTypeLabel(eventType)}
-                  </p>
-                  <p className="text-sm text-green-700 mt-1">
-                    {nocodbStatus === 'connected' 
-                      ? '💾 Dados salvos na planilha NocoDB automaticamente'
-                      : '💽 Dados salvos localmente (tentará sincronizar com NocoDB quando disponível)'
-                    }
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                        {message.type !== 'text' && (
+                          <div>
+                            <Label>Enviar Arquivo</Label>
+                            <div className="flex items-center space-x-2">
+                              <Input
+                                type="file"
+                                accept={message.type === 'audio' ? '.mp3,.wav' : 
+                                       message.type === 'video' ? '.mp4,.avi' :
+                                       message.type === 'image' ? '.jpg,.png,.gif' : 
+                                       '.pdf,.doc,.docx'}
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleFileUpload(message.id, file);
+                                }}
+                                className="flex-1"
+                              />
+                              <Upload className="w-4 h-4 text-gray-400" />
+                            </div>
+                            {message.fileUrl && (
+                              <p className="text-sm text-green-600 mt-1">Arquivo enviado com sucesso</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {message.type === 'text' && (
+                        <div>
+                          <Label>Conteúdo da Mensagem</Label>
+                          <Textarea
+                            value={message.content}
+                            onChange={(e) => updateMessage(message.id, { content: e.target.value })}
+                            placeholder="Digite sua mensagem de notificação aqui..."
+                            className="min-h-[100px]"
+                          />
+                          <p className="text-sm text-gray-500 mt-1">
+                            {message.content.length} caracteres
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Notification Phone */}
+              <div className="space-y-2">
+                <Label>Telefone para Notificação de Conclusão (opcional)</Label>
+                <Input
+                  value={notificationPhone}
+                  onChange={(e) => setNotificationPhone(e.target.value)}
+                  placeholder="+5511999999999"
+                />
+              </div>
+
+              {/* Save Button */}
+              <Button
+                onClick={saveNotification}
+                disabled={isLoading}
+                className="w-full bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700"
+              >
+                <Bell className="w-4 h-4 mr-2" />
+                {isLoading ? (nocodbStatus === 'connected' ? 'Salvando no NocoDB...' : 'Salvando...') : 'Salvar Configuração de Notificação'}
+              </Button>
+
+              {/* Webhook URL Display */}
+              {showWebhookUrl && eventType && (
+                <Card className="bg-green-50 border-green-200">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-green-800">
+                      ✅ Configuração Salva com Sucesso!
+                    </CardTitle>
+                    <CardDescription className="text-green-700">
+                      {nocodbStatus === 'connected' 
+                        ? 'Os dados foram salvos no NocoDB. Copie esta URL do webhook e cole na sua plataforma Hotmart'
+                        : 'Os dados foram salvos localmente (NocoDB temporariamente indisponível). Copie esta URL do webhook e cole na sua plataforma Hotmart'
+                      }
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center space-x-2">
+                      <Input
+                        value={webhookUrls[eventType as keyof typeof webhookUrls]}
+                        readOnly
+                        className="flex-1 bg-white"
+                      />
+                      <Button
+                        onClick={copyWebhookUrl}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <div className="mt-3 p-3 bg-green-100 rounded-lg">
+                      <p className="text-sm text-green-800 font-medium">
+                        📋 Evento configurado: {getEventTypeLabel(eventType)}
+                      </p>
+                      <p className="text-sm text-green-700 mt-1">
+                        {nocodbStatus === 'connected' 
+                          ? '💾 Dados salvos na planilha NocoDB automaticamente'
+                          : '💽 Dados salvos localmente (tentará sincronizar com NocoDB quando disponível)'
+                        }
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="list">
+              <NotificationsList />
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>

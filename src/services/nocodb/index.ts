@@ -1,4 +1,3 @@
-
 import { NocodbConfig, ConnectionTestResult } from './types';
 import { NocodbTableManager } from './tableManager';
 import { NocodbDataOperations } from './dataOperations';
@@ -15,6 +14,66 @@ class NocodbService {
   constructor() {
     this.tableManager = new NocodbTableManager(this.config);
     this.dataOperations = new NocodbDataOperations(this.config);
+  }
+
+  async getHotmartNotifications(): Promise<any[]> {
+    try {
+      console.log('Buscando notificações Hotmart do NocoDB...');
+      
+      const targetBaseId = this.tableManager.getTargetBaseId();
+      if (!targetBaseId) {
+        console.log('❌ Base "Notificação Inteligente" não encontrada');
+        return [];
+      }
+      
+      // Garantir que a tabela existe
+      await this.tableManager.ensureTableExists('NotificacoesHotmart');
+      
+      // Obter ID da tabela
+      const tableId = await this.getTableId(targetBaseId, 'NotificacoesHotmart');
+      if (!tableId) {
+        console.log('❌ ID da tabela NotificacoesHotmart não encontrado');
+        return [];
+      }
+      
+      // Buscar notificações
+      const notifications = await this.dataOperations.getNotifications(targetBaseId, tableId);
+      console.log(`✅ ${notifications.length} notificações encontradas`);
+      
+      return notifications;
+    } catch (error) {
+      console.error('Erro ao buscar notificações Hotmart:', error);
+      return [];
+    }
+  }
+
+  private async getTableId(baseId: string, tableName: string): Promise<string | null> {
+    try {
+      const response = await fetch(`${this.config.baseUrl}/api/v1/db/meta/projects/${baseId}/tables`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'xc-token': this.config.apiToken,
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const tables = data.list || [];
+        
+        const table = tables.find((t: any) => 
+          t.table_name === tableName || 
+          t.title === tableName ||
+          (tableName === 'NotificacoesHotmart' && t.title === 'Notificações Hotmart')
+        );
+        
+        return table?.id || null;
+      }
+      
+      return null;
+    } catch (error) {
+      console.log('❌ Erro ao obter ID da tabela:', error);
+      return null;
+    }
   }
 
   async testConnection(): Promise<ConnectionTestResult> {
