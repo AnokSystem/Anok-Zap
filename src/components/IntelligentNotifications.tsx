@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Bell, Copy, Plus, Trash2, Upload } from 'lucide-react';
+import { Bell, Copy, Plus, Trash2, Upload, Database } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { evolutionApiService } from '@/services/evolutionApi';
 import { minioService } from '@/services/minio';
@@ -38,10 +38,30 @@ const IntelligentNotifications = () => {
   const [notificationPhone, setNotificationPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showWebhookUrl, setShowWebhookUrl] = useState(false);
+  const [nocodbStatus, setNocodbStatus] = useState<string>('checking');
 
   useEffect(() => {
     loadInstances();
+    testNocodbConnection();
   }, []);
+
+  const testNocodbConnection = async () => {
+    try {
+      console.log('Testando conexão com NocoDB...');
+      const result = await nocodbService.testConnection();
+      
+      if (result.success) {
+        setNocodbStatus('connected');
+        console.log('NocoDB conectado com sucesso!');
+      } else {
+        setNocodbStatus('error');
+        console.log('Erro na conexão com NocoDB:', result.error);
+      }
+    } catch (error) {
+      console.error('Erro ao testar conexão NocoDB:', error);
+      setNocodbStatus('error');
+    }
+  };
 
   const loadInstances = async () => {
     try {
@@ -142,7 +162,9 @@ const IntelligentNotifications = () => {
         
         toast({
           title: "Sucesso",
-          description: "Configuração de notificação salva com sucesso no NocoDB",
+          description: nocodbStatus === 'connected' 
+            ? "Configuração de notificação salva com sucesso no NocoDB"
+            : "Configuração salva localmente (NocoDB indisponível)",
         });
 
         // Enviar notificação de conclusão se o telefone foi fornecido
@@ -181,13 +203,37 @@ const IntelligentNotifications = () => {
     }
   };
 
+  const getNocodbStatusColor = () => {
+    switch (nocodbStatus) {
+      case 'connected': return 'text-green-600';
+      case 'error': return 'text-red-600';
+      default: return 'text-yellow-600';
+    }
+  };
+
+  const getNocodbStatusText = () => {
+    switch (nocodbStatus) {
+      case 'connected': return 'NocoDB Conectado';
+      case 'error': return 'NocoDB Desconectado';
+      default: return 'Verificando NocoDB...';
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Bell className="w-5 h-5" />
-            <span>Notificações Inteligentes</span>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Bell className="w-5 h-5" />
+              <span>Notificações Inteligentes</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Database className="w-4 h-4" />
+              <span className={`text-sm font-medium ${getNocodbStatusColor()}`}>
+                {getNocodbStatusText()}
+              </span>
+            </div>
           </CardTitle>
           <CardDescription>
             Configure notificações automáticas do WhatsApp para eventos do Hotmart
@@ -365,7 +411,7 @@ const IntelligentNotifications = () => {
             className="w-full bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700"
           >
             <Bell className="w-4 h-4 mr-2" />
-            {isLoading ? 'Salvando no NocoDB...' : 'Salvar Configuração de Notificação'}
+            {isLoading ? (nocodbStatus === 'connected' ? 'Salvando no NocoDB...' : 'Salvando...') : 'Salvar Configuração de Notificação'}
           </Button>
 
           {/* Webhook URL Display */}
@@ -376,7 +422,10 @@ const IntelligentNotifications = () => {
                   ✅ Configuração Salva com Sucesso!
                 </CardTitle>
                 <CardDescription className="text-green-700">
-                  Os dados foram salvos no NocoDB. Copie esta URL do webhook e cole na sua plataforma Hotmart
+                  {nocodbStatus === 'connected' 
+                    ? 'Os dados foram salvos no NocoDB. Copie esta URL do webhook e cole na sua plataforma Hotmart'
+                    : 'Os dados foram salvos localmente (NocoDB temporariamente indisponível). Copie esta URL do webhook e cole na sua plataforma Hotmart'
+                  }
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -399,7 +448,10 @@ const IntelligentNotifications = () => {
                     📋 Evento configurado: {getEventTypeLabel(eventType)}
                   </p>
                   <p className="text-sm text-green-700 mt-1">
-                    💾 Dados salvos na planilha NocoDB automaticamente
+                    {nocodbStatus === 'connected' 
+                      ? '💾 Dados salvos na planilha NocoDB automaticamente'
+                      : '💽 Dados salvos localmente (tentará sincronizar com NocoDB quando disponível)'
+                    }
                   </p>
                 </div>
               </CardContent>

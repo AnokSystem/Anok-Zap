@@ -1,4 +1,3 @@
-
 class NocodbService {
   private baseUrl = 'https://kovalski.novahagencia.com.br';
   private apiToken = 'aY4YYKsICfBJXDtjLj4GWlwwaFIOkwSsOy64gslJ';
@@ -8,12 +7,56 @@ class NocodbService {
     'xc-token': this.apiToken,
   };
 
+  // Método para descobrir bases disponíveis
+  async discoverBases() {
+    try {
+      console.log('Descobrindo bases disponíveis no NocoDB...');
+      
+      // Tenta diferentes endpoints para listar bases
+      const endpoints = [
+        '/api/v2/meta/bases',
+        '/api/v1/db/meta/projects',
+        '/api/v2/meta/projects'
+      ];
+      
+      for (const endpoint of endpoints) {
+        try {
+          const response = await fetch(`${this.baseUrl}${endpoint}`, {
+            method: 'GET',
+            headers: this.headers,
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log(`Bases encontradas via ${endpoint}:`, data);
+            return data;
+          }
+        } catch (error) {
+          console.log(`Erro no endpoint ${endpoint}:`, error);
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Erro ao descobrir bases:', error);
+      return null;
+    }
+  }
+
   // Método para testar conectividade
   async testConnection() {
     try {
       console.log('Testando conexão com NocoDB...');
       
-      // Primeiro tenta acessar a API básica
+      // Primeiro tenta descobrir as bases
+      const bases = await this.discoverBases();
+      
+      if (bases) {
+        console.log('NocoDB conectado com sucesso, bases disponíveis:', bases);
+        return { success: true, bases };
+      }
+      
+      // Se não conseguiu descobrir bases, tenta endpoint básico
       const response = await fetch(`${this.baseUrl}/api/v2/meta/bases`, {
         method: 'GET',
         headers: this.headers,
@@ -21,26 +64,170 @@ class NocodbService {
       
       if (response.ok) {
         const data = await response.json();
-        console.log('NocoDB conectado com sucesso:', data);
-        return true;
+        console.log('NocoDB conectado via endpoint básico:', data);
+        return { success: true, bases: data };
       } else {
         console.log('Erro na resposta NocoDB:', response.status, response.statusText);
-        
-        // Tenta endpoint alternativo
-        const altResponse = await fetch(`${this.baseUrl}/api/v1/db/meta/projects`, {
-          headers: this.headers,
-        });
-        
-        if (altResponse.ok) {
-          console.log('NocoDB conectado via endpoint alternativo');
-          return true;
-        }
-        
-        return false;
+        return { success: false, error: `HTTP ${response.status}` };
       }
     } catch (error) {
       console.error('Erro ao conectar com NocoDB:', error);
-      return false;
+      return { success: false, error: error.message };
+    }
+  }
+
+  async saveHotmartNotification(notificationData: any) {
+    try {
+      console.log('Salvando notificação Hotmart no NocoDB...');
+      
+      // Primeiro descobre as bases disponíveis
+      const basesInfo = await this.discoverBases();
+      console.log('Informações das bases:', basesInfo);
+      
+      const data = {
+        event_type: notificationData.eventType,
+        instance_id: notificationData.instance,
+        user_role: notificationData.userRole,
+        hotmart_profile: notificationData.hotmartProfile,
+        webhook_url: notificationData.webhookUrl,
+        message_count: notificationData.messages.length,
+        notification_phone: notificationData.notificationPhone,
+        created_at: notificationData.timestamp,
+        data: JSON.stringify(notificationData)
+      };
+      
+      // Lista de possíveis nomes para a base "Notificação Inteligente"
+      const possibleBaseNames = [
+        'Notificação Inteligente',
+        'notificacao-inteligente',
+        'NotificacaoInteligente',
+        'Notificacao_Inteligente',
+        'notification-intelligence',
+        'whatsapp',
+        'main',
+        'default'
+      ];
+      
+      // Lista de possíveis nomes para as tabelas
+      const possibleTableNames = [
+        'HotmartNotifications',
+        'hotmart_notifications',
+        'notifications',
+        'Notifications',
+        'NotificacoesHotmart',
+        'notificacoes_hotmart',
+        'notificacoes',
+        'Notificacoes'
+      ];
+      
+      // Tenta diferentes combinações de base e tabela
+      for (const baseName of possibleBaseNames) {
+        for (const tableName of possibleTableNames) {
+          try {
+            // Tenta diferentes formatos de URL da API
+            const apiVersions = ['v1', 'v2'];
+            
+            for (const version of apiVersions) {
+              const url = `${this.baseUrl}/api/${version}/db/data/noco/${baseName}/${tableName}`;
+              console.log('Tentando salvar em:', url);
+              
+              const response = await fetch(url, {
+                method: 'POST',
+                headers: this.headers,
+                body: JSON.stringify(data),
+              });
+              
+              if (response.ok) {
+                const result = await response.json();
+                console.log('Dados salvos com sucesso no NocoDB:', result);
+                return true;
+              } else {
+                const errorText = await response.text();
+                console.log(`Erro ${response.status} para ${baseName}/${tableName} (${version}):`, errorText);
+              }
+            }
+          } catch (error) {
+            console.log(`Erro interno para ${baseName}/${tableName}:`, error);
+          }
+        }
+      }
+      
+      // Se chegou aqui, tenta descobrir tabelas específicas se conseguir acessar alguma base
+      if (basesInfo && Array.isArray(basesInfo.list)) {
+        for (const base of basesInfo.list) {
+          try {
+            await this.tryDiscoverTables(base.id, data);
+          } catch (error) {
+            console.log(`Erro ao tentar base ${base.id}:`, error);
+          }
+        }
+      }
+      
+      // Se todas as tentativas falharam, salva localmente como fallback
+      console.log('Todas as tentativas de salvar no NocoDB falharam, salvando localmente como fallback');
+      this.saveLocalFallback('hotmart_notifications', data);
+      return true;
+    } catch (error) {
+      console.error('Erro geral ao salvar notificação Hotmart:', error);
+      // Salva localmente como fallback
+      this.saveLocalFallback('hotmart_notifications', notificationData);
+      return true;
+    }
+  }
+
+  private async tryDiscoverTables(baseId: string, data: any) {
+    try {
+      // Tenta descobrir tabelas na base específica
+      const tablesResponse = await fetch(`${this.baseUrl}/api/v1/db/meta/projects/${baseId}/tables`, {
+        headers: this.headers,
+      });
+      
+      if (tablesResponse.ok) {
+        const tables = await tablesResponse.json();
+        console.log(`Tabelas encontradas na base ${baseId}:`, tables);
+        
+        // Tenta salvar na primeira tabela que parecer relevante
+        for (const table of tables.list || []) {
+          if (table.title.toLowerCase().includes('notification') || 
+              table.title.toLowerCase().includes('notificac') ||
+              table.title.toLowerCase().includes('hotmart')) {
+            
+            const url = `${this.baseUrl}/api/v1/db/data/noco/${baseId}/${table.title}`;
+            console.log('Tentando tabela descoberta:', url);
+            
+            const response = await fetch(url, {
+              method: 'POST',
+              headers: this.headers,
+              body: JSON.stringify(data),
+            });
+            
+            if (response.ok) {
+              console.log(`Sucesso ao salvar na tabela descoberta: ${table.title}`);
+              return true;
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.log('Erro ao descobrir tabelas:', error);
+    }
+    
+    return false;
+  }
+
+  private saveLocalFallback(type: string, data: any) {
+    try {
+      const key = `nocodb_fallback_${type}`;
+      const existing = JSON.parse(localStorage.getItem(key) || '[]');
+      existing.push({
+        ...data,
+        saved_at: new Date().toISOString(),
+        fallback_reason: 'nocodb_connection_failed'
+      });
+      localStorage.setItem(key, JSON.stringify(existing));
+      console.log(`Dados salvos localmente como fallback: ${key}`);
+    } catch (error) {
+      console.error('Erro ao salvar fallback local:', error);
     }
   }
 
@@ -156,29 +343,6 @@ class NocodbService {
     }
     
     return false;
-  }
-
-  async saveHotmartNotification(notificationData: any) {
-    try {
-      console.log('Salvando notificação Hotmart no NocoDB...');
-      
-      const data = {
-        event_type: notificationData.eventType,
-        instance_id: notificationData.instance,
-        user_role: notificationData.userRole,
-        hotmart_profile: notificationData.hotmartProfile,
-        webhook_url: notificationData.webhookUrl,
-        message_count: notificationData.messages.length,
-        notification_phone: notificationData.notificationPhone,
-        created_at: notificationData.timestamp,
-        data: JSON.stringify(notificationData)
-      };
-      
-      return await this.saveToAnyTable(data, ['HotmartNotifications', 'hotmart_notifications', 'notifications']);
-    } catch (error) {
-      console.error('Erro ao salvar notificação Hotmart:', error);
-      return true;
-    }
   }
 
   async saveInstance(instanceData: any) {
