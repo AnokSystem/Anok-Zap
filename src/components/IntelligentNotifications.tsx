@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -133,25 +132,36 @@ const IntelligentNotifications = () => {
         timestamp: new Date().toISOString()
       };
 
-      // Save to NocoDB
-      await nocodbService.saveHotmartNotification(notificationData);
-      
-      setShowWebhookUrl(true);
-      
-      toast({
-        title: "Sucesso",
-        description: "Configuração de notificação salva com sucesso",
-      });
+      console.log('Salvando configuração de notificação no NocoDB...', notificationData);
 
-      // Send completion notification if phone number provided
-      if (notificationPhone) {
-        await evolutionApiService.sendMessage(
-          selectedInstance,
-          notificationPhone,
-          `Notificação do Hotmart para ${eventType.replace('-', ' ')} configurada com sucesso.`
-        );
+      // Salvar no NocoDB usando o serviço existente
+      const success = await nocodbService.saveHotmartNotification(notificationData);
+      
+      if (success) {
+        setShowWebhookUrl(true);
+        
+        toast({
+          title: "Sucesso",
+          description: "Configuração de notificação salva com sucesso no NocoDB",
+        });
+
+        // Enviar notificação de conclusão se o telefone foi fornecido
+        if (notificationPhone) {
+          try {
+            await evolutionApiService.sendMessage(
+              selectedInstance,
+              notificationPhone,
+              `✅ Notificação do Hotmart para "${getEventTypeLabel(eventType)}" configurada com sucesso!\n\n🔗 Webhook configurado para: ${webhookUrls[eventType as keyof typeof webhookUrls]}`
+            );
+          } catch (error) {
+            console.log('Erro ao enviar notificação de conclusão:', error);
+          }
+        }
+      } else {
+        throw new Error('Falha ao salvar no NocoDB');
       }
     } catch (error) {
+      console.error('Erro ao salvar configuração de notificação:', error);
       toast({
         title: "Erro",
         description: "Falha ao salvar configuração de notificação",
@@ -159,6 +169,15 @@ const IntelligentNotifications = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const getEventTypeLabel = (type: string) => {
+    switch (type) {
+      case 'purchase-approved': return 'Compra Aprovada';
+      case 'awaiting-payment': return 'Aguardando Pagamento';
+      case 'cart-abandoned': return 'Carrinho Abandonado';
+      default: return type;
     }
   };
 
@@ -346,7 +365,7 @@ const IntelligentNotifications = () => {
             className="w-full bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700"
           >
             <Bell className="w-4 h-4 mr-2" />
-            {isLoading ? 'Salvando...' : 'Salvar Configuração de Notificação'}
+            {isLoading ? 'Salvando no NocoDB...' : 'Salvar Configuração de Notificação'}
           </Button>
 
           {/* Webhook URL Display */}
@@ -354,10 +373,10 @@ const IntelligentNotifications = () => {
             <Card className="bg-green-50 border-green-200">
               <CardHeader>
                 <CardTitle className="text-lg text-green-800">
-                  Configuração Concluída!
+                  ✅ Configuração Salva com Sucesso!
                 </CardTitle>
                 <CardDescription className="text-green-700">
-                  Copie esta URL do webhook e cole na sua plataforma Hotmart
+                  Os dados foram salvos no NocoDB. Copie esta URL do webhook e cole na sua plataforma Hotmart
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -375,11 +394,14 @@ const IntelligentNotifications = () => {
                     <Copy className="w-4 h-4" />
                   </Button>
                 </div>
-                <p className="text-sm text-green-700 mt-2">
-                  Evento: {eventType === 'purchase-approved' ? 'COMPRA APROVADA' : 
-                          eventType === 'awaiting-payment' ? 'AGUARDANDO PAGAMENTO' : 
-                          'CARRINHO ABANDONADO'}
-                </p>
+                <div className="mt-3 p-3 bg-green-100 rounded-lg">
+                  <p className="text-sm text-green-800 font-medium">
+                    📋 Evento configurado: {getEventTypeLabel(eventType)}
+                  </p>
+                  <p className="text-sm text-green-700 mt-1">
+                    💾 Dados salvos na planilha NocoDB automaticamente
+                  </p>
+                </div>
               </CardContent>
             </Card>
           )}
