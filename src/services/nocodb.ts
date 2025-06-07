@@ -1,3 +1,4 @@
+
 class NocodbService {
   private baseUrl = 'https://kovalski.novahagencia.com.br';
   private apiToken = 'aY4YYKsICfBJXDtjLj4GWlwwaFIOkwSsOy64gslJ';
@@ -76,6 +77,7 @@ class NocodbService {
   async saveHotmartNotification(notificationData: any) {
     try {
       console.log('Salvando notificação Hotmart no NocoDB...');
+      console.log('Dados originais:', notificationData);
       
       // Primeiro descobre as bases se ainda não foram descobertas
       if (!this.targetBaseId) {
@@ -88,18 +90,24 @@ class NocodbService {
         return true;
       }
       
+      // Estruturar os dados corretamente para o NocoDB
       const data = {
-        event_type: notificationData.eventType,
-        instance_id: notificationData.instance,
-        user_role: notificationData.userRole,
-        hotmart_profile: notificationData.hotmartProfile,
-        webhook_url: notificationData.webhookUrl,
-        message_count: notificationData.messages.length,
+        event_type: notificationData.eventType || '',
+        instance_id: notificationData.instance || '',
+        user_role: notificationData.userRole || '',
+        hotmart_profile: notificationData.hotmartProfile || '',
+        webhook_url: notificationData.webhookUrl || '',
+        message_count: notificationData.messages ? notificationData.messages.length : 0,
         notification_phone: notificationData.notificationPhone || '',
-        created_at: notificationData.timestamp,
-        data: JSON.stringify(notificationData)
+        created_at: notificationData.timestamp || new Date().toISOString(),
+        // Garantir que o campo data seja uma string JSON válida
+        data_json: JSON.stringify({
+          ...notificationData,
+          saved_timestamp: new Date().toISOString()
+        })
       };
       
+      console.log('Dados formatados para NocoDB:', data);
       console.log(`Tentando salvar na base "Notificação Inteligente" (ID: ${this.targetBaseId})...`);
       
       // Descobrir tabelas na base "Notificação Inteligente"
@@ -110,6 +118,7 @@ class NocodbService {
         // Tentar salvar na primeira tabela disponível
         for (const table of tables) {
           try {
+            console.log(`Tentando salvar na tabela: ${table.title} (${table.table_name})`);
             const success = await this.saveToSpecificTable(this.targetBaseId, table.table_name, data);
             if (success) {
               console.log(`✅ Dados salvos com sucesso na base "Notificação Inteligente", tabela ${table.title}`);
@@ -144,13 +153,17 @@ class NocodbService {
 
   private async getTablesFromBase(baseId: string) {
     try {
+      console.log(`Buscando tabelas da base ${baseId}...`);
       const response = await fetch(`${this.baseUrl}/api/v1/db/meta/projects/${baseId}/tables`, {
         headers: this.headers,
       });
       
       if (response.ok) {
         const data = await response.json();
+        console.log('Tabelas encontradas:', data.list);
         return data.list || [];
+      } else {
+        console.log('Erro ao obter tabelas:', response.status, response.statusText);
       }
       return [];
     } catch (error) {
@@ -161,6 +174,8 @@ class NocodbService {
 
   private async saveToSpecificTable(baseId: string, tableName: string, data: any): Promise<boolean> {
     try {
+      console.log(`Salvando dados na tabela ${tableName}:`, data);
+      
       // Tentar API v1 primeiro
       let url = `${this.baseUrl}/api/v1/db/data/noco/${baseId}/${tableName}`;
       console.log('Tentando salvar (v1):', url);
@@ -175,6 +190,9 @@ class NocodbService {
         const result = await response.json();
         console.log('✅ Dados salvos com sucesso (v1):', result);
         return true;
+      } else {
+        const errorText = await response.text();
+        console.log(`❌ Erro v1 ${response.status}:`, errorText);
       }
       
       // Se v1 falhou, tentar v2
@@ -191,10 +209,11 @@ class NocodbService {
         const result = await response.json();
         console.log('✅ Dados salvos com sucesso (v2):', result);
         return true;
+      } else {
+        const errorText = await response.text();
+        console.log(`❌ Erro v2 ${response.status}:`, errorText);
       }
       
-      const errorText = await response.text();
-      console.log(`❌ Erro ${response.status}:`, errorText);
       return false;
       
     } catch (error) {
@@ -207,7 +226,7 @@ class NocodbService {
     try {
       console.log(`Tentando criar tabela de notificações na base ${baseId}...`);
       
-      // Definir estrutura da tabela
+      // Definir estrutura da tabela com campos mais específicos
       const tableSchema = {
         table_name: 'NotificacoesHotmart',
         title: 'Notificações Hotmart',
@@ -221,9 +240,11 @@ class NocodbService {
           { column_name: 'message_count', title: 'Quantidade de Mensagens', uidt: 'Number' },
           { column_name: 'notification_phone', title: 'Telefone de Notificação', uidt: 'SingleLineText' },
           { column_name: 'created_at', title: 'Criado em', uidt: 'DateTime' },
-          { column_name: 'data', title: 'Dados Completos', uidt: 'LongText' }
+          { column_name: 'data_json', title: 'Dados Completos (JSON)', uidt: 'LongText' }
         ]
       };
+      
+      console.log('Schema da tabela:', tableSchema);
       
       const response = await fetch(`${this.baseUrl}/api/v1/db/meta/projects/${baseId}/tables`, {
         method: 'POST',
@@ -240,7 +261,7 @@ class NocodbService {
         return success;
       } else {
         const errorText = await response.text();
-        console.log('❌ Erro ao criar tabela:', errorText);
+        console.log('❌ Erro ao criar tabela:', response.status, errorText);
         return false;
       }
       
@@ -261,8 +282,6 @@ class NocodbService {
       });
       localStorage.setItem(key, JSON.stringify(existing));
       console.log(`💾 Dados salvos localmente como fallback: ${key}`);
-      
-      // Notificar que dados foram salvos localmente
       console.log('📱 Os dados estão seguros no armazenamento local e serão sincronizados quando o NocoDB estiver disponível');
     } catch (error) {
       console.error('❌ Erro ao salvar fallback local:', error);
