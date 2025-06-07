@@ -1,4 +1,3 @@
-
 const API_BASE_URL = 'https://api.novahagencia.com.br';
 const API_KEY = '26bda82495a95caeae71f96534841285';
 
@@ -81,62 +80,126 @@ class EvolutionApiService {
 
   async getAllContacts(instanceId: string) {
     try {
-      console.log('Buscando contatos pessoais para instância:', instanceId);
+      console.log('🔍 Buscando contatos pessoais para instância:', instanceId);
       
-      const response = await fetch(`${API_BASE_URL}/chat/findChats/${instanceId}`, {
+      // Primeira tentativa: endpoint findChats
+      console.log('📞 Tentativa 1: Usando endpoint findChats...');
+      const response1 = await fetch(`${API_BASE_URL}/chat/findChats/${instanceId}`, {
         method: 'POST',
         headers: this.headers,
       });
       
-      console.log(`Response status para findChats: ${response.status}`);
+      console.log(`📊 Response status findChats: ${response1.status}`);
       
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Dados de chats recebidos:', data);
+      if (response1.ok) {
+        const data1 = await response1.json();
+        console.log('📦 Dados completos do findChats:', JSON.stringify(data1, null, 2));
         
         let chats = [];
         
-        if (Array.isArray(data)) {
-          chats = data;
-        } else if (data.chats) {
-          chats = data.chats;
-        } else if (data.data) {
-          chats = data.data;
-        } else if (data.response) {
-          chats = data.response;
+        if (Array.isArray(data1)) {
+          chats = data1;
+        } else if (data1.chats) {
+          chats = data1.chats;
+        } else if (data1.data) {
+          chats = data1.data;
+        } else if (data1.response) {
+          chats = data1.response;
         }
         
-        console.log('Chats processados:', chats);
+        console.log(`📝 Total de chats encontrados: ${chats.length}`);
         
-        // Filtrar apenas chats de contatos pessoais (não grupos)
-        const personalContacts = chats
-          .filter((chat: any) => {
-            const chatId = chat.id || chat.remoteJid;
-            // Contatos pessoais terminam com @s.whatsapp.net e não contêm @g.us
-            const isPersonal = chatId && chatId.includes('@s.whatsapp.net') && !chatId.includes('@g.us');
-            console.log('Chat:', chat.pushName || 'Sem nome', 'ID:', chatId, 'É pessoal:', isPersonal);
-            return isPersonal;
-          })
-          .map((chat: any) => {
-            const chatId = chat.id || chat.remoteJid;
-            const contactName = chat.pushName || chat.name || chat.notify || chat.verifiedName || 'Contato sem nome';
-            
-            return {
-              id: chatId,
-              name: contactName,
-              phoneNumber: this.formatPhoneNumber(chatId),
-            };
-          });
-        
-        console.log('Contatos pessoais finais:', personalContacts);
-        return personalContacts;
+        if (chats.length > 0) {
+          console.log('🔍 Analisando primeiro chat:', JSON.stringify(chats[0], null, 2));
+          
+          const personalContacts = chats
+            .filter((chat: any) => {
+              const chatId = chat.id || chat.remoteJid;
+              console.log('🔍 Analisando chat ID:', chatId);
+              
+              if (!chatId) {
+                console.log('❌ Chat sem ID');
+                return false;
+              }
+              
+              // Verificar se é contato pessoal
+              const isPersonal = chatId.includes('@s.whatsapp.net') && !chatId.includes('@g.us');
+              console.log(`✅ Chat ${chatId} é pessoal: ${isPersonal}`);
+              
+              return isPersonal;
+            })
+            .map((chat: any) => {
+              const chatId = chat.id || chat.remoteJid;
+              const contactName = chat.pushName || chat.name || chat.notify || chat.verifiedName || 'Contato sem nome';
+              
+              console.log(`👤 Mapeando contato: ${contactName} (${chatId})`);
+              
+              return {
+                id: chatId,
+                name: contactName,
+                phoneNumber: this.formatPhoneNumber(chatId),
+              };
+            });
+          
+          console.log(`✅ Contatos pessoais encontrados: ${personalContacts.length}`);
+          
+          if (personalContacts.length > 0) {
+            return personalContacts;
+          }
+        }
       }
       
-      console.log('❌ Endpoint de contatos falhou, retornando lista vazia');
+      // Segunda tentativa: endpoint fetchAllContacts
+      console.log('📞 Tentativa 2: Usando endpoint fetchAllContacts...');
+      const response2 = await fetch(`${API_BASE_URL}/chat/fetchAllContacts/${instanceId}`, {
+        headers: this.headers,
+      });
+      
+      console.log(`📊 Response status fetchAllContacts: ${response2.status}`);
+      
+      if (response2.ok) {
+        const data2 = await response2.json();
+        console.log('📦 Dados do fetchAllContacts:', JSON.stringify(data2, null, 2));
+        
+        const contacts = Array.isArray(data2) ? data2 : data2.contacts || data2.data || [];
+        
+        if (contacts.length > 0) {
+          return contacts.map((contact: any) => ({
+            id: contact.id || contact.jid,
+            name: contact.name || contact.pushName || contact.notify || 'Contato sem nome',
+            phoneNumber: this.formatPhoneNumber(contact.id || contact.jid),
+          }));
+        }
+      }
+      
+      // Terceira tentativa: endpoint getContacts 
+      console.log('📞 Tentativa 3: Usando endpoint getContacts...');
+      const response3 = await fetch(`${API_BASE_URL}/instance/getContacts/${instanceId}`, {
+        headers: this.headers,
+      });
+      
+      console.log(`📊 Response status getContacts: ${response3.status}`);
+      
+      if (response3.ok) {
+        const data3 = await response3.json();
+        console.log('📦 Dados do getContacts:', JSON.stringify(data3, null, 2));
+        
+        const contacts = Array.isArray(data3) ? data3 : data3.contacts || data3.data || [];
+        
+        if (contacts.length > 0) {
+          return contacts.map((contact: any) => ({
+            id: contact.id || contact.jid,
+            name: contact.name || contact.pushName || contact.notify || 'Contato sem nome',
+            phoneNumber: this.formatPhoneNumber(contact.id || contact.jid),
+          }));
+        }
+      }
+      
+      console.log('❌ Nenhum endpoint retornou contatos válidos');
       return [];
       
     } catch (error) {
-      console.error('Erro ao buscar contatos:', error);
+      console.error('💥 Erro ao buscar contatos:', error);
       return [];
     }
   }
