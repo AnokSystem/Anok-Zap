@@ -50,8 +50,8 @@ const IntelligentNotifications = () => {
       setInstances(instancesData);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to load WhatsApp instances",
+        title: "Erro",
+        description: "Falha ao carregar instâncias do WhatsApp",
         variant: "destructive",
       });
     }
@@ -85,13 +85,13 @@ const IntelligentNotifications = () => {
       const fileUrl = await minioService.uploadFile(file);
       updateMessage(messageId, { file, fileUrl });
       toast({
-        title: "Success",
-        description: "File uploaded successfully",
+        title: "Sucesso",
+        description: "Arquivo enviado com sucesso",
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to upload file",
+        title: "Erro",
+        description: "Falha ao enviar arquivo",
         variant: "destructive",
       });
     } finally {
@@ -104,8 +104,8 @@ const IntelligentNotifications = () => {
       const url = webhookUrls[eventType as keyof typeof webhookUrls];
       navigator.clipboard.writeText(url);
       toast({
-        title: "Copied!",
-        description: "Webhook URL copied to clipboard",
+        title: "Copiado!",
+        description: "URL do webhook copiada para a área de transferência",
       });
     }
   };
@@ -113,8 +113,8 @@ const IntelligentNotifications = () => {
   const saveNotification = async () => {
     if (!selectedInstance || !userRole || !hotmartProfile || !eventType || messages.length === 0) {
       toast({
-        title: "Error",
-        description: "Please fill in all required fields",
+        title: "Erro",
+        description: "Por favor, preencha todos os campos obrigatórios",
         variant: "destructive",
       });
       return;
@@ -139,8 +139,8 @@ const IntelligentNotifications = () => {
       setShowWebhookUrl(true);
       
       toast({
-        title: "Success",
-        description: "Notification configuration saved successfully",
+        title: "Sucesso",
+        description: "Configuração de notificação salva com sucesso",
       });
 
       // Send completion notification if phone number provided
@@ -148,13 +148,13 @@ const IntelligentNotifications = () => {
         await evolutionApiService.sendMessage(
           selectedInstance,
           notificationPhone,
-          `Hotmart notification for ${eventType.replace('-', ' ')} configured successfully.`
+          `Notificação do Hotmart para ${eventType.replace('-', ' ')} configurada com sucesso.`
         );
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to save notification configuration",
+        title: "Erro",
+        description: "Falha ao salvar configuração de notificação",
         variant: "destructive",
       });
     } finally {
@@ -168,20 +168,20 @@ const IntelligentNotifications = () => {
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Bell className="w-5 h-5" />
-            <span>Intelligent Notifications</span>
+            <span>Notificações Inteligentes</span>
           </CardTitle>
           <CardDescription>
-            Configure automatic WhatsApp notifications for Hotmart events
+            Configure notificações automáticas do WhatsApp para eventos do Hotmart
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Basic Configuration */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>WhatsApp Instance</Label>
+              <Label>Instância WhatsApp</Label>
               <Select value={selectedInstance} onValueChange={setSelectedInstance}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select an instance" />
+                  <SelectValue placeholder="Selecione uma instância" />
                 </SelectTrigger>
                 <SelectContent>
                   {instances.map((instance) => (
@@ -194,37 +194,37 @@ const IntelligentNotifications = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>User Role</Label>
+              <Label>Função do Usuário</Label>
               <Select value={userRole} onValueChange={setUserRole}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select your role" />
+                  <SelectValue placeholder="Selecione sua função" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="affiliate">Affiliate</SelectItem>
-                  <SelectItem value="producer">Producer</SelectItem>
+                  <SelectItem value="affiliate">Afiliado</SelectItem>
+                  <SelectItem value="producer">Produtor</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label>Hotmart Profile Name</Label>
+              <Label>Nome do Perfil Hotmart</Label>
               <Input
                 value={hotmartProfile}
                 onChange={(e) => setHotmartProfile(e.target.value)}
-                placeholder="Enter your Hotmart profile name"
+                placeholder="Digite o nome do seu perfil Hotmart"
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Event Type</Label>
+              <Label>Tipo de Evento</Label>
               <Select value={eventType} onValueChange={setEventType}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select event type" />
+                  <SelectValue placeholder="Selecione o tipo de evento" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="purchase-approved">Purchase Approved</SelectItem>
-                  <SelectItem value="awaiting-payment">Awaiting Payment</SelectItem>
-                  <SelectItem value="cart-abandoned">Cart Abandoned</SelectItem>
+                  <SelectItem value="purchase-approved">Compra Aprovada</SelectItem>
+                  <SelectItem value="awaiting-payment">Aguardando Pagamento</SelectItem>
+                  <SelectItem value="cart-abandoned">Carrinho Abandonado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -233,7 +233,7 @@ const IntelligentNotifications = () => {
           {/* Messages Configuration */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label>Notification Messages (up to 5)</Label>
+              <Label>Mensagens de Notificação (até 5)</Label>
               {messages.length < 5 && (
                 <Button
                   type="button"
@@ -243,7 +243,7 @@ const IntelligentNotifications = () => {
                   className="flex items-center space-x-1"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>Add Message</span>
+                  <span>Adicionar Mensagem</span>
                 </Button>
               )}
             </div>
@@ -252,7 +252,7 @@ const IntelligentNotifications = () => {
               <Card key={message.id} className="p-4">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <Label>Message {index + 1}</Label>
+                    <Label>Mensagem {index + 1}</Label>
                     {messages.length > 1 && (
                       <Button
                         type="button"
@@ -267,7 +267,7 @@ const IntelligentNotifications = () => {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>Message Type</Label>
+                      <Label>Tipo de Mensagem</Label>
                       <Select
                         value={message.type}
                         onValueChange={(value: any) => updateMessage(message.id, { type: value })}
@@ -276,18 +276,18 @@ const IntelligentNotifications = () => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="text">Text</SelectItem>
-                          <SelectItem value="audio">Audio</SelectItem>
-                          <SelectItem value="video">Video</SelectItem>
-                          <SelectItem value="image">Image</SelectItem>
-                          <SelectItem value="document">Document</SelectItem>
+                          <SelectItem value="text">Texto</SelectItem>
+                          <SelectItem value="audio">Áudio</SelectItem>
+                          <SelectItem value="video">Vídeo</SelectItem>
+                          <SelectItem value="image">Imagem</SelectItem>
+                          <SelectItem value="document">Documento</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
                     {message.type !== 'text' && (
                       <div>
-                        <Label>Upload File</Label>
+                        <Label>Enviar Arquivo</Label>
                         <div className="flex items-center space-x-2">
                           <Input
                             type="file"
@@ -304,7 +304,7 @@ const IntelligentNotifications = () => {
                           <Upload className="w-4 h-4 text-gray-400" />
                         </div>
                         {message.fileUrl && (
-                          <p className="text-sm text-green-600 mt-1">File uploaded successfully</p>
+                          <p className="text-sm text-green-600 mt-1">Arquivo enviado com sucesso</p>
                         )}
                       </div>
                     )}
@@ -312,15 +312,15 @@ const IntelligentNotifications = () => {
 
                   {message.type === 'text' && (
                     <div>
-                      <Label>Message Content</Label>
+                      <Label>Conteúdo da Mensagem</Label>
                       <Textarea
                         value={message.content}
                         onChange={(e) => updateMessage(message.id, { content: e.target.value })}
-                        placeholder="Enter your notification message here..."
+                        placeholder="Digite sua mensagem de notificação aqui..."
                         className="min-h-[100px]"
                       />
                       <p className="text-sm text-gray-500 mt-1">
-                        {message.content.length} characters
+                        {message.content.length} caracteres
                       </p>
                     </div>
                   )}
@@ -331,7 +331,7 @@ const IntelligentNotifications = () => {
 
           {/* Notification Phone */}
           <div className="space-y-2">
-            <Label>Completion Notification Phone (optional)</Label>
+            <Label>Telefone para Notificação de Conclusão (opcional)</Label>
             <Input
               value={notificationPhone}
               onChange={(e) => setNotificationPhone(e.target.value)}
@@ -346,7 +346,7 @@ const IntelligentNotifications = () => {
             className="w-full bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700"
           >
             <Bell className="w-4 h-4 mr-2" />
-            {isLoading ? 'Saving...' : 'Save Notification Configuration'}
+            {isLoading ? 'Salvando...' : 'Salvar Configuração de Notificação'}
           </Button>
 
           {/* Webhook URL Display */}
@@ -354,10 +354,10 @@ const IntelligentNotifications = () => {
             <Card className="bg-green-50 border-green-200">
               <CardHeader>
                 <CardTitle className="text-lg text-green-800">
-                  Configuration Complete!
+                  Configuração Concluída!
                 </CardTitle>
                 <CardDescription className="text-green-700">
-                  Copy this webhook URL and paste it in your Hotmart platform
+                  Copie esta URL do webhook e cole na sua plataforma Hotmart
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -376,7 +376,9 @@ const IntelligentNotifications = () => {
                   </Button>
                 </div>
                 <p className="text-sm text-green-700 mt-2">
-                  Event: {eventType.replace('-', ' ').toUpperCase()}
+                  Evento: {eventType === 'purchase-approved' ? 'COMPRA APROVADA' : 
+                          eventType === 'awaiting-payment' ? 'AGUARDANDO PAGAMENTO' : 
+                          'CARRINHO ABANDONADO'}
                 </p>
               </CardContent>
             </Card>
