@@ -41,7 +41,7 @@ export class MinioAuth {
     path: string, 
     query: string, 
     headers: Record<string, string>, 
-    payload: string,
+    payloadHash: string,
     accessKey: string,
     secretKey: string,
     region: string
@@ -61,7 +61,8 @@ export class MinioAuth {
       .map(key => key.toLowerCase())
       .join(';');
 
-    const payloadHash = await this.sha256(payload);
+    // Usar o hash do payload fornecido ou calcular para string vazia
+    const finalPayloadHash = payloadHash || await this.sha256('');
     
     const canonicalRequest = [
       method,
@@ -69,8 +70,10 @@ export class MinioAuth {
       query,
       canonicalHeaders,
       signedHeaders,
-      payloadHash
+      finalPayloadHash
     ].join('\n');
+
+    console.log('Canonical request:', canonicalRequest);
 
     // String to sign
     const algorithm = 'AWS4-HMAC-SHA256';
@@ -84,6 +87,8 @@ export class MinioAuth {
       canonicalRequestHash
     ].join('\n');
 
+    console.log('String to sign:', stringToSign);
+
     // Calculate signature
     const signingKey = await this.createSigningKey(secretKey, dateStamp, region, 's3');
     const signature = await this.hmacSha256(signingKey, stringToSign);
@@ -91,6 +96,9 @@ export class MinioAuth {
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
 
-    return `${algorithm} Credential=${accessKey}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signatureHex}`;
+    const authHeader = `${algorithm} Credential=${accessKey}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signatureHex}`;
+    console.log('Authorization header gerado:', authHeader);
+    
+    return authHeader;
   }
 }

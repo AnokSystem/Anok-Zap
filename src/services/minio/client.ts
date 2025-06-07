@@ -60,7 +60,7 @@ export class MinioClient {
     try {
       console.log('Iniciando upload para MinIO...', file.name);
       
-      // Simplificar o nome do arquivo para evitar problemas de encoding
+      // Simplificar o nome do arquivo
       const timestamp = Date.now();
       const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
       const fileName = `${timestamp}-${cleanFileName}`;
@@ -69,59 +69,61 @@ export class MinioClient {
       const url = new URL(this.config.serverUrl);
       const path = `/${this.config.bucketName}/${filePath}`;
       
-      // Headers mais simples e compatíveis
+      // Calcular hash do payload
+      const fileArrayBuffer = await file.arrayBuffer();
+      const hashBuffer = await crypto.subtle.digest('SHA-256', fileArrayBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const payloadHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      
+      // Headers corrigidos
       const amzDate = new Date().toISOString().replace(/[:\-]|\.\d{3}/g, '');
       const headers: MinioHeaders = {
         'Host': url.hostname,
         'X-Amz-Date': amzDate,
+        'X-Amz-Content-Sha256': payloadHash,
         'Content-Type': options.contentType || file.type || 'application/octet-stream',
         'Content-Length': file.size.toString()
       };
 
-      // Calcular hash do payload para upload
-      const fileArrayBuffer = await file.arrayBuffer();
-      const fileBytes = new Uint8Array(fileArrayBuffer);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', fileBytes);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const payloadHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      console.log('Headers de upload:', headers);
+      console.log('Payload hash:', payloadHash);
+
+      const authorization = await this.auth.createSignature(
+        'PUT', 
+        path, 
+        '', 
+        headers, 
+        payloadHash,
+        this.config.accessKey,
+        this.config.secretKey,
+        this.config.region
+      );
       
-      headers['X-Amz-Content-Sha256'] = payloadHash;
+      console.log('Authorization header:', authorization);
+      
+      const fullUrl = `${this.config.serverUrl}${path}`;
+      console.log('URL de upload:', fullUrl);
+      
+      const response = await fetch(fullUrl, {
+        method: 'PUT',
+        headers: {
+          ...headers,
+          'Authorization': authorization
+        },
+        body: file
+      });
 
-      try {
-        const authorization = await this.auth.createSignature(
-          'PUT', 
-          path, 
-          '', 
-          headers, 
-          '',
-          this.config.accessKey,
-          this.config.secretKey,
-          this.config.region
-        );
-        
-        const response = await fetch(`${this.config.serverUrl}${path}`, {
-          method: 'PUT',
-          headers: {
-            ...headers,
-            'Authorization': authorization
-          },
-          body: file
-        });
-
-        console.log(`Status do upload MinIO: ${response.status}`);
-        
-        if (response.ok) {
-          const fileUrl = `${this.config.serverUrl}${path}`;
-          console.log('Upload realizado com sucesso no MinIO:', fileUrl);
-          return fileUrl;
-        } else {
-          const errorText = await response.text().catch(() => '');
-          console.error('Erro no upload MinIO:', response.status, errorText);
-          throw new Error(`Upload falhou: ${response.status} - ${errorText}`);
-        }
-      } catch (error) {
-        console.error('Erro durante upload MinIO:', error);
-        throw new Error(`Falha na comunicação com MinIO: ${error.message}`);
+      console.log(`Status do upload MinIO: ${response.status}`);
+      
+      if (response.ok) {
+        const fileUrl = fullUrl;
+        console.log('Upload realizado com sucesso no MinIO:', fileUrl);
+        return fileUrl;
+      } else {
+        const errorText = await response.text().catch(() => '');
+        console.error('Erro no upload MinIO:', response.status, errorText);
+        console.error('Response headers:', Object.fromEntries(response.headers.entries()));
+        throw new Error(`Upload falhou: ${response.status} - ${errorText}`);
       }
     } catch (error) {
       console.error('Erro geral no upload:', error);
