@@ -1,9 +1,53 @@
-
 class MinioService {
   private serverUrl = 'https://s3.novahagencia.com.br';
   private accessKey = 'JMPKSCVbXS5bkgjNEoSQ';
   private secretKey = 'YFUPP0XvxYWqQTQUayfBN8U6LzhgsRVg3733RIAM';
   private bucketName = 'whatsapp-files';
+
+  // Teste de conexão com Minio
+  async testConnection(): Promise<boolean> {
+    try {
+      console.log('Testando conexão com Minio S3...');
+      
+      // Tenta listar buckets ou acessar endpoint de health
+      const endpoints = [
+        `${this.serverUrl}/minio/health/live`,
+        `${this.serverUrl}/health/live`,
+        `${this.serverUrl}/${this.bucketName}`,
+        `${this.serverUrl}`
+      ];
+      
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`Testando endpoint: ${endpoint}`);
+          
+          const response = await fetch(endpoint, {
+            method: 'GET',
+            headers: {
+              'Authorization': `AWS4-HMAC-SHA256 Credential=${this.accessKey}`,
+            }
+          });
+          
+          console.log(`Resposta do endpoint ${endpoint}:`, response.status);
+          
+          if (response.status === 200 || response.status === 403) {
+            // 403 pode indicar que o serviço está rodando mas sem permissão
+            console.log('Minio está respondendo');
+            return true;
+          }
+        } catch (error) {
+          console.log(`Endpoint ${endpoint} falhou:`, error);
+          continue;
+        }
+      }
+      
+      console.log('Todos os endpoints Minio falharam, mas serviço pode estar funcionando');
+      return false;
+    } catch (error) {
+      console.error('Erro geral ao testar Minio:', error);
+      return false;
+    }
+  }
 
   async uploadFile(file: File): Promise<string> {
     try {

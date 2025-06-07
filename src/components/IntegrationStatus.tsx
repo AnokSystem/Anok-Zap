@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,18 +29,23 @@ const IntegrationStatus = () => {
 
   const checkIntegrations = async () => {
     setIsChecking(true);
+    console.log('Iniciando verificação das integrações...');
+    
     const newIntegrations = [...integrations];
 
     // Verificar Evolution API
     try {
-      await evolutionApiService.getInstances();
+      console.log('Verificando Evolution API...');
+      const instances = await evolutionApiService.getInstances();
       newIntegrations[0] = {
         name: 'Evolution API',
         status: 'conectado',
-        message: 'API respondendo normalmente',
+        message: `API funcionando - ${instances.length} instâncias encontradas`,
         lastCheck: new Date()
       };
+      console.log('Evolution API: Conectado');
     } catch (error) {
+      console.error('Evolution API: Erro', error);
       newIntegrations[0] = {
         name: 'Evolution API',
         status: 'erro',
@@ -52,32 +56,42 @@ const IntegrationStatus = () => {
 
     // Verificar NocoDB
     try {
+      console.log('Verificando NocoDB...');
       const isConnected = await nocodbService.testConnection();
       newIntegrations[1] = {
         name: 'NocoDB',
         status: isConnected ? 'conectado' : 'erro',
-        message: isConnected ? 'Banco de dados conectado' : 'Erro na conexão com o banco',
+        message: isConnected ? 'Banco de dados conectado e operacional' : 'Falha na conexão - verifique credenciais',
         lastCheck: new Date()
       };
+      console.log('NocoDB:', isConnected ? 'Conectado' : 'Erro');
     } catch (error) {
+      console.error('NocoDB: Erro', error);
       newIntegrations[1] = {
         name: 'NocoDB',
         status: 'erro',
-        message: 'Falha na comunicação',
+        message: 'Falha na comunicação com o banco',
         lastCheck: new Date()
       };
     }
 
     // Verificar Minio
     try {
+      console.log('Verificando Minio S3...');
+      const isConnected = await minioService.testConnection();
       const files = await minioService.listFiles();
+      
       newIntegrations[2] = {
         name: 'Minio S3',
-        status: 'conectado',
-        message: `Sistema de arquivos operacional (${files.length} arquivos)`,
+        status: isConnected ? 'conectado' : 'erro',
+        message: isConnected 
+          ? `Sistema de arquivos operacional (${files.length} arquivos)` 
+          : 'Erro na conexão com servidor de arquivos',
         lastCheck: new Date()
       };
+      console.log('Minio:', isConnected ? 'Conectado' : 'Erro');
     } catch (error) {
+      console.error('Minio: Erro', error);
       newIntegrations[2] = {
         name: 'Minio S3',
         status: 'erro',
@@ -88,6 +102,7 @@ const IntegrationStatus = () => {
 
     setIntegrations(newIntegrations);
     setIsChecking(false);
+    console.log('Verificação das integrações concluída');
   };
 
   const getStatusIcon = (status: string) => {

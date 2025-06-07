@@ -11,20 +11,35 @@ class NocodbService {
   // Método para testar conectividade
   async testConnection() {
     try {
-      const response = await fetch(`${this.baseUrl}/api/v1/db/meta/projects`, {
+      console.log('Testando conexão com NocoDB...');
+      
+      // Primeiro tenta acessar a API básica
+      const response = await fetch(`${this.baseUrl}/api/v2/meta/bases`, {
+        method: 'GET',
         headers: this.headers,
       });
       
       if (response.ok) {
         const data = await response.json();
-        console.log('Projetos NocoDB encontrados:', data);
+        console.log('NocoDB conectado com sucesso:', data);
         return true;
       } else {
-        console.log('Erro na conexão NocoDB:', response.status);
+        console.log('Erro na resposta NocoDB:', response.status, response.statusText);
+        
+        // Tenta endpoint alternativo
+        const altResponse = await fetch(`${this.baseUrl}/api/v1/db/meta/projects`, {
+          headers: this.headers,
+        });
+        
+        if (altResponse.ok) {
+          console.log('NocoDB conectado via endpoint alternativo');
+          return true;
+        }
+        
         return false;
       }
     } catch (error) {
-      console.error('Erro ao testar conexão NocoDB:', error);
+      console.error('Erro ao conectar com NocoDB:', error);
       return false;
     }
   }
