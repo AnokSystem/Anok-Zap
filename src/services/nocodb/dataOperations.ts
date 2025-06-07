@@ -17,9 +17,18 @@ export class NocodbDataOperations {
     try {
       console.log(`Salvando dados na tabela ${tableName}:`, data);
       
-      // Tentar API v1 primeiro
-      let url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableName}`;
-      console.log('Tentando salvar (v1):', url);
+      // Primeiro, vamos obter o ID correto da tabela
+      const tableId = await this.getTableId(baseId, tableName);
+      if (!tableId) {
+        console.log(`❌ ID da tabela ${tableName} não encontrado`);
+        return false;
+      }
+      
+      console.log(`📋 ID da tabela ${tableName}: ${tableId}`);
+      
+      // Tentar API v1 com ID da tabela
+      let url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}`;
+      console.log('Tentando salvar (v1 com ID):', url);
       
       let response = await fetch(url, {
         method: 'POST',
@@ -29,16 +38,16 @@ export class NocodbDataOperations {
       
       if (response.ok) {
         const result = await response.json();
-        console.log('✅ Dados salvos com sucesso (v1):', result);
+        console.log('✅ Dados salvos com sucesso (v1 com ID):', result);
         return true;
       } else {
         const errorText = await response.text();
-        console.log(`❌ Erro v1 ${response.status}:`, errorText);
+        console.log(`❌ Erro v1 com ID ${response.status}:`, errorText);
       }
       
-      // Se v1 falhou, tentar v2
-      url = `${this.config.baseUrl}/api/v2/tables/${tableName}/records`;
-      console.log('Tentando salvar (v2):', url);
+      // Se v1 com ID falhou, tentar v2 com ID
+      url = `${this.config.baseUrl}/api/v2/tables/${tableId}/records`;
+      console.log('Tentando salvar (v2 com ID):', url);
       
       response = await fetch(url, {
         method: 'POST',
@@ -48,11 +57,11 @@ export class NocodbDataOperations {
       
       if (response.ok) {
         const result = await response.json();
-        console.log('✅ Dados salvos com sucesso (v2):', result);
+        console.log('✅ Dados salvos com sucesso (v2 com ID):', result);
         return true;
       } else {
         const errorText = await response.text();
-        console.log(`❌ Erro v2 ${response.status}:`, errorText);
+        console.log(`❌ Erro v2 com ID ${response.status}:`, errorText);
       }
       
       return false;
@@ -60,6 +69,42 @@ export class NocodbDataOperations {
     } catch (error) {
       console.log('❌ Erro interno ao salvar:', error);
       return false;
+    }
+  }
+
+  private async getTableId(baseId: string, tableName: string): Promise<string | null> {
+    try {
+      console.log(`🔍 Buscando ID da tabela ${tableName} na base ${baseId}...`);
+      
+      const response = await fetch(`${this.config.baseUrl}/api/v1/db/meta/projects/${baseId}/tables`, {
+        headers: this.headers,
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const tables = data.list || [];
+        
+        // Procurar pela tabela usando table_name ou title
+        const table = tables.find((t: any) => 
+          t.table_name === tableName || 
+          t.title === tableName ||
+          (tableName === 'NotificacoesHotmart' && t.title === 'Notificações Hotmart')
+        );
+        
+        if (table) {
+          console.log(`✅ Tabela encontrada:`, table);
+          return table.id;
+        } else {
+          console.log(`❌ Tabela ${tableName} não encontrada nas tabelas disponíveis:`, tables.map(t => ({ id: t.id, table_name: t.table_name, title: t.title })));
+        }
+      } else {
+        console.log(`❌ Erro ao buscar tabelas: ${response.status}`);
+      }
+      
+      return null;
+    } catch (error) {
+      console.log('❌ Erro ao obter ID da tabela:', error);
+      return null;
     }
   }
 
