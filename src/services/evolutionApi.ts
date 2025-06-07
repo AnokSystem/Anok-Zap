@@ -82,30 +82,61 @@ class EvolutionApiService {
     try {
       console.log('Buscando contatos pessoais para instância:', instanceId);
       
-      // Primeiro, tentar o endpoint de contatos
-      let response = await fetch(`${API_BASE_URL}/chat/findContacts/${instanceId}`, {
+      // Tentar endpoint de chats primeiro (mais confiável)
+      let response = await fetch(`${API_BASE_URL}/chat/findChats/${instanceId}`, {
         headers: this.headers,
       });
       
-      console.log(`Response status para findContacts: ${response.status}`);
+      console.log(`Response status para findChats: ${response.status}`);
       
-      // Se não funcionar, tentar outro endpoint
-      if (!response.ok) {
-        console.log('Tentando endpoint alternativo...');
-        response = await fetch(`${API_BASE_URL}/chat/findChats/${instanceId}?where=%7B%22owner%22%3A%22${instanceId}%22%7D`, {
-          headers: this.headers,
-        });
-        console.log(`Response status para findChats alternativo: ${response.status}`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Dados de chats recebidos:', data);
+        
+        let chats = [];
+        
+        if (Array.isArray(data)) {
+          chats = data;
+        } else if (data.chats) {
+          chats = data.chats;
+        } else if (data.data) {
+          chats = data.data;
+        } else if (data.response) {
+          chats = data.response;
+        }
+        
+        console.log('Chats processados:', chats);
+        
+        // Filtrar apenas contatos pessoais (não grupos)
+        const personalContacts = chats
+          .filter((chat: any) => {
+            const chatId = chat.id || chat.remoteJid;
+            const isPersonal = chatId && !chatId.includes('@g.us') && chatId.includes('@s.whatsapp.net');
+            console.log('Chat:', chat.name || chat.pushName, 'É pessoal:', isPersonal);
+            return isPersonal;
+          })
+          .map((chat: any) => {
+            const chatId = chat.id || chat.remoteJid;
+            const contactName = chat.name || chat.pushName || chat.notify || chat.verifiedName || 'Contato sem nome';
+            
+            return {
+              id: chatId,
+              name: contactName,
+              phoneNumber: this.formatPhoneNumber(chatId),
+            };
+          });
+        
+        console.log('Contatos pessoais finais:', personalContacts);
+        return personalContacts;
       }
       
-      // Se ainda não funcionar, tentar endpoint básico
-      if (!response.ok) {
-        console.log('Tentando endpoint básico...');
-        response = await fetch(`${API_BASE_URL}/chat/whatsappNumbers/${instanceId}`, {
-          headers: this.headers,
-        });
-        console.log(`Response status para whatsappNumbers: ${response.status}`);
-      }
+      // Se findChats não funcionar, tentar contact/findMany
+      console.log('Tentando endpoint contact/findMany...');
+      response = await fetch(`${API_BASE_URL}/contact/findMany/${instanceId}`, {
+        headers: this.headers,
+      });
+      
+      console.log(`Response status para contact/findMany: ${response.status}`);
       
       if (response.ok) {
         const data = await response.json();
@@ -113,7 +144,6 @@ class EvolutionApiService {
         
         let contacts = [];
         
-        // Tratar diferentes formatos de resposta
         if (Array.isArray(data)) {
           contacts = data;
         } else if (data.contacts) {
@@ -126,17 +156,16 @@ class EvolutionApiService {
         
         console.log('Contatos processados:', contacts);
         
-        // Filtrar e mapear contatos pessoais
+        // Filtrar apenas contatos pessoais
         const personalContacts = contacts
           .filter((contact: any) => {
-            // Filtrar apenas contatos pessoais (não grupos)
-            const isPersonal = !contact.isGroup && 
-                              (contact.id || contact.remoteJid || contact.number || contact.jid);
+            const contactId = contact.id || contact.remoteJid;
+            const isPersonal = contactId && !contactId.includes('@g.us') && contactId.includes('@s.whatsapp.net');
             console.log('Contato:', contact.name || contact.pushName, 'É pessoal:', isPersonal);
             return isPersonal;
           })
           .map((contact: any) => {
-            const contactId = contact.id || contact.remoteJid || contact.number || contact.jid;
+            const contactId = contact.id || contact.remoteJid;
             const contactName = contact.name || contact.pushName || contact.notify || contact.verifiedName || 'Contato sem nome';
             
             return {
@@ -150,7 +179,56 @@ class EvolutionApiService {
         return personalContacts;
       }
       
-      throw new Error('Falha ao buscar contatos');
+      // Se ainda não funcionar, tentar message/findMany para extrair contatos das mensagens
+      console.log('Tentando endpoint message/findMany para extrair contatos...');
+      response = await fetch(`${API_BASE_URL}/message/findMany/${instanceId}?limit=100&where={"key.fromMe":false}`, {
+        headers: this.headers,
+      });
+      
+      console.log(`Response status para message/findMany: ${response.status}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Dados de mensagens recebidos:', data);
+        
+        let messages = [];
+        
+        if (Array.isArray(data)) {
+          messages = data;
+        } else if (data.messages) {
+          messages = data.messages;
+        } else if (data.data) {
+          messages = data.data;
+        } else if (data.response) {
+          messages = data.response;
+        }
+        
+        console.log('Mensagens processadas:', messages);
+        
+        // Extrair contatos únicos das mensagens
+        const contactsMap = new Map();
+        
+        messages.forEach((message: any) => {
+          const remoteJid = message.key?.remoteJid || message.remoteJid;
+          const pushName = message.pushName || message.key?.pushName;
+          
+          if (remoteJid && !remoteJid.includes('@g.us') && remoteJid.includes('@s.whatsapp.net')) {
+            if (!contactsMap.has(remoteJid)) {
+              contactsMap.set(remoteJid, {
+                id: remoteJid,
+                name: pushName || 'Contato sem nome',
+                phoneNumber: this.formatPhoneNumber(remoteJid),
+              });
+            }
+          }
+        });
+        
+        const personalContacts = Array.from(contactsMap.values());
+        console.log('Contatos extraídos das mensagens:', personalContacts);
+        return personalContacts;
+      }
+      
+      throw new Error('Todos os endpoints falharam');
     } catch (error) {
       console.error('Erro ao buscar contatos:', error);
       return [];
