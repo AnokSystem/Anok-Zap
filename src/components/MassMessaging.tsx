@@ -93,14 +93,96 @@ const MassMessaging = () => {
     }
   };
 
-  const handleSpreadsheetUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const processSpreadsheet = async (file: File): Promise<string[]> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        try {
+          const text = e.target?.result as string;
+          const lines = text.split('\n');
+          const phones: string[] = [];
+          
+          // Pular o cabeçalho (primeira linha)
+          for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+            
+            // Dividir por vírgula ou ponto e vírgula
+            const columns = line.split(/[,;]/);
+            
+            if (columns.length > 0) {
+              // Assumir que o telefone está na primeira coluna
+              let phone = columns[0].trim();
+              
+              // Remover aspas se existirem
+              phone = phone.replace(/['"]/g, '');
+              
+              // Verificar se parece com um número de telefone
+              if (phone && (phone.includes('+') || phone.match(/^\d+$/))) {
+                // Adicionar + se não tiver
+                if (!phone.startsWith('+') && phone.match(/^\d+$/)) {
+                  phone = '+' + phone;
+                }
+                phones.push(phone);
+              }
+            }
+          }
+          
+          resolve(phones);
+        } catch (error) {
+          console.error('Erro ao processar planilha:', error);
+          reject(error);
+        }
+      };
+      
+      reader.onerror = () => reject(new Error('Erro ao ler arquivo'));
+      reader.readAsText(file);
+    });
+  };
+
+  const handleSpreadsheetUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setUploadedFile(file);
-      toast({
-        title: "Arquivo carregado",
-        description: "Planilha processada com sucesso",
-      });
+      try {
+        setIsLoading(true);
+        setUploadedFile(file);
+        
+        console.log('Processando planilha:', file.name);
+        const extractedPhones = await processSpreadsheet(file);
+        
+        console.log('Telefones extraídos:', extractedPhones);
+        
+        if (extractedPhones.length > 0) {
+          // Adicionar os telefones à entrada manual
+          const currentRecipients = recipients.trim();
+          const newRecipients = currentRecipients 
+            ? currentRecipients + '\n' + extractedPhones.join('\n')
+            : extractedPhones.join('\n');
+          
+          setRecipients(newRecipients);
+          
+          toast({
+            title: "Planilha processada com sucesso",
+            description: `${extractedPhones.length} contatos foram adicionados à entrada manual`,
+          });
+        } else {
+          toast({
+            title: "Nenhum contato encontrado",
+            description: "Verifique se a planilha possui números de telefone na primeira coluna",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao processar planilha:', error);
+        toast({
+          title: "Erro ao processar planilha",
+          description: "Verifique se o arquivo está no formato correto (CSV)",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -313,6 +395,9 @@ const MassMessaging = () => {
                   placeholder="Digite os números de telefone (um por linha)&#10;+5511999999999&#10;+5511888888888"
                   className="min-h-[120px]"
                 />
+                <p className="text-sm text-gray-500 mt-1">
+                  {recipients.split('\n').filter(r => r.trim()).length} contatos
+                </p>
               </div>
               <div>
                 <Label className="text-sm">Enviar Planilha</Label>
@@ -321,7 +406,13 @@ const MassMessaging = () => {
                     type="file"
                     accept=".xlsx,.csv"
                     onChange={handleSpreadsheetUpload}
+                    disabled={isLoading}
                   />
+                  {uploadedFile && (
+                    <p className="text-sm text-green-600">
+                      📄 {uploadedFile.name} processado
+                    </p>
+                  )}
                   <Button
                     type="button"
                     variant="outline"
