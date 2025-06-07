@@ -53,7 +53,6 @@ class EvolutionApiService {
     try {
       console.log('Buscando grupos para instância:', instanceId);
       
-      // Endpoint correto para buscar grupos
       const response = await fetch(`${API_BASE_URL}/group/fetchAllGroups/${instanceId}?getParticipants=false`, {
         headers: this.headers,
       });
@@ -64,7 +63,6 @@ class EvolutionApiService {
         const data = await response.json();
         console.log('Grupos encontrados:', data);
         
-        // A resposta pode ser um array direto ou ter uma propriedade com os grupos
         const groups = Array.isArray(data) ? data : data.groups || data.data || [];
         
         return groups.map((group: any) => ({
@@ -84,31 +82,72 @@ class EvolutionApiService {
     try {
       console.log('Buscando contatos pessoais para instância:', instanceId);
       
-      // Endpoint correto para buscar contatos
-      const response = await fetch(`${API_BASE_URL}/chat/findChats/${instanceId}`, {
+      // Primeiro, tentar o endpoint de contatos
+      let response = await fetch(`${API_BASE_URL}/chat/findContacts/${instanceId}`, {
         headers: this.headers,
       });
       
-      console.log(`Response status para findChats: ${response.status}`);
+      console.log(`Response status para findContacts: ${response.status}`);
+      
+      // Se não funcionar, tentar outro endpoint
+      if (!response.ok) {
+        console.log('Tentando endpoint alternativo...');
+        response = await fetch(`${API_BASE_URL}/chat/findChats/${instanceId}?where=%7B%22owner%22%3A%22${instanceId}%22%7D`, {
+          headers: this.headers,
+        });
+        console.log(`Response status para findChats alternativo: ${response.status}`);
+      }
+      
+      // Se ainda não funcionar, tentar endpoint básico
+      if (!response.ok) {
+        console.log('Tentando endpoint básico...');
+        response = await fetch(`${API_BASE_URL}/chat/whatsappNumbers/${instanceId}`, {
+          headers: this.headers,
+        });
+        console.log(`Response status para whatsappNumbers: ${response.status}`);
+      }
       
       if (response.ok) {
         const data = await response.json();
         console.log('Dados de contatos recebidos:', data);
         
-        const chats = Array.isArray(data) ? data : data.chats || data.data || [];
+        let contacts = [];
         
-        // Filtrar apenas conversas individuais (não grupos)
-        const personalContacts = chats.filter((chat: any) => 
-          !chat.isGroup && 
-          chat.id && 
-          chat.id.includes('@s.whatsapp.net')
-        );
+        // Tratar diferentes formatos de resposta
+        if (Array.isArray(data)) {
+          contacts = data;
+        } else if (data.contacts) {
+          contacts = data.contacts;
+        } else if (data.data) {
+          contacts = data.data;
+        } else if (data.response) {
+          contacts = data.response;
+        }
         
-        return personalContacts.map((contact: any) => ({
-          id: contact.id,
-          name: contact.name || contact.pushName || contact.notify || 'Contato sem nome',
-          phoneNumber: this.formatPhoneNumber(contact.id),
-        }));
+        console.log('Contatos processados:', contacts);
+        
+        // Filtrar e mapear contatos pessoais
+        const personalContacts = contacts
+          .filter((contact: any) => {
+            // Filtrar apenas contatos pessoais (não grupos)
+            const isPersonal = !contact.isGroup && 
+                              (contact.id || contact.remoteJid || contact.number || contact.jid);
+            console.log('Contato:', contact.name || contact.pushName, 'É pessoal:', isPersonal);
+            return isPersonal;
+          })
+          .map((contact: any) => {
+            const contactId = contact.id || contact.remoteJid || contact.number || contact.jid;
+            const contactName = contact.name || contact.pushName || contact.notify || contact.verifiedName || 'Contato sem nome';
+            
+            return {
+              id: contactId,
+              name: contactName,
+              phoneNumber: this.formatPhoneNumber(contactId),
+            };
+          });
+        
+        console.log('Contatos pessoais finais:', personalContacts);
+        return personalContacts;
       }
       
       throw new Error('Falha ao buscar contatos');
@@ -122,7 +161,6 @@ class EvolutionApiService {
     try {
       console.log('Buscando participantes do grupo:', groupId);
       
-      // Endpoint correto para buscar participantes do grupo
       const response = await fetch(`${API_BASE_URL}/group/participants/${instanceId}?groupJid=${groupId}`, {
         headers: this.headers,
       });
@@ -135,7 +173,6 @@ class EvolutionApiService {
         
         const participants = Array.isArray(data) ? data : data.participants || data.data || [];
         
-        // Buscar informações do grupo para pegar o nome
         let groupName = 'Grupo';
         try {
           const groupInfoResponse = await fetch(`${API_BASE_URL}/group/findGroup/${instanceId}?groupJid=${groupId}`, {
@@ -168,10 +205,8 @@ class EvolutionApiService {
   private formatPhoneNumber(jid: string): string {
     if (!jid) return '';
     
-    // Extrair apenas os números do JID
     const numbers = jid.replace('@s.whatsapp.net', '').replace('@c.us', '');
     
-    // Formatação brasileira: +55 XX XXXXX-XXXX
     if (numbers.startsWith('55') && numbers.length >= 12) {
       const countryCode = numbers.substring(0, 2);
       const areaCode = numbers.substring(2, 4);
