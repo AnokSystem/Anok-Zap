@@ -1,4 +1,3 @@
-
 class NocodbService {
   private baseUrl = 'https://kovalski.novahagencia.com.br';
   private apiToken = 'aY4YYKsICfBJXDtjLj4GWlwwaFIOkwSsOy64gslJ';
@@ -11,6 +10,83 @@ class NocodbService {
   // Cache das bases descobertas
   private discoveredBases: any[] = [];
   private targetBaseId: string | null = null;
+
+  // Schemas das tabelas necessárias
+  private tableSchemas = {
+    NotificacoesHotmart: {
+      table_name: 'NotificacoesHotmart',
+      title: 'Notificações Hotmart',
+      columns: [
+        { column_name: 'id', title: 'ID', uidt: 'ID' },
+        { column_name: 'event_type', title: 'Tipo de Evento', uidt: 'SingleLineText' },
+        { column_name: 'instance_id', title: 'ID da Instância', uidt: 'SingleLineText' },
+        { column_name: 'user_role', title: 'Função do Usuário', uidt: 'SingleLineText' },
+        { column_name: 'hotmart_profile', title: 'Perfil Hotmart', uidt: 'SingleLineText' },
+        { column_name: 'webhook_url', title: 'URL do Webhook', uidt: 'LongText' },
+        { column_name: 'message_count', title: 'Quantidade de Mensagens', uidt: 'Number' },
+        { column_name: 'notification_phone', title: 'Telefone de Notificação', uidt: 'SingleLineText' },
+        { column_name: 'created_at', title: 'Criado em', uidt: 'DateTime' },
+        { column_name: 'data_json', title: 'Dados Completos (JSON)', uidt: 'LongText' }
+      ]
+    },
+    WhatsAppInstances: {
+      table_name: 'WhatsAppInstances',
+      title: 'Instâncias WhatsApp',
+      columns: [
+        { column_name: 'id', title: 'ID', uidt: 'ID' },
+        { column_name: 'instance_id', title: 'ID da Instância', uidt: 'SingleLineText' },
+        { column_name: 'name', title: 'Nome', uidt: 'SingleLineText' },
+        { column_name: 'status', title: 'Status', uidt: 'SingleLineText' },
+        { column_name: 'created_at', title: 'Criado em', uidt: 'DateTime' },
+        { column_name: 'last_updated', title: 'Última Atualização', uidt: 'DateTime' },
+        { column_name: 'data_json', title: 'Dados Completos (JSON)', uidt: 'LongText' }
+      ]
+    },
+    WhatsAppContacts: {
+      table_name: 'WhatsAppContacts',
+      title: 'Contatos WhatsApp',
+      columns: [
+        { column_name: 'id', title: 'ID', uidt: 'ID' },
+        { column_name: 'contact_id', title: 'ID do Contato', uidt: 'SingleLineText' },
+        { column_name: 'name', title: 'Nome', uidt: 'SingleLineText' },
+        { column_name: 'phone_number', title: 'Número do Telefone', uidt: 'SingleLineText' },
+        { column_name: 'group_name', title: 'Nome do Grupo', uidt: 'SingleLineText' },
+        { column_name: 'instance_id', title: 'ID da Instância', uidt: 'SingleLineText' },
+        { column_name: 'created_at', title: 'Criado em', uidt: 'DateTime' },
+        { column_name: 'data_json', title: 'Dados Completos (JSON)', uidt: 'LongText' }
+      ]
+    },
+    MassMessagingLogs: {
+      table_name: 'MassMessagingLogs',
+      title: 'Logs de Disparo em Massa',
+      columns: [
+        { column_name: 'id', title: 'ID', uidt: 'ID' },
+        { column_name: 'campaign_id', title: 'ID da Campanha', uidt: 'SingleLineText' },
+        { column_name: 'instance_id', title: 'ID da Instância', uidt: 'SingleLineText' },
+        { column_name: 'message_type', title: 'Tipo de Mensagem', uidt: 'SingleLineText' },
+        { column_name: 'recipient_count', title: 'Quantidade de Destinatários', uidt: 'Number' },
+        { column_name: 'delay', title: 'Delay (ms)', uidt: 'Number' },
+        { column_name: 'status', title: 'Status', uidt: 'SingleLineText' },
+        { column_name: 'created_at', title: 'Criado em', uidt: 'DateTime' },
+        { column_name: 'data_json', title: 'Dados Completos (JSON)', uidt: 'LongText' }
+      ]
+    },
+    WebhookLogs: {
+      table_name: 'WebhookLogs',
+      title: 'Logs de Webhooks',
+      columns: [
+        { column_name: 'id', title: 'ID', uidt: 'ID' },
+        { column_name: 'webhook_url', title: 'URL do Webhook', uidt: 'LongText' },
+        { column_name: 'event_type', title: 'Tipo de Evento', uidt: 'SingleLineText' },
+        { column_name: 'source', title: 'Origem', uidt: 'SingleLineText' },
+        { column_name: 'status_code', title: 'Código de Status', uidt: 'Number' },
+        { column_name: 'response_time', title: 'Tempo de Resposta (ms)', uidt: 'Number' },
+        { column_name: 'created_at', title: 'Criado em', uidt: 'DateTime' },
+        { column_name: 'request_data', title: 'Dados da Requisição (JSON)', uidt: 'LongText' },
+        { column_name: 'response_data', title: 'Dados da Resposta (JSON)', uidt: 'LongText' }
+      ]
+    }
+  };
 
   async discoverBases() {
     try {
@@ -74,10 +150,9 @@ class NocodbService {
     }
   }
 
-  async saveHotmartNotification(notificationData: any) {
+  async createAllTables() {
     try {
-      console.log('Salvando notificação Hotmart no NocoDB...');
-      console.log('Dados originais:', notificationData);
+      console.log('🏗️ Iniciando criação de todas as tabelas necessárias...');
       
       // Primeiro descobre as bases se ainda não foram descobertas
       if (!this.targetBaseId) {
@@ -85,10 +160,124 @@ class NocodbService {
       }
       
       if (!this.targetBaseId) {
-        console.log('❌ Base "Notificação Inteligente" não encontrada');
-        this.saveLocalFallback('hotmart_notifications', notificationData);
+        console.log('❌ Base "Notificação Inteligente" não encontrada, não é possível criar tabelas');
+        return false;
+      }
+
+      const results = [];
+      
+      // Criar cada tabela definida no schema
+      for (const [tableName, schema] of Object.entries(this.tableSchemas)) {
+        console.log(`📋 Criando tabela: ${tableName}...`);
+        
+        try {
+          const success = await this.createTable(this.targetBaseId, schema);
+          results.push({ tableName, success });
+          
+          if (success) {
+            console.log(`✅ Tabela ${tableName} criada com sucesso`);
+          } else {
+            console.log(`❌ Falha ao criar tabela ${tableName}`);
+          }
+        } catch (error) {
+          console.log(`❌ Erro ao criar tabela ${tableName}:`, error);
+          results.push({ tableName, success: false, error });
+        }
+      }
+      
+      const successCount = results.filter(r => r.success).length;
+      const totalCount = results.length;
+      
+      console.log(`🎯 Processo concluído: ${successCount}/${totalCount} tabelas criadas com sucesso`);
+      console.log('📊 Resumo:', results);
+      
+      return successCount > 0;
+    } catch (error) {
+      console.error('❌ Erro geral ao criar tabelas:', error);
+      return false;
+    }
+  }
+
+  private async createTable(baseId: string, schema: any): Promise<boolean> {
+    try {
+      console.log(`Criando tabela ${schema.title} na base ${baseId}...`);
+      console.log('Schema da tabela:', schema);
+      
+      const response = await fetch(`${this.baseUrl}/api/v1/db/meta/projects/${baseId}/tables`, {
+        method: 'POST',
+        headers: this.headers,
+        body: JSON.stringify(schema),
+      });
+      
+      if (response.ok) {
+        const tableResult = await response.json();
+        console.log(`✅ Tabela ${schema.title} criada com sucesso:`, tableResult);
+        return true;
+      } else {
+        const errorText = await response.text();
+        console.log(`❌ Erro ao criar tabela ${schema.title}:`, response.status, errorText);
+        
+        // Se o erro for 400, pode ser que a tabela já existe
+        if (response.status === 400 && errorText.includes('already exists')) {
+          console.log(`ℹ️ Tabela ${schema.title} já existe`);
+          return true;
+        }
+        
+        return false;
+      }
+      
+    } catch (error) {
+      console.log(`❌ Erro interno ao criar tabela ${schema.title}:`, error);
+      return false;
+    }
+  }
+
+  async ensureTableExists(tableName: string): Promise<boolean> {
+    try {
+      if (!this.targetBaseId) {
+        await this.discoverBases();
+      }
+      
+      if (!this.targetBaseId) {
+        console.log('❌ Base não encontrada, não é possível verificar tabela');
+        return false;
+      }
+
+      // Verificar se a tabela já existe
+      const tables = await this.getTablesFromBase(this.targetBaseId);
+      const tableExists = tables.some(table => 
+        table.table_name === tableName || 
+        table.title === this.tableSchemas[tableName]?.title
+      );
+      
+      if (tableExists) {
+        console.log(`✅ Tabela ${tableName} já existe`);
         return true;
       }
+      
+      // Criar a tabela se não existir
+      const schema = this.tableSchemas[tableName];
+      if (!schema) {
+        console.log(`❌ Schema não encontrado para tabela ${tableName}`);
+        return false;
+      }
+      
+      console.log(`📋 Criando tabela ${tableName}...`);
+      return await this.createTable(this.targetBaseId, schema);
+      
+    } catch (error) {
+      console.log(`❌ Erro ao verificar/criar tabela ${tableName}:`, error);
+      return false;
+    }
+  }
+
+  async saveHotmartNotification(notificationData: any) {
+    try {
+      console.log('Salvando notificação Hotmart no NocoDB...');
+      console.log('Dados originais:', notificationData);
+      
+      // Garantir que a tabela existe
+      await this.ensureTableExists('NotificacoesHotmart');
       
       // Estruturar os dados corretamente para o NocoDB
       const data = {
@@ -100,7 +289,6 @@ class NocodbService {
         message_count: notificationData.messages ? notificationData.messages.length : 0,
         notification_phone: notificationData.notificationPhone || '',
         created_at: notificationData.timestamp || new Date().toISOString(),
-        // Garantir que o campo data seja uma string JSON válida
         data_json: JSON.stringify({
           ...notificationData,
           saved_timestamp: new Date().toISOString()
@@ -108,39 +296,22 @@ class NocodbService {
       };
       
       console.log('Dados formatados para NocoDB:', data);
-      console.log(`Tentando salvar na base "Notificação Inteligente" (ID: ${this.targetBaseId})...`);
       
-      // Descobrir tabelas na base "Notificação Inteligente"
-      const tables = await this.getTablesFromBase(this.targetBaseId);
-      console.log(`Tabelas encontradas na base "Notificação Inteligente":`, tables);
-      
-      if (tables && tables.length > 0) {
-        // Tentar salvar na primeira tabela disponível
-        for (const table of tables) {
-          try {
-            console.log(`Tentando salvar na tabela: ${table.title} (${table.table_name})`);
-            const success = await this.saveToSpecificTable(this.targetBaseId, table.table_name, data);
-            if (success) {
-              console.log(`✅ Dados salvos com sucesso na base "Notificação Inteligente", tabela ${table.title}`);
-              return true;
-            }
-          } catch (error) {
-            console.log(`❌ Erro ao salvar na tabela ${table.title}:`, error);
-            continue;
-          }
-        }
-      }
-      
-      // Se não conseguiu salvar em nenhuma tabela existente, tentar criar uma nova
-      console.log('Tentando criar nova tabela para notificações na base "Notificação Inteligente"...');
-      const success = await this.createNotificationTable(this.targetBaseId, data);
-      if (success) {
-        console.log(`✅ Nova tabela criada e dados salvos na base "Notificação Inteligente"`);
+      if (!this.targetBaseId) {
+        console.log('❌ Base "Notificação Inteligente" não encontrada');
+        this.saveLocalFallback('hotmart_notifications', notificationData);
         return true;
       }
       
-      // Se chegou aqui, todas as tentativas falharam
-      console.log('❌ Todas as tentativas falharam, salvando localmente como fallback');
+      // Tentar salvar na tabela de notificações
+      const success = await this.saveToSpecificTable(this.targetBaseId, 'NotificacoesHotmart', data);
+      if (success) {
+        console.log('✅ Dados salvos com sucesso na tabela NotificacoesHotmart');
+        return true;
+      }
+      
+      // Se falhou, salvar como fallback
+      console.log('❌ Falha ao salvar, usando fallback local');
       this.saveLocalFallback('hotmart_notifications', data);
       return true;
       
@@ -223,52 +394,7 @@ class NocodbService {
   }
 
   private async createNotificationTable(baseId: string, data: any): Promise<boolean> {
-    try {
-      console.log(`Tentando criar tabela de notificações na base ${baseId}...`);
-      
-      // Definir estrutura da tabela com campos mais específicos
-      const tableSchema = {
-        table_name: 'NotificacoesHotmart',
-        title: 'Notificações Hotmart',
-        columns: [
-          { column_name: 'id', title: 'ID', uidt: 'ID' },
-          { column_name: 'event_type', title: 'Tipo de Evento', uidt: 'SingleLineText' },
-          { column_name: 'instance_id', title: 'ID da Instância', uidt: 'SingleLineText' },
-          { column_name: 'user_role', title: 'Função do Usuário', uidt: 'SingleLineText' },
-          { column_name: 'hotmart_profile', title: 'Perfil Hotmart', uidt: 'SingleLineText' },
-          { column_name: 'webhook_url', title: 'URL do Webhook', uidt: 'LongText' },
-          { column_name: 'message_count', title: 'Quantidade de Mensagens', uidt: 'Number' },
-          { column_name: 'notification_phone', title: 'Telefone de Notificação', uidt: 'SingleLineText' },
-          { column_name: 'created_at', title: 'Criado em', uidt: 'DateTime' },
-          { column_name: 'data_json', title: 'Dados Completos (JSON)', uidt: 'LongText' }
-        ]
-      };
-      
-      console.log('Schema da tabela:', tableSchema);
-      
-      const response = await fetch(`${this.baseUrl}/api/v1/db/meta/projects/${baseId}/tables`, {
-        method: 'POST',
-        headers: this.headers,
-        body: JSON.stringify(tableSchema),
-      });
-      
-      if (response.ok) {
-        const tableResult = await response.json();
-        console.log('✅ Tabela criada com sucesso:', tableResult);
-        
-        // Agora tentar salvar os dados na nova tabela
-        const success = await this.saveToSpecificTable(baseId, 'NotificacoesHotmart', data);
-        return success;
-      } else {
-        const errorText = await response.text();
-        console.log('❌ Erro ao criar tabela:', response.status, errorText);
-        return false;
-      }
-      
-    } catch (error) {
-      console.log('❌ Erro ao criar tabela:', error);
-      return false;
-    }
+    return await this.createTable(baseId, this.tableSchemas.NotificacoesHotmart);
   }
 
   private saveLocalFallback(type: string, data: any) {
@@ -288,7 +414,6 @@ class NocodbService {
     }
   }
 
-  // Método para sincronizar dados salvos localmente quando conexão for restabelecida
   async syncLocalData() {
     try {
       const keys = Object.keys(localStorage).filter(key => key.startsWith('nocodb_fallback_'));
@@ -318,51 +443,33 @@ class NocodbService {
     }
   }
 
-  // Manter métodos existentes para compatibilidade
   async saveMassMessagingLog(campaignData: any) {
     try {
       console.log('Salvando log de disparo em massa no NocoDB...');
       
-      // Tentar diferentes bases possíveis
-      const possibleBases = ['whatsapp', 'main', 'default'];
-      const possibleTables = ['MassMessagingLogs', 'mass_messaging_logs', 'campaigns'];
+      // Garantir que a tabela existe
+      await this.ensureTableExists('MassMessagingLogs');
       
-      for (const base of possibleBases) {
-        for (const table of possibleTables) {
-          try {
-            const url = `${this.baseUrl}/api/v1/db/data/noco/${base}/${table}`;
-            console.log('Tentando salvar em:', url);
-            
-            const response = await fetch(url, {
-              method: 'POST',
-              headers: this.headers,
-              body: JSON.stringify({
-                campaign_id: `campanha_${Date.now()}`,
-                instance_id: campaignData.instance,
-                message_type: campaignData.messages[0]?.type || 'text',
-                recipient_count: campaignData.recipients.length,
-                delay: campaignData.delay,
-                status: 'iniciado',
-                created_at: new Date().toISOString(),
-                data: JSON.stringify(campaignData)
-              }),
-            });
-            
-            if (response.ok) {
-              console.log('Log salvo com sucesso no NocoDB');
-              return true;
-            } else {
-              const errorText = await response.text();
-              console.log(`Erro ${response.status} para ${base}/${table}:`, errorText);
-            }
-          } catch (error) {
-            console.log(`Erro interno para ${base}/${table}:`, error);
-          }
+      const data = {
+        campaign_id: `campanha_${Date.now()}`,
+        instance_id: campaignData.instance,
+        message_type: campaignData.messages[0]?.type || 'text',
+        recipient_count: campaignData.recipients.length,
+        delay: campaignData.delay,
+        status: 'iniciado',
+        created_at: new Date().toISOString(),
+        data_json: JSON.stringify(campaignData)
+      };
+      
+      if (this.targetBaseId) {
+        const success = await this.saveToSpecificTable(this.targetBaseId, 'MassMessagingLogs', data);
+        if (success) {
+          console.log('✅ Log de disparo em massa salvo com sucesso');
+          return true;
         }
       }
       
-      // Se chegou aqui, todas as tentativas falharam
-      console.log('Todas as tentativas de salvar no NocoDB falharam, usando modo desenvolvimento');
+      console.log('❌ Falha ao salvar no NocoDB, usando modo desenvolvimento');
       return true;
     } catch (error) {
       console.error('Erro geral ao salvar log:', error);
@@ -374,6 +481,9 @@ class NocodbService {
     try {
       console.log('Salvando contatos no NocoDB...');
       
+      // Garantir que a tabela existe
+      await this.ensureTableExists('WhatsAppContacts');
+      
       const contactRecords = contacts.map(contact => ({
         contact_id: contact.id,
         name: contact.name,
@@ -381,6 +491,7 @@ class NocodbService {
         group_name: contact.groupName || null,
         instance_id: instanceId,
         created_at: new Date().toISOString(),
+        data_json: JSON.stringify(contact)
       }));
 
       // Salvar em lotes para melhor performance
@@ -392,8 +503,10 @@ class NocodbService {
         
         for (const contact of batch) {
           try {
-            const success = await this.saveIndividualContact(contact);
-            if (success) savedCount++;
+            if (this.targetBaseId) {
+              const success = await this.saveToSpecificTable(this.targetBaseId, 'WhatsAppContacts', contact);
+              if (success) savedCount++;
+            }
           } catch (error) {
             console.log('Erro ao salvar contato individual:', error);
           }
@@ -409,27 +522,9 @@ class NocodbService {
   }
 
   private async saveIndividualContact(contact: any): Promise<boolean> {
-    const possibleBases = ['whatsapp', 'main', 'default'];
-    const possibleTables = ['WhatsAppContacts', 'whatsapp_contacts', 'contacts'];
-    
-    for (const base of possibleBases) {
-      for (const table of possibleTables) {
-        try {
-          const response = await fetch(`${this.baseUrl}/api/v1/db/data/noco/${base}/${table}`, {
-            method: 'POST',
-            headers: this.headers,
-            body: JSON.stringify(contact),
-          });
-          
-          if (response.ok) {
-            return true;
-          }
-        } catch (error) {
-          continue;
-        }
-      }
+    if (this.targetBaseId) {
+      return await this.saveToSpecificTable(this.targetBaseId, 'WhatsAppContacts', contact);
     }
-    
     return false;
   }
 
@@ -437,15 +532,27 @@ class NocodbService {
     try {
       console.log('Salvando instância no NocoDB...');
       
+      // Garantir que a tabela existe
+      await this.ensureTableExists('WhatsAppInstances');
+      
       const data = {
         instance_id: instanceData.id,
         name: instanceData.name,
         status: instanceData.status,
         created_at: instanceData.creationDate,
         last_updated: new Date().toISOString(),
+        data_json: JSON.stringify(instanceData)
       };
       
-      return await this.saveToAnyTable(data, ['WhatsAppInstances', 'whatsapp_instances', 'instances']);
+      if (this.targetBaseId) {
+        const success = await this.saveToSpecificTable(this.targetBaseId, 'WhatsAppInstances', data);
+        if (success) {
+          console.log('✅ Instância salva com sucesso');
+          return true;
+        }
+      }
+      
+      return true;
     } catch (error) {
       console.error('Erro ao salvar instância:', error);
       return true;
@@ -453,19 +560,12 @@ class NocodbService {
   }
 
   private async saveToAnyTable(data: any, possibleTables: string[]): Promise<boolean> {
-    const possibleBases = ['whatsapp', 'main', 'default'];
-    
-    for (const base of possibleBases) {
-      for (const table of possibleTables) {
+    for (const table of possibleTables) {
+      if (this.targetBaseId) {
         try {
-          const response = await fetch(`${this.baseUrl}/api/v1/db/data/noco/${base}/${table}`, {
-            method: 'POST',
-            headers: this.headers,
-            body: JSON.stringify(data),
-          });
-          
-          if (response.ok) {
-            console.log(`Dados salvos com sucesso em ${base}/${table}`);
+          const success = await this.saveToSpecificTable(this.targetBaseId, table, data);
+          if (success) {
+            console.log(`Dados salvos com sucesso em ${table}`);
             return true;
           }
         } catch (error) {
