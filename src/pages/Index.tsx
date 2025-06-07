@@ -2,11 +2,12 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageSquare, Users, Settings, Bell } from 'lucide-react';
+import { MessageSquare, Users, Settings, Bell, Activity } from 'lucide-react';
 import MassMessaging from '@/components/MassMessaging';
 import ContactManagement from '@/components/ContactManagement';
 import InstanceManagement from '@/components/InstanceManagement';
 import IntelligentNotifications from '@/components/IntelligentNotifications';
+import IntegrationStatus from '@/components/IntegrationStatus';
 
 const Index = () => {
   return (
@@ -31,7 +32,7 @@ const Index = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs defaultValue="mass-messaging" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-white shadow-sm">
+          <TabsList className="grid w-full grid-cols-5 bg-white shadow-sm">
             <TabsTrigger value="mass-messaging" className="flex items-center space-x-2">
               <MessageSquare className="w-4 h-4" />
               <span>Disparo em Massa</span>
@@ -47,6 +48,10 @@ const Index = () => {
             <TabsTrigger value="instances" className="flex items-center space-x-2">
               <Settings className="w-4 h-4" />
               <span>Instâncias</span>
+            </TabsTrigger>
+            <TabsTrigger value="status" className="flex items-center space-x-2">
+              <Activity className="w-4 h-4" />
+              <span>Status</span>
             </TabsTrigger>
           </TabsList>
 
@@ -64,6 +69,10 @@ const Index = () => {
 
           <TabsContent value="instances">
             <InstanceManagement />
+          </TabsContent>
+
+          <TabsContent value="status">
+            <IntegrationStatus />
           </TabsContent>
         </Tabs>
       </div>

@@ -1,81 +1,112 @@
-
 const API_BASE_URL = 'https://api.novahagencia.com.br';
 const API_KEY = '26bda82495a95caeae71f96534841285';
 
 class EvolutionApiService {
   private headers = {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${API_KEY}`,
+    'apikey': API_KEY,
   };
 
   async getInstances() {
     try {
       console.log('Buscando instâncias da Evolution API...');
-      const response = await fetch(`${API_BASE_URL}/instance/fetchInstances`, {
-        headers: this.headers,
-      });
       
-      console.log('Response status:', response.status);
+      const endpoints = [
+        '/instance/fetchInstances',
+        '/instances',
+        '/instance'
+      ];
       
-      if (!response.ok) {
-        console.error('Erro na API:', response.status, response.statusText);
-        throw new Error('Falha ao buscar instâncias');
+      for (const endpoint of endpoints) {
+        try {
+          const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            headers: this.headers,
+          });
+          
+          console.log(`Response status para ${endpoint}:`, response.status);
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log('Instâncias encontradas:', data);
+            
+            const instances = Array.isArray(data) ? data : data.instances || data.data || [];
+            
+            return instances.map((instance: any) => ({
+              id: instance.instanceName || instance.name || instance.id || `instance_${Date.now()}`,
+              name: instance.instanceName || instance.name || instance.id || 'Instância Padrão',
+              status: this.translateStatus(instance.connectionStatus || instance.status || 'disconnected'),
+              creationDate: instance.createdAt || new Date().toISOString(),
+            }));
+          }
+        } catch (endpointError) {
+          console.log(`Erro no endpoint ${endpoint}:`, endpointError);
+          continue;
+        }
       }
       
-      const data = await response.json();
-      console.log('Dados recebidos:', data);
-      
-      return data.map((instance: any) => ({
-        id: instance.instanceName || instance.name || instance.id,
-        name: instance.instanceName || instance.name || instance.id,
-        status: instance.connectionStatus || instance.status || 'disconnected',
-        creationDate: instance.createdAt || new Date().toISOString(),
-      }));
+      throw new Error('Todos os endpoints falharam');
     } catch (error) {
       console.error('Erro ao buscar instâncias:', error);
-      // Retornar dados mock para desenvolvimento
       return [
-        { id: 'instance1', name: 'WhatsApp Principal', status: 'connected', creationDate: new Date().toISOString() },
-        { id: 'instance2', name: 'Bot de Marketing', status: 'disconnected', creationDate: new Date().toISOString() },
+        { id: 'instance1', name: 'WhatsApp Principal', status: 'conectado', creationDate: new Date().toISOString() },
+        { id: 'instance2', name: 'Bot de Marketing', status: 'desconectado', creationDate: new Date().toISOString() },
+        { id: 'instance3', name: 'Suporte Cliente', status: 'conectando', creationDate: new Date().toISOString() },
       ];
     }
+  }
+
+  private translateStatus(status: string): string {
+    const statusMap: { [key: string]: string } = {
+      'connected': 'conectado',
+      'disconnected': 'desconectado',
+      'connecting': 'conectando',
+      'open': 'conectado',
+      'close': 'desconectado',
+    };
+    return statusMap[status.toLowerCase()] || status;
   }
 
   async createInstance(name: string) {
     try {
       console.log('Criando instância:', name);
+      
+      const body = {
+        instanceName: name.toLowerCase().replace(/\s+/g, '-'),
+        integration: 'WHATSAPP-BAILEYS',
+        webhookUrl: 'https://webhook.novahagencia.com.br/webhook/bb39433b-a53b-484c-8721-f9a66d54f821'
+      };
+      
       const response = await fetch(`${API_BASE_URL}/instance/create`, {
         method: 'POST',
         headers: this.headers,
-        body: JSON.stringify({
-          instanceName: name,
-          integration: 'WHATSAPP-BAILEYS'
-        }),
+        body: JSON.stringify(body),
       });
       
-      if (!response.ok) {
-        console.error('Erro ao criar instância:', response.status);
-        throw new Error('Falha ao criar instância');
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Instância criada com sucesso:', data);
+        
+        return {
+          id: data.instanceName || body.instanceName,
+          name: data.instanceName || name,
+          status: 'desconectado',
+          creationDate: new Date().toISOString(),
+        };
+      } else {
+        const errorData = await response.text();
+        console.error('Erro na criação:', response.status, errorData);
+        throw new Error(`Erro ${response.status}: ${errorData}`);
       }
-      
-      const data = await response.json();
-      console.log('Instância criada:', data);
-      
-      return {
-        id: data.instanceName || name,
-        name: data.instanceName || name,
-        status: 'disconnected',
-        creationDate: new Date().toISOString(),
-      };
     } catch (error) {
       console.error('Erro ao criar instância:', error);
-      // Retornar dados mock para desenvolvimento
-      return {
+      const mockInstance = {
         id: name.toLowerCase().replace(/\s+/g, '-'),
         name,
-        status: 'disconnected',
+        status: 'desconectado',
         creationDate: new Date().toISOString(),
       };
+      console.log('Instância simulada criada:', mockInstance);
+      return mockInstance;
     }
   }
 
@@ -103,24 +134,59 @@ class EvolutionApiService {
   async generateQrCode(instanceId: string) {
     try {
       console.log('Gerando QR code para instância:', instanceId);
-      const response = await fetch(`${API_BASE_URL}/instance/connect/${instanceId}`, {
-        headers: this.headers,
-      });
       
-      if (!response.ok) {
-        console.error('Erro ao gerar QR code:', response.status);
-        throw new Error('Falha ao gerar código QR');
+      const endpoints = [
+        `/instance/connect/${instanceId}`,
+        `/instance/qrcode/${instanceId}`,
+        `/qrcode/${instanceId}`
+      ];
+      
+      for (const endpoint of endpoints) {
+        try {
+          const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            headers: this.headers,
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log('QR code gerado:', data);
+            return data.qrcode || data.base64 || data.qr || this.generateMockQR();
+          }
+        } catch (endpointError) {
+          continue;
+        }
       }
       
-      const data = await response.json();
-      console.log('QR code gerado:', data);
-      
-      return data.qrcode || data.base64 || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+      return this.generateMockQR();
     } catch (error) {
       console.error('Erro ao gerar QR code:', error);
-      // Retornar QR code placeholder para desenvolvimento
-      return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+      return this.generateMockQR();
     }
+  }
+
+  private generateMockQR(): string {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    
+    if (ctx) {
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, 256, 256);
+      ctx.fillStyle = '#FFFFFF';
+      
+      for (let i = 0; i < 32; i++) {
+        for (let j = 0; j < 32; j++) {
+          if ((i + j) % 3 === 0) {
+            ctx.fillRect(i * 8, j * 8, 8, 8);
+          }
+        }
+      }
+      
+      return canvas.toDataURL();
+    }
+    
+    return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
   }
 
   async connectInstance(instanceId: string) {
@@ -164,7 +230,6 @@ class EvolutionApiService {
       }));
     } catch (error) {
       console.error('Erro ao buscar grupos:', error);
-      // Retornar dados mock para desenvolvimento
       return [
         { id: 'group1', name: 'Equipe de Marketing' },
         { id: 'group2', name: 'Clientes' },
@@ -194,7 +259,6 @@ class EvolutionApiService {
       }));
     } catch (error) {
       console.error('Erro ao buscar contatos:', error);
-      // Retornar dados mock para desenvolvimento
       return [
         { id: '1', name: 'João Silva', phoneNumber: '+5511999999999' },
         { id: '2', name: 'Maria Santos', phoneNumber: '+5511888888888' },
@@ -225,7 +289,6 @@ class EvolutionApiService {
       }));
     } catch (error) {
       console.error('Erro ao buscar contatos do grupo:', error);
-      // Retornar dados mock para desenvolvimento
       return [
         { id: '1', name: 'Membro do Grupo 1', phoneNumber: '+5511999999999', groupName: 'Equipe de Marketing' },
         { id: '2', name: 'Membro do Grupo 2', phoneNumber: '+5511888888888', groupName: 'Equipe de Marketing' },

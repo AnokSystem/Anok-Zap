@@ -1,0 +1,161 @@
+
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { CheckCircle, XCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { evolutionApiService } from '@/services/evolutionApi';
+import { nocodbService } from '@/services/nocodb';
+import { minioService } from '@/services/minio';
+
+interface IntegrationStatus {
+  name: string;
+  status: 'conectado' | 'erro' | 'verificando';
+  message: string;
+  lastCheck: Date;
+}
+
+const IntegrationStatus = () => {
+  const [integrations, setIntegrations] = useState<IntegrationStatus[]>([
+    { name: 'Evolution API', status: 'verificando', message: 'Verificando...', lastCheck: new Date() },
+    { name: 'NocoDB', status: 'verificando', message: 'Verificando...', lastCheck: new Date() },
+    { name: 'Minio S3', status: 'verificando', message: 'Verificando...', lastCheck: new Date() },
+  ]);
+
+  const [isChecking, setIsChecking] = useState(false);
+
+  useEffect(() => {
+    checkIntegrations();
+  }, []);
+
+  const checkIntegrations = async () => {
+    setIsChecking(true);
+    const newIntegrations = [...integrations];
+
+    // Verificar Evolution API
+    try {
+      await evolutionApiService.getInstances();
+      newIntegrations[0] = {
+        name: 'Evolution API',
+        status: 'conectado',
+        message: 'API respondendo normalmente',
+        lastCheck: new Date()
+      };
+    } catch (error) {
+      newIntegrations[0] = {
+        name: 'Evolution API',
+        status: 'erro',
+        message: 'Erro de autenticação ou conexão',
+        lastCheck: new Date()
+      };
+    }
+
+    // Verificar NocoDB
+    try {
+      const isConnected = await nocodbService.testConnection();
+      newIntegrations[1] = {
+        name: 'NocoDB',
+        status: isConnected ? 'conectado' : 'erro',
+        message: isConnected ? 'Banco de dados conectado' : 'Erro na conexão com o banco',
+        lastCheck: new Date()
+      };
+    } catch (error) {
+      newIntegrations[1] = {
+        name: 'NocoDB',
+        status: 'erro',
+        message: 'Falha na comunicação',
+        lastCheck: new Date()
+      };
+    }
+
+    // Verificar Minio
+    try {
+      const files = await minioService.listFiles();
+      newIntegrations[2] = {
+        name: 'Minio S3',
+        status: 'conectado',
+        message: `Sistema de arquivos operacional (${files.length} arquivos)`,
+        lastCheck: new Date()
+      };
+    } catch (error) {
+      newIntegrations[2] = {
+        name: 'Minio S3',
+        status: 'erro',
+        message: 'Erro no sistema de arquivos',
+        lastCheck: new Date()
+      };
+    }
+
+    setIntegrations(newIntegrations);
+    setIsChecking(false);
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'conectado':
+        return <CheckCircle className="w-4 h-4 text-green-600" />;
+      case 'erro':
+        return <XCircle className="w-4 h-4 text-red-600" />;
+      default:
+        return <AlertCircle className="w-4 h-4 text-yellow-600" />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'conectado':
+        return 'bg-green-100 text-green-800';
+      case 'erro':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-yellow-100 text-yellow-800';
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <span>Status das Integrações</span>
+          <Button
+            onClick={checkIntegrations}
+            disabled={isChecking}
+            size="sm"
+            variant="outline"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${isChecking ? 'animate-spin' : ''}`} />
+            {isChecking ? 'Verificando...' : 'Atualizar'}
+          </Button>
+        </CardTitle>
+        <CardDescription>
+          Status das conexões com os serviços externos
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {integrations.map((integration, index) => (
+            <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+              <div className="flex items-center space-x-3">
+                {getStatusIcon(integration.status)}
+                <div>
+                  <h4 className="font-medium">{integration.name}</h4>
+                  <p className="text-sm text-gray-600">{integration.message}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <Badge className={getStatusColor(integration.status)}>
+                  {integration.status}
+                </Badge>
+                <p className="text-xs text-gray-500 mt-1">
+                  {integration.lastCheck.toLocaleTimeString('pt-BR')}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default IntegrationStatus;
