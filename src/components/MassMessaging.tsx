@@ -101,7 +101,7 @@ const MassMessaging = () => {
         try {
           const text = e.target?.result as string;
           const lines = text.split('\n');
-          const phones: string[] = [];
+          const contacts: string[] = [];
           
           // Pular o cabeçalho (primeira linha)
           for (let i = 1; i < lines.length; i++) {
@@ -111,12 +111,14 @@ const MassMessaging = () => {
             // Dividir por vírgula ou ponto e vírgula
             const columns = line.split(/[,;]/);
             
-            if (columns.length > 0) {
-              // Assumir que o telefone está na primeira coluna
+            if (columns.length >= 2) {
+              // Primeira coluna: Telefone, Segunda coluna: Nome
               let phone = columns[0].trim();
+              let name = columns[1].trim();
               
               // Remover aspas se existirem
               phone = phone.replace(/['"]/g, '');
+              name = name.replace(/['"]/g, '');
               
               // Verificar se parece com um número de telefone
               if (phone && (phone.includes('+') || phone.match(/^\d+$/))) {
@@ -124,12 +126,15 @@ const MassMessaging = () => {
                 if (!phone.startsWith('+') && phone.match(/^\d+$/)) {
                   phone = '+' + phone;
                 }
-                phones.push(phone);
+                
+                // Formatar como "telefone - nome" ou apenas telefone se não tiver nome
+                const contactEntry = name ? `${phone} - ${name}` : phone;
+                contacts.push(contactEntry);
               }
             }
           }
           
-          resolve(phones);
+          resolve(contacts);
         } catch (error) {
           console.error('Erro ao processar planilha:', error);
           reject(error);
@@ -149,27 +154,27 @@ const MassMessaging = () => {
         setUploadedFile(file);
         
         console.log('Processando planilha:', file.name);
-        const extractedPhones = await processSpreadsheet(file);
+        const extractedContacts = await processSpreadsheet(file);
         
-        console.log('Telefones extraídos:', extractedPhones);
+        console.log('Contatos extraídos:', extractedContacts);
         
-        if (extractedPhones.length > 0) {
-          // Adicionar os telefones à entrada manual
+        if (extractedContacts.length > 0) {
+          // Adicionar os contatos à entrada manual
           const currentRecipients = recipients.trim();
           const newRecipients = currentRecipients 
-            ? currentRecipients + '\n' + extractedPhones.join('\n')
-            : extractedPhones.join('\n');
+            ? currentRecipients + '\n' + extractedContacts.join('\n')
+            : extractedContacts.join('\n');
           
           setRecipients(newRecipients);
           
           toast({
             title: "Planilha processada com sucesso",
-            description: `${extractedPhones.length} contatos foram adicionados à entrada manual`,
+            description: `${extractedContacts.length} contatos foram adicionados à entrada manual`,
           });
         } else {
           toast({
             title: "Nenhum contato encontrado",
-            description: "Verifique se a planilha possui números de telefone na primeira coluna",
+            description: "Verifique se a planilha possui telefone na 1ª coluna e nome na 2ª coluna",
             variant: "destructive",
           });
         }
@@ -177,7 +182,7 @@ const MassMessaging = () => {
         console.error('Erro ao processar planilha:', error);
         toast({
           title: "Erro ao processar planilha",
-          description: "Verifique se o arquivo está no formato correto (CSV)",
+          description: "Verifique se o arquivo está no formato correto (CSV) com 2 colunas",
           variant: "destructive",
         });
       } finally {
@@ -392,7 +397,7 @@ const MassMessaging = () => {
                 <Textarea
                   value={recipients}
                   onChange={(e) => setRecipients(e.target.value)}
-                  placeholder="Digite os números de telefone (um por linha)&#10;+5511999999999&#10;+5511888888888"
+                  placeholder="Digite os contatos (um por linha)&#10;+5511999999999 - João Silva&#10;+5511888888888 - Maria Santos"
                   className="min-h-[120px]"
                 />
                 <p className="text-sm text-gray-500 mt-1">
@@ -400,7 +405,7 @@ const MassMessaging = () => {
                 </p>
               </div>
               <div>
-                <Label className="text-sm">Enviar Planilha</Label>
+                <Label className="text-sm">Enviar Planilha (CSV)</Label>
                 <div className="space-y-2">
                   <Input
                     type="file"
@@ -421,8 +426,11 @@ const MassMessaging = () => {
                     className="w-full"
                   >
                     <Download className="w-4 h-4 mr-2" />
-                    Baixar Modelo
+                    Baixar Modelo (2 colunas)
                   </Button>
+                  <p className="text-xs text-gray-500">
+                    Formato: Telefone, Nome (uma linha por contato)
+                  </p>
                 </div>
               </div>
             </div>
