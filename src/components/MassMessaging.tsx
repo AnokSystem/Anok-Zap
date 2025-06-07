@@ -108,8 +108,18 @@ const MassMessaging = () => {
             const line = lines[i].trim();
             if (!line) continue;
             
-            // Dividir por vírgula ou ponto e vírgula
-            const columns = line.split(/[,;]/);
+            // Detectar separador (vírgula, ponto e vírgula ou tab)
+            let columns: string[];
+            if (line.includes('\t')) {
+              // Arquivo separado por tab (Excel)
+              columns = line.split('\t');
+            } else if (line.includes(';')) {
+              // Arquivo CSV separado por ponto e vírgula
+              columns = line.split(';');
+            } else {
+              // Arquivo CSV separado por vírgula
+              columns = line.split(',');
+            }
             
             if (columns.length >= 2) {
               // Primeira coluna: Telefone, Segunda coluna: Nome
@@ -117,8 +127,8 @@ const MassMessaging = () => {
               let name = columns[1].trim();
               
               // Remover aspas se existirem
-              phone = phone.replace(/['"]/g, '');
-              name = name.replace(/['"]/g, '');
+              phone = phone.replace(/^["']|["']$/g, '');
+              name = name.replace(/^["']|["']$/g, '');
               
               // Verificar se parece com um número de telefone
               if (phone && (phone.includes('+') || phone.match(/^\d+$/))) {
