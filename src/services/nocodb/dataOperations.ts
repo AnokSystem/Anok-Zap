@@ -1,3 +1,4 @@
+
 import { NocodbConfig } from './types';
 
 export class NocodbDataOperations {
@@ -16,7 +17,8 @@ export class NocodbDataOperations {
     try {
       console.log('Buscando notificações no NocoDB...');
       
-      const url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=100&sort=-created_at`;
+      // Removendo a ordenação problemática por 'created_at' que não existe
+      const url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=100`;
       console.log('URL de consulta:', url);
       
       const response = await fetch(url, {
@@ -26,8 +28,10 @@ export class NocodbDataOperations {
       
       if (response.ok) {
         const data = await response.json();
-        console.log('Notificações encontradas:', data);
-        return data.list || [];
+        console.log('Resposta completa do NocoDB:', data);
+        const notifications = data.list || [];
+        console.log('Notificações encontradas:', notifications);
+        return notifications;
       } else {
         const errorText = await response.text();
         console.log(`❌ Erro ao buscar notificações: ${response.status}`, errorText);
