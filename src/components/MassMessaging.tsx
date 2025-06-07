@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,7 +35,30 @@ const MassMessaging = () => {
 
   useEffect(() => {
     loadInstances();
+    // Verificar se há contatos salvos no localStorage
+    checkForSavedContacts();
   }, []);
+
+  const checkForSavedContacts = () => {
+    const savedContacts = localStorage.getItem('massMessagingContacts');
+    const savedInstance = localStorage.getItem('massMessagingInstance');
+    
+    if (savedContacts) {
+      setRecipients(savedContacts);
+      // Limpar o localStorage após usar
+      localStorage.removeItem('massMessagingContacts');
+      
+      if (savedInstance) {
+        setSelectedInstance(savedInstance);
+        localStorage.removeItem('massMessagingInstance');
+      }
+      
+      toast({
+        title: "Contatos Importados",
+        description: "Contatos foram importados da página de gerenciamento de contatos",
+      });
+    }
+  };
 
   const loadInstances = async () => {
     try {

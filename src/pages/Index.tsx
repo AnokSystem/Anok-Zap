@@ -1,8 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageSquare, Users, Settings, Bell, Activity } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import MassMessaging from '@/components/MassMessaging';
 import ContactManagement from '@/components/ContactManagement';
 import InstanceManagement from '@/components/InstanceManagement';
@@ -10,6 +11,16 @@ import IntelligentNotifications from '@/components/IntelligentNotifications';
 import IntegrationStatus from '@/components/IntegrationStatus';
 
 const Index = () => {
+  const [searchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabFromUrl || 'mass-messaging');
+
+  useEffect(() => {
+    if (tabFromUrl) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
@@ -31,7 +42,7 @@ const Index = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs defaultValue="mass-messaging" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-5 bg-white shadow-sm">
             <TabsTrigger value="mass-messaging" className="flex items-center space-x-2">
               <MessageSquare className="w-4 h-4" />

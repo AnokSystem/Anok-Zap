@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Users, Download, MessageSquare, Upload, User, Users2, Crown, UserCheck } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from 'react-router-dom';
 import { evolutionApiService } from '@/services/evolutionApi';
 import { nocodbService } from '@/services/nocodb';
 
@@ -25,6 +25,7 @@ interface Group {
 
 const ContactManagement = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [instances, setInstances] = useState<any[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedInstance, setSelectedInstance] = useState('');
@@ -203,16 +204,24 @@ const ContactManagement = () => {
       return;
     }
 
-    const phoneNumbers = contacts.map(contact => contact.phoneNumber).join('\n');
-    navigator.clipboard.writeText(phoneNumbers);
-    
-    const contactTypeText = contactType === 'groups' ? 'do grupo' : 'pessoais';
-    const memberTypeText = memberType === 'admin' ? ' (apenas admins)' : 
-                          memberType === 'members' ? ' (apenas membros)' : '';
+    // Preparar os contatos formatados
+    const formattedContacts = contacts.map(contact => {
+      if (contact.name && contact.name !== contact.phoneNumber) {
+        return `${contact.phoneNumber} - ${contact.name}`;
+      }
+      return contact.phoneNumber;
+    });
+
+    // Salvar os contatos no localStorage para serem recuperados na página de disparo
+    localStorage.setItem('massMessagingContacts', formattedContacts.join('\n'));
+    localStorage.setItem('massMessagingInstance', selectedInstance);
+
+    // Navegar para a página de disparo em massa (tab específica)
+    navigate('/?tab=mass-messaging');
     
     toast({
-      title: "Sucesso",
-      description: `${contacts.length} números ${contactTypeText}${memberTypeText} copiados para área de transferência. Vá para Disparo em Massa para utilizá-los.`,
+      title: "Redirecionando",
+      description: `${contacts.length} contatos exportados para disparo em massa`,
     });
   };
 
