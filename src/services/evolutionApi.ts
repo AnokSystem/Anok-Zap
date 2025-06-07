@@ -80,108 +80,27 @@ class EvolutionApiService {
 
   async getAllContacts(instanceId: string) {
     try {
-      console.log('🔍 Iniciando busca de contatos pessoais para instância:', instanceId);
+      console.log('🔍 Buscando contatos pessoais para instância:', instanceId);
       
-      // Tentativa 1: findContacts
-      const contacts1 = await this.tryFindContacts(instanceId);
-      if (contacts1.length > 0) {
-        console.log(`✅ Encontrados ${contacts1.length} contatos via findContacts`);
-        return contacts1;
-      }
-      
-      // Tentativa 2: fetchContacts
-      const contacts2 = await this.tryFetchContacts(instanceId);
-      if (contacts2.length > 0) {
-        console.log(`✅ Encontrados ${contacts2.length} contatos via fetchContacts`);
-        return contacts2;
-      }
-      
-      // Tentativa 3: chat/find
-      const contacts3 = await this.tryChatFind(instanceId);
-      if (contacts3.length > 0) {
-        console.log(`✅ Encontrados ${contacts3.length} contatos via chat/find`);
-        return contacts3;
-      }
-      
-      console.log('❌ Nenhum endpoint retornou contatos válidos');
-      return [];
-      
-    } catch (error) {
-      console.error('💥 Erro geral na busca de contatos:', error);
-      return [];
-    }
-  }
-
-  private async tryFindContacts(instanceId: string) {
-    try {
-      console.log('🔄 Tentativa 1: findContacts');
-      
-      const response = await fetch(`${API_BASE_URL}/chat/findContacts/${instanceId}`, {
-        method: 'POST',
-        headers: this.headers,
-        body: JSON.stringify({})
-      });
-      
-      console.log(`📊 Status findContacts: ${response.status}`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('📦 Resposta findContacts:', data);
-        return this.extractAndFilterContacts(data, 'findContacts');
-      }
-      
-      return [];
-    } catch (error) {
-      console.log('❌ Erro findContacts:', error);
-      return [];
-    }
-  }
-
-  private async tryFetchContacts(instanceId: string) {
-    try {
-      console.log('🔄 Tentativa 2: fetchContacts');
-      
-      const response = await fetch(`${API_BASE_URL}/chat/fetchContacts/${instanceId}`, {
+      // Usar o endpoint correto baseado no exemplo do n8n
+      const response = await fetch(`${API_BASE_URL}/chat/find-contacts/${instanceId}`, {
         method: 'GET',
         headers: this.headers,
       });
       
-      console.log(`📊 Status fetchContacts: ${response.status}`);
+      console.log(`📊 Status find-contacts: ${response.status}`);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('📦 Resposta fetchContacts:', data);
-        return this.extractAndFilterContacts(data, 'fetchContacts');
+        console.log('📦 Resposta find-contacts:', data);
+        return this.extractAndFilterContacts(data, 'find-contacts');
       }
       
+      console.log('❌ Endpoint find-contacts não retornou contatos válidos');
       return [];
+      
     } catch (error) {
-      console.log('❌ Erro fetchContacts:', error);
-      return [];
-    }
-  }
-
-  private async tryChatFind(instanceId: string) {
-    try {
-      console.log('🔄 Tentativa 3: chat/find');
-      
-      const response = await fetch(`${API_BASE_URL}/chat/find/${instanceId}`, {
-        method: 'POST',
-        headers: this.headers,
-        body: JSON.stringify({ where: { id: { endsWith: '@s.whatsapp.net' } } })
-      });
-      
-      console.log(`📊 Status chat/find: ${response.status}`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('📦 Resposta chat/find:', data);
-        return this.extractAndFilterContacts(data, 'chat/find');
-      }
-      
-      return [];
-    } catch (error) {
-      console.log('❌ Erro chat/find:', error);
+      console.error('💥 Erro na busca de contatos:', error);
       return [];
     }
   }
