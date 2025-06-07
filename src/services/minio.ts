@@ -6,35 +6,7 @@ class MinioService {
   private bucketName = 'dispador-inteligente';
   private region = 'us-east-1';
 
-  // Gerar assinatura AWS4
-  private async createAWSSignature(method: string, url: string, headers: Record<string, string>, timestamp: string): Promise<string> {
-    const dateStamp = timestamp.substring(0, 8);
-    const credentialScope = `${dateStamp}/${this.region}/s3/aws4_request`;
-    
-    // Canonical request
-    const canonicalHeaders = Object.keys(headers)
-      .sort()
-      .map(key => `${key.toLowerCase()}:${headers[key]}`)
-      .join('\n') + '\n';
-    
-    const signedHeaders = Object.keys(headers)
-      .sort()
-      .map(key => key.toLowerCase())
-      .join(';');
-    
-    const canonicalRequest = `${method}\n${new URL(url).pathname}\n\n${canonicalHeaders}\n${signedHeaders}\nUNSIGNED-PAYLOAD`;
-    
-    // String to sign
-    const algorithm = 'AWS4-HMAC-SHA256';
-    const stringToSign = `${algorithm}\n${timestamp}\n${credentialScope}\n${await this.sha256(canonicalRequest)}`;
-    
-    // Calculate signature
-    const signingKey = await this.getSignatureKey(this.secretKey, dateStamp, this.region, 's3');
-    const signature = await this.hmacSha256(signingKey, stringToSign);
-    
-    return `${algorithm} Credential=${this.accessKey}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
-  }
-
+  // Implementação correta do AWS4-HMAC-SHA256 para MinIO
   private async sha256(message: string): Promise<string> {
     const msgBuffer = new TextEncoder().encode(message);
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
@@ -42,326 +14,212 @@ class MinioService {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
-  private async hmacSha256(key: CryptoKey, message: string): Promise<string> {
-    const msgBuffer = new TextEncoder().encode(message);
-    const signature = await crypto.subtle.sign('HMAC', key, msgBuffer);
-    const signatureArray = Array.from(new Uint8Array(signature));
-    return signatureArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  }
-
-  private async getSignatureKey(key: string, dateStamp: string, regionName: string, serviceName: string): Promise<CryptoKey> {
-    const kDate = await this.hmacSha256Key(`AWS4${key}`, dateStamp);
-    const kRegion = await this.hmacSha256Key(kDate, regionName);
-    const kService = await this.hmacSha256Key(kRegion, serviceName);
-    return this.hmacSha256Key(kService, 'aws4_request');
-  }
-
-  private async hmacSha256Key(key: string | CryptoKey, message: string): Promise<CryptoKey> {
-    const keyData = typeof key === 'string' ? new TextEncoder().encode(key) : key;
-    const msgBuffer = new TextEncoder().encode(message);
+  private async hmacSha256(key: ArrayBuffer | string, message: string): Promise<ArrayBuffer> {
+    let keyBuffer: ArrayBuffer;
     
     if (typeof key === 'string') {
-      const cryptoKey = await crypto.subtle.importKey(
-        'raw',
-        keyData as ArrayBuffer,
-        { name: 'HMAC', hash: 'SHA-256' },
-        false,
-        ['sign']
-      );
-      return cryptoKey;
+      keyBuffer = new TextEncoder().encode(key);
+    } else {
+      keyBuffer = key;
     }
     
-    const signature = await crypto.subtle.sign('HMAC', keyData as CryptoKey, msgBuffer);
-    return crypto.subtle.importKey(
+    const cryptoKey = await crypto.subtle.importKey(
       'raw',
-      signature,
+      keyBuffer,
       { name: 'HMAC', hash: 'SHA-256' },
       false,
       ['sign']
     );
+    
+    const msgBuffer = new TextEncoder().encode(message);
+    return await crypto.subtle.sign('HMAC', cryptoKey, msgBuffer);
   }
 
-  // Teste de conexão melhorado
+  private async createSigningKey(secretKey: string, dateStamp: string, region: string, service: string): Promise<ArrayBuffer> {
+    const kDate = await this.hmacSha256('AWS4' + secretKey, dateStamp);
+    const kRegion = await this.hmacSha256(kDate, region);
+    const kService = await this.hmacSha256(kRegion, service);
+    const kSigning = await this.hmacSha256(kService, 'aws4_request');
+    return kSigning;
+  }
+
+  private async createSignature(method: string, path: string, query: string, headers: Record<string, string>, payload: string): Promise<string> {
+    const now = new Date();
+    const amzDate = now.toISOString().replace(/[:\-]|\.\d{3}/g, '');
+    const dateStamp = amzDate.substring(0, 8);
+
+    // Canonical request
+    const canonicalHeaders = Object.keys(headers)
+      .sort()
+      .map(key => `${key.toLowerCase()}:${headers[key].trim()}`)
+      .join('\n') + '\n';
+
+    const signedHeaders = Object.keys(headers)
+      .sort()
+      .map(key => key.toLowerCase())
+      .join(';');
+
+    const payloadHash = await this.sha256(payload);
+    
+    const canonicalRequest = [
+      method,
+      path,
+      query,
+      canonicalHeaders,
+      signedHeaders,
+      payloadHash
+    ].join('\n');
+
+    // String to sign
+    const algorithm = 'AWS4-HMAC-SHA256';
+    const credentialScope = `${dateStamp}/${this.region}/s3/aws4_request`;
+    const canonicalRequestHash = await this.sha256(canonicalRequest);
+    
+    const stringToSign = [
+      algorithm,
+      amzDate,
+      credentialScope,
+      canonicalRequestHash
+    ].join('\n');
+
+    // Calculate signature
+    const signingKey = await this.createSigningKey(this.secretKey, dateStamp, this.region, 's3');
+    const signature = await this.hmacSha256(signingKey, stringToSign);
+    const signatureHex = Array.from(new Uint8Array(signature))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+
+    return `${algorithm} Credential=${this.accessKey}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signatureHex}`;
+  }
+
   async testConnection(): Promise<boolean> {
     try {
-      console.log('Testando conexão com Minio S3...');
+      console.log('Testando conexão com MinIO...');
       
-      // Fazer uma requisição HEAD simples para verificar se o bucket existe
-      const url = `${this.serverUrl}/${this.bucketName}/`;
-      const timestamp = new Date().toISOString().replace(/[:\-]|\.\d{3}/g, '');
+      const url = new URL(this.serverUrl);
+      const path = `/${this.bucketName}/`;
       
       const headers = {
-        'Host': new URL(this.serverUrl).hostname,
-        'X-Amz-Date': timestamp,
+        'Host': url.hostname,
+        'X-Amz-Date': new Date().toISOString().replace(/[:\-]|\.\d{3}/g, ''),
         'X-Amz-Content-Sha256': 'UNSIGNED-PAYLOAD'
       };
-      
+
       try {
-        const authorization = await this.createAWSSignature('HEAD', url, headers, timestamp);
+        const authorization = await this.createSignature('HEAD', path, '', headers, '');
         
-        const response = await fetch(url, {
+        const response = await fetch(`${this.serverUrl}${path}`, {
           method: 'HEAD',
           headers: {
             ...headers,
             'Authorization': authorization
           }
         });
-        
-        console.log(`Resposta do bucket test: ${response.status}`);
-        
-        // Aceitar 200, 403 (forbidden mas bucket existe) ou 404 (bucket não encontrado mas serviço responde)
-        if (response.status === 200 || response.status === 403 || response.status === 404) {
-          console.log('Minio está respondendo corretamente');
-          return true;
-        }
+
+        console.log(`Status da conexão MinIO: ${response.status}`);
+        return response.status === 200 || response.status === 403 || response.status === 404;
       } catch (error) {
-        console.log('Teste de conexão autenticada falhou:', error);
+        console.log('Erro na autenticação MinIO:', error);
+        return false;
       }
-      
-      // Fallback: teste simples sem autenticação
-      try {
-        const simpleResponse = await fetch(this.serverUrl, {
-          method: 'HEAD',
-          mode: 'no-cors'
-        });
-        console.log('Servidor Minio está online (teste sem CORS)');
-        return true;
-      } catch (error) {
-        console.log('Teste sem CORS também falhou:', error);
-      }
-      
-      return false;
     } catch (error) {
-      console.error('Erro geral ao testar Minio:', error);
+      console.error('Erro ao testar conexão MinIO:', error);
       return false;
     }
   }
 
   async uploadFile(file: File): Promise<string> {
     try {
-      console.log('Iniciando upload para Minio...', file.name);
+      console.log('Iniciando upload para MinIO...', file.name);
       
-      // Gerar nome único para o arquivo
       const timestamp = Date.now();
       const fileName = `${timestamp}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
       const filePath = `uploads/${fileName}`;
       
-      console.log(`Enviando arquivo: ${fileName} para bucket: ${this.bucketName}`);
+      const url = new URL(this.serverUrl);
+      const path = `/${this.bucketName}/${filePath}`;
       
-      // Tentar upload com autenticação AWS4
-      const uploadUrl = `${this.serverUrl}/${this.bucketName}/${filePath}`;
-      const timestamp_aws = new Date().toISOString().replace(/[:\-]|\.\d{3}/g, '');
-      
+      // Preparar headers para upload
       const headers = {
-        'Host': new URL(this.serverUrl).hostname,
-        'X-Amz-Date': timestamp_aws,
+        'Host': url.hostname,
+        'X-Amz-Date': new Date().toISOString().replace(/[:\-]|\.\d{3}/g, ''),
         'X-Amz-Content-Sha256': 'UNSIGNED-PAYLOAD',
         'Content-Type': file.type || 'application/octet-stream',
         'Content-Length': file.size.toString()
       };
-      
+
       try {
-        const authorization = await this.createAWSSignature('PUT', uploadUrl, headers, timestamp_aws);
+        // Tentar upload direto com autenticação MinIO
+        const authorization = await this.createSignature('PUT', path, '', headers, '');
         
-        const response = await fetch(uploadUrl, {
+        const response = await fetch(`${this.serverUrl}${path}`, {
           method: 'PUT',
-          body: file,
           headers: {
             ...headers,
             'Authorization': authorization
-          }
+          },
+          body: file
         });
+
+        console.log(`Status do upload MinIO: ${response.status}`);
         
-        console.log(`Upload response status: ${response.status}`);
-        
-        if (response.ok || response.status === 200) {
-          console.log('Upload realizado com sucesso via AWS4 auth');
-          return uploadUrl;
+        if (response.ok) {
+          const fileUrl = `${this.serverUrl}${path}`;
+          console.log('Upload realizado com sucesso no MinIO:', fileUrl);
+          return fileUrl;
+        } else {
+          const errorText = await response.text().catch(() => '');
+          console.error('Erro no upload MinIO:', response.status, errorText);
+          throw new Error(`Upload falhou: ${response.status} - ${errorText}`);
         }
-        
-        const responseText = await response.text().catch(() => '');
-        console.log('Upload falhou, resposta:', responseText);
-        
       } catch (error) {
-        console.error('Erro no upload autenticado:', error);
+        console.error('Erro durante upload MinIO:', error);
+        throw new Error(`Falha na comunicação com MinIO: ${error.message}`);
       }
-      
-      // Tentar upload via FormData (para APIs que não suportam PUT direto)
-      try {
-        console.log('Tentando upload via FormData...');
-        
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('key', filePath);
-        formData.append('bucket', this.bucketName);
-        
-        const uploadEndpoints = [
-          `${this.serverUrl}/upload`,
-          `${this.serverUrl}/${this.bucketName}`,
-          `${this.serverUrl}/api/v1/upload`
-        ];
-        
-        for (const endpoint of uploadEndpoints) {
-          try {
-            console.log(`Tentando endpoint: ${endpoint}`);
-            
-            const response = await fetch(endpoint, {
-              method: 'POST',
-              body: formData,
-              headers: {
-                'X-Amz-Credential': this.accessKey,
-                'X-Amz-Signature': 'dummy-signature'
-              }
-            });
-            
-            if (response.ok) {
-              const result = await response.json().catch(() => ({}));
-              const fileUrl = result.url || result.location || uploadUrl;
-              console.log('Upload realizado com sucesso via FormData:', fileUrl);
-              return fileUrl;
-            }
-            
-            console.log(`Endpoint ${endpoint} retornou: ${response.status}`);
-          } catch (error) {
-            console.log(`Endpoint ${endpoint} falhou:`, error);
-            continue;
-          }
-        }
-        
-      } catch (error) {
-        console.error('Erro no upload via FormData:', error);
-      }
-      
-      // Se chegou até aqui, significa que o upload real falhou
-      // Vamos salvar localmente e retornar erro mais claro
-      console.warn('ATENÇÃO: Upload para Minio falhou. Salvando localmente para desenvolvimento.');
-      
-      const mockUrl = await this.simulateUpload(file, filePath);
-      
-      // Lançar erro para que o usuário saiba que não foi salvo remotamente
-      throw new Error(`Upload falhou no servidor Minio. Arquivo salvo localmente apenas para teste. URL mock: ${mockUrl}`);
-      
     } catch (error) {
-      console.error('Erro ao processar arquivo:', error);
+      console.error('Erro geral no upload:', error);
       throw error;
     }
   }
 
-  private async simulateUpload(file: File, filePath: string): Promise<string> {
-    return new Promise((resolve) => {
-      console.log('Simulando upload do arquivo para desenvolvimento...');
-      
-      const reader = new FileReader();
-      reader.onload = () => {
-        const fileData = {
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          data: reader.result,
-          uploadedAt: new Date().toISOString(),
-          path: filePath,
-          bucket: this.bucketName
-        };
-        
-        const storageKey = `minio_file_${this.bucketName}_${filePath}`;
-        localStorage.setItem(storageKey, JSON.stringify(fileData));
-        
-        const mockUrl = `${this.serverUrl}/${this.bucketName}/${filePath}`;
-        
-        setTimeout(() => {
-          console.log('Arquivo salvo localmente para desenvolvimento:', mockUrl);
-          resolve(mockUrl);
-        }, 1000 + Math.random() * 2000);
-      };
-      
-      reader.onerror = () => {
-        console.error('Erro ao ler arquivo');
-        resolve(`${this.serverUrl}/${this.bucketName}/${filePath}`);
-      };
-      
-      reader.readAsDataURL(file);
-    });
-  }
-
   async deleteFile(fileUrl: string): Promise<boolean> {
     try {
-      console.log(`Excluindo arquivo: ${fileUrl}`);
+      console.log(`Excluindo arquivo do MinIO: ${fileUrl}`);
       
-      const urlParts = fileUrl.split('/');
-      const filePath = urlParts.slice(-1)[0];
-      
-      const deleteUrl = `${this.serverUrl}/${this.bucketName}/${filePath}`;
-      const timestamp = new Date().toISOString().replace(/[:\-]|\.\d{3}/g, '');
+      const url = new URL(fileUrl);
+      const path = url.pathname;
       
       const headers = {
-        'Host': new URL(this.serverUrl).hostname,
-        'X-Amz-Date': timestamp,
+        'Host': url.hostname,
+        'X-Amz-Date': new Date().toISOString().replace(/[:\-]|\.\d{3}/g, ''),
         'X-Amz-Content-Sha256': 'UNSIGNED-PAYLOAD'
       };
+
+      const authorization = await this.createSignature('DELETE', path, '', headers, '');
       
-      try {
-        const authorization = await this.createAWSSignature('DELETE', deleteUrl, headers, timestamp);
-        
-        const response = await fetch(deleteUrl, {
-          method: 'DELETE',
-          headers: {
-            ...headers,
-            'Authorization': authorization
-          }
-        });
-        
-        if (response.ok) {
-          console.log('Arquivo excluído com sucesso via API');
-          return true;
+      const response = await fetch(fileUrl, {
+        method: 'DELETE',
+        headers: {
+          ...headers,
+          'Authorization': authorization
         }
-      } catch (deleteError) {
-        console.log('Exclusão via API falhou:', deleteError);
-      }
-      
-      const storageKey = `minio_file_${this.bucketName}_uploads/${filePath}`;
-      if (localStorage.getItem(storageKey)) {
-        localStorage.removeItem(storageKey);
-        console.log('Arquivo removido do localStorage');
-      }
-      
-      return true;
+      });
+
+      const success = response.ok;
+      console.log(`Exclusão no MinIO: ${success ? 'sucesso' : 'falha'} (${response.status})`);
+      return success;
     } catch (error) {
-      console.error('Erro ao excluir arquivo:', error);
+      console.error('Erro ao excluir arquivo do MinIO:', error);
       return false;
     }
   }
 
   getFilePreviewUrl(fileUrl: string): string {
-    const urlParts = fileUrl.split('/');
-    const fileName = urlParts.slice(-1)[0];
-    const filePath = `uploads/${fileName}`;
-    
-    const storageKey = `minio_file_${this.bucketName}_${filePath}`;
-    const localFile = localStorage.getItem(storageKey);
-    
-    if (localFile) {
-      try {
-        const fileData = JSON.parse(localFile);
-        return fileData.data;
-      } catch (error) {
-        console.error('Erro ao ler arquivo local:', error);
-      }
-    }
-    
     return fileUrl;
   }
 
   async fileExists(fileUrl: string): Promise<boolean> {
     try {
-      const urlParts = fileUrl.split('/');
-      const fileName = urlParts.slice(-1)[0];
-      const filePath = `uploads/${fileName}`;
-      
-      const storageKey = `minio_file_${this.bucketName}_${filePath}`;
-      if (localStorage.getItem(storageKey)) {
-        return true;
-      }
-      
       const response = await fetch(fileUrl, { method: 'HEAD' });
       return response.ok;
     } catch (error) {
@@ -372,63 +230,57 @@ class MinioService {
 
   async listFiles(prefix: string = ''): Promise<any[]> {
     try {
-      console.log(`Listando arquivos do bucket: ${this.bucketName}`);
+      console.log(`Listando arquivos do bucket MinIO: ${this.bucketName}`);
       
-      const localFiles = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith(`minio_file_${this.bucketName}_`)) {
-          try {
-            const fileData = JSON.parse(localStorage.getItem(key) || '');
-            if (!prefix || fileData.path.startsWith(prefix)) {
-              localFiles.push({
-                key: fileData.path,
-                name: fileData.name,
-                size: fileData.size,
-                lastModified: fileData.uploadedAt,
-                url: `${this.serverUrl}/${this.bucketName}/${fileData.path}`,
-                bucket: this.bucketName
-              });
-            }
-          } catch (error) {
-            console.error('Erro ao processar arquivo local:', error);
-          }
+      const url = new URL(this.serverUrl);
+      const path = `/${this.bucketName}/`;
+      const query = prefix ? `prefix=${encodeURIComponent(prefix)}` : '';
+      
+      const headers = {
+        'Host': url.hostname,
+        'X-Amz-Date': new Date().toISOString().replace(/[:\-]|\.\d{3}/g, ''),
+        'X-Amz-Content-Sha256': 'UNSIGNED-PAYLOAD'
+      };
+
+      const authorization = await this.createSignature('GET', path, query, headers, '');
+      
+      const requestUrl = `${this.serverUrl}${path}${query ? '?' + query : ''}`;
+      
+      const response = await fetch(requestUrl, {
+        method: 'GET',
+        headers: {
+          ...headers,
+          'Authorization': authorization
         }
+      });
+
+      if (response.ok) {
+        const xmlText = await response.text();
+        console.log('Lista de arquivos MinIO obtida com sucesso');
+        // Aqui você pode implementar um parser XML se necessário
+        return [];
+      } else {
+        console.log(`Erro ao listar arquivos MinIO: ${response.status}`);
+        return [];
       }
-      
-      console.log(`Encontrados ${localFiles.length} arquivos locais no bucket ${this.bucketName}`);
-      return localFiles;
     } catch (error) {
-      console.error('Erro ao listar arquivos:', error);
+      console.error('Erro ao listar arquivos MinIO:', error);
       return [];
     }
   }
 
   async testUpload(): Promise<boolean> {
     try {
-      console.log('Testando upload de arquivo no Minio...');
+      console.log('Testando upload no MinIO...');
       
-      const testContent = `Teste de upload - ${new Date().toISOString()}`;
-      const testFile = new Blob([testContent], { type: 'text/plain' });
-      const file = new File([testFile], 'teste-upload.txt', { type: 'text/plain' });
+      const testContent = `Teste MinIO - ${new Date().toISOString()}`;
+      const testFile = new File([testContent], 'teste-minio.txt', { type: 'text/plain' });
       
-      try {
-        const result = await this.uploadFile(file);
-        
-        if (result && !result.includes('mock')) {
-          console.log('Teste de upload bem-sucedido (real):', result);
-          return true;
-        } else {
-          console.log('Upload caiu no modo de simulação - servidor não está aceitando uploads');
-          return false;
-        }
-      } catch (error) {
-        console.log('Teste de upload falhou:', error);
-        return false;
-      }
-      
+      const result = await this.uploadFile(testFile);
+      console.log('Teste de upload MinIO concluído:', result);
+      return true;
     } catch (error) {
-      console.error('Erro no teste de upload:', error);
+      console.log('Teste de upload MinIO falhou:', error);
       return false;
     }
   }
