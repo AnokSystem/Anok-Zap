@@ -20,8 +20,8 @@ const Index = () => {
                 <MessageSquare className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">WhatsApp Automation</h1>
-                <p className="text-sm text-gray-500">Complete messaging and notification system</p>
+                <h1 className="text-2xl font-bold text-gray-900">Automação WhatsApp</h1>
+                <p className="text-sm text-gray-500">Sistema completo de mensagens e notificações</p>
               </div>
             </div>
           </div>
@@ -34,19 +34,19 @@ const Index = () => {
           <TabsList className="grid w-full grid-cols-4 bg-white shadow-sm">
             <TabsTrigger value="mass-messaging" className="flex items-center space-x-2">
               <MessageSquare className="w-4 h-4" />
-              <span>Mass Messaging</span>
+              <span>Disparo em Massa</span>
             </TabsTrigger>
             <TabsTrigger value="contacts" className="flex items-center space-x-2">
               <Users className="w-4 h-4" />
-              <span>Contacts</span>
+              <span>Contatos</span>
             </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center space-x-2">
               <Bell className="w-4 h-4" />
-              <span>Notifications</span>
+              <span>Notificações</span>
             </TabsTrigger>
             <TabsTrigger value="instances" className="flex items-center space-x-2">
               <Settings className="w-4 h-4" />
-              <span>Instances</span>
+              <span>Instâncias</span>
             </TabsTrigger>
           </TabsList>
 

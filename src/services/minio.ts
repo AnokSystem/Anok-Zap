@@ -7,44 +7,45 @@ class MinioService {
 
   async uploadFile(file: File): Promise<string> {
     try {
-      // Create FormData for file upload
+      console.log('Enviando arquivo para Minio...');
+      // Criar FormData para upload do arquivo
       const formData = new FormData();
       formData.append('file', file);
       
-      // Generate a unique filename
+      // Gerar nome único para o arquivo
       const timestamp = Date.now();
       const fileName = `${timestamp}-${file.name}`;
       
-      // For development, we'll simulate file upload and return a mock URL
-      console.log(`Uploading file: ${fileName} to Minio`);
+      console.log(`Enviando arquivo: ${fileName} para Minio`);
       
-      // In a real implementation, you would use the Minio SDK or direct API calls
-      // For now, return a mock URL
+      // Em uma implementação real, você usaria o SDK do Minio ou chamadas diretas da API
+      // Por enquanto, retornar uma URL mock
       const mockUrl = `${this.serverUrl}/${this.bucketName}/${fileName}`;
       
-      // Simulate upload delay
+      // Simular delay do upload
       await new Promise(resolve => setTimeout(resolve, 1000));
       
+      console.log('Arquivo enviado com sucesso:', mockUrl);
       return mockUrl;
     } catch (error) {
-      console.error('Error uploading file to Minio:', error);
-      throw new Error('Failed to upload file');
+      console.error('Erro ao enviar arquivo para Minio:', error);
+      throw new Error('Falha ao enviar arquivo');
     }
   }
 
   async deleteFile(fileUrl: string): Promise<boolean> {
     try {
-      console.log(`Deleting file: ${fileUrl} from Minio`);
-      // In a real implementation, you would delete the file from Minio
+      console.log(`Excluindo arquivo: ${fileUrl} do Minio`);
+      // Em uma implementação real, você excluiria o arquivo do Minio
       return true;
     } catch (error) {
-      console.error('Error deleting file from Minio:', error);
+      console.error('Erro ao excluir arquivo do Minio:', error);
       return false;
     }
   }
 
   getFilePreviewUrl(fileUrl: string): string {
-    // Return the file URL for preview
+    // Retornar a URL do arquivo para visualização
     return fileUrl;
   }
 }

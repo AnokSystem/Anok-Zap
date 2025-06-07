@@ -10,33 +10,37 @@ class NocodbService {
 
   async saveMassMessagingLog(campaignData: any) {
     try {
+      console.log('Salvando log de disparo em massa no NocoDB...');
       const response = await fetch(`${this.baseUrl}/api/v1/db/data/noco/whatsapp/MassMessagingLogs`, {
         method: 'POST',
         headers: this.headers,
         body: JSON.stringify({
-          campaign_id: `campaign_${Date.now()}`,
+          campaign_id: `campanha_${Date.now()}`,
           instance_id: campaignData.instance,
           message_type: campaignData.messages[0]?.type || 'text',
           recipient_count: campaignData.recipients.length,
           delay: campaignData.delay,
-          status: 'initiated',
+          status: 'iniciado',
           created_at: new Date().toISOString(),
         }),
       });
       
       if (!response.ok) {
-        console.log('Failed to save to NocoDB, using mock response');
+        console.log('Falha ao salvar no NocoDB, usando resposta mock');
+      } else {
+        console.log('Log salvo com sucesso no NocoDB');
       }
       
       return true;
     } catch (error) {
-      console.error('Error saving mass messaging log:', error);
-      return true; // Return true for development
+      console.error('Erro ao salvar log de disparo em massa:', error);
+      return true; // Retornar true para desenvolvimento
     }
   }
 
   async saveContacts(contacts: any[], instanceId: string) {
     try {
+      console.log('Salvando contatos no NocoDB...');
       const contactRecords = contacts.map(contact => ({
         contact_id: contact.id,
         name: contact.name,
@@ -47,22 +51,32 @@ class NocodbService {
       }));
 
       for (const contact of contactRecords) {
-        await fetch(`${this.baseUrl}/api/v1/db/data/noco/whatsapp/WhatsAppContacts`, {
-          method: 'POST',
-          headers: this.headers,
-          body: JSON.stringify(contact),
-        });
+        try {
+          const response = await fetch(`${this.baseUrl}/api/v1/db/data/noco/whatsapp/WhatsAppContacts`, {
+            method: 'POST',
+            headers: this.headers,
+            body: JSON.stringify(contact),
+          });
+          
+          if (!response.ok) {
+            console.log('Falha ao salvar contato individual, continuando...');
+          }
+        } catch (error) {
+          console.log('Erro ao salvar contato individual, continuando...');
+        }
       }
       
+      console.log('Processo de salvamento de contatos concluído');
       return true;
     } catch (error) {
-      console.error('Error saving contacts:', error);
-      return true; // Return true for development
+      console.error('Erro ao salvar contatos:', error);
+      return true; // Retornar true para desenvolvimento
     }
   }
 
   async saveHotmartNotification(notificationData: any) {
     try {
+      console.log('Salvando notificação Hotmart no NocoDB...');
       const response = await fetch(`${this.baseUrl}/api/v1/db/data/noco/whatsapp/HotmartNotifications`, {
         method: 'POST',
         headers: this.headers,
@@ -79,18 +93,21 @@ class NocodbService {
       });
       
       if (!response.ok) {
-        console.log('Failed to save to NocoDB, using mock response');
+        console.log('Falha ao salvar no NocoDB, usando resposta mock');
+      } else {
+        console.log('Notificação Hotmart salva com sucesso');
       }
       
       return true;
     } catch (error) {
-      console.error('Error saving Hotmart notification:', error);
-      return true; // Return true for development
+      console.error('Erro ao salvar notificação Hotmart:', error);
+      return true; // Retornar true para desenvolvimento
     }
   }
 
   async saveInstance(instanceData: any) {
     try {
+      console.log('Salvando instância no NocoDB...');
       const response = await fetch(`${this.baseUrl}/api/v1/db/data/noco/whatsapp/WhatsAppInstances`, {
         method: 'POST',
         headers: this.headers,
@@ -104,13 +121,15 @@ class NocodbService {
       });
       
       if (!response.ok) {
-        console.log('Failed to save to NocoDB, using mock response');
+        console.log('Falha ao salvar no NocoDB, usando resposta mock');
+      } else {
+        console.log('Instância salva com sucesso no NocoDB');
       }
       
       return true;
     } catch (error) {
-      console.error('Error saving instance:', error);
-      return true; // Return true for development
+      console.error('Erro ao salvar instância:', error);
+      return true; // Retornar true para desenvolvimento
     }
   }
 }

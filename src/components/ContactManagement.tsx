@@ -41,8 +41,8 @@ const ContactManagement = () => {
       setInstances(instancesData);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to load instances",
+        title: "Erro",
+        description: "Falha ao carregar instâncias",
         variant: "destructive",
       });
     }
@@ -54,8 +54,8 @@ const ContactManagement = () => {
       setGroups(groupsData);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to load groups",
+        title: "Erro",
+        description: "Falha ao carregar grupos",
         variant: "destructive",
       });
     }
@@ -64,8 +64,8 @@ const ContactManagement = () => {
   const fetchContacts = async () => {
     if (!selectedInstance) {
       toast({
-        title: "Error",
-        description: "Please select an instance first",
+        title: "Erro",
+        description: "Por favor, selecione uma instância primeiro",
         variant: "destructive",
       });
       return;
@@ -82,17 +82,17 @@ const ContactManagement = () => {
 
       setContacts(contactsData);
       
-      // Save to NocoDB
+      // Salvar no NocoDB
       await nocodbService.saveContacts(contactsData, selectedInstance);
       
       toast({
-        title: "Success",
-        description: `Loaded ${contactsData.length} contacts`,
+        title: "Sucesso",
+        description: `${contactsData.length} contatos carregados`,
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to fetch contacts",
+        title: "Erro",
+        description: "Falha ao buscar contatos",
         variant: "destructive",
       });
     } finally {
@@ -103,15 +103,15 @@ const ContactManagement = () => {
   const exportContacts = () => {
     if (contacts.length === 0) {
       toast({
-        title: "Error",
-        description: "No contacts to export",
+        title: "Erro",
+        description: "Nenhum contato para exportar",
         variant: "destructive",
       });
       return;
     }
 
     const csvContent = [
-      "Name,PhoneNumber,GroupName",
+      "Nome,Telefone,Grupo",
       ...contacts.map(contact => 
         `"${contact.name}","${contact.phoneNumber}","${contact.groupName || ''}"`
       )
@@ -121,24 +121,22 @@ const ContactManagement = () => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `whatsapp_contacts_${selectedInstance}_${Date.now()}.csv`;
+    a.download = `contatos_whatsapp_${selectedInstance}_${Date.now()}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
 
     toast({
-      title: "Success",
-      description: "Contacts exported successfully",
+      title: "Sucesso",
+      description: "Contatos exportados com sucesso",
     });
   };
 
   const startMassMessaging = () => {
     const phoneNumbers = contacts.map(contact => contact.phoneNumber).join('\n');
-    // You would navigate to mass messaging with pre-filled recipients
-    // For now, we'll just copy to clipboard
     navigator.clipboard.writeText(phoneNumbers);
     toast({
-      title: "Success",
-      description: "Phone numbers copied to clipboard. Navigate to Mass Messaging to use them.",
+      title: "Sucesso",
+      description: "Números copiados para área de transferência. Vá para Disparo em Massa para utilizá-los.",
     });
   };
 
@@ -148,20 +146,20 @@ const ContactManagement = () => {
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Users className="w-5 h-5" />
-            <span>Contact Management</span>
+            <span>Gerenciamento de Contatos</span>
           </CardTitle>
           <CardDescription>
-            Retrieve and manage WhatsApp contacts from your instances
+            Recupere e gerencie contatos do WhatsApp das suas instâncias
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Instance and Group Selection */}
+          {/* Seleção de Instância e Grupo */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">WhatsApp Instance</label>
+              <label className="text-sm font-medium">Instância WhatsApp</label>
               <Select value={selectedInstance} onValueChange={setSelectedInstance}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select an instance" />
+                  <SelectValue placeholder="Selecione uma instância" />
                 </SelectTrigger>
                 <SelectContent>
                   {instances.map((instance) => (
@@ -174,13 +172,13 @@ const ContactManagement = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">WhatsApp Group (Optional)</label>
+              <label className="text-sm font-medium">Grupo WhatsApp (Opcional)</label>
               <Select value={selectedGroup} onValueChange={setSelectedGroup}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All contacts or select group" />
+                  <SelectValue placeholder="Todos os contatos ou selecione um grupo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All contacts</SelectItem>
+                  <SelectItem value="all">Todos os contatos</SelectItem>
                   {groups.map((group) => (
                     <SelectItem key={group.id} value={group.id}>
                       {group.name}
@@ -191,7 +189,7 @@ const ContactManagement = () => {
             </div>
           </div>
 
-          {/* Action Buttons */}
+          {/* Botões de Ação */}
           <div className="flex flex-wrap gap-3">
             <Button
               onClick={fetchContacts}
@@ -199,7 +197,7 @@ const ContactManagement = () => {
               className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700"
             >
               <Upload className="w-4 h-4 mr-2" />
-              {isLoading ? 'Loading...' : 'Fetch Contacts'}
+              {isLoading ? 'Carregando...' : 'Buscar Contatos'}
             </Button>
 
             <Button
@@ -208,7 +206,7 @@ const ContactManagement = () => {
               variant="outline"
             >
               <Download className="w-4 h-4 mr-2" />
-              Export CSV
+              Exportar CSV
             </Button>
 
             <Button
@@ -217,16 +215,16 @@ const ContactManagement = () => {
               variant="outline"
             >
               <MessageSquare className="w-4 h-4 mr-2" />
-              Mass Message
+              Disparo em Massa
             </Button>
           </div>
 
-          {/* Contacts Table */}
+          {/* Tabela de Contatos */}
           {contacts.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">
-                  Contacts ({contacts.length})
+                  Contatos ({contacts.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -234,9 +232,9 @@ const ContactManagement = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Phone Number</TableHead>
-                        <TableHead>Group</TableHead>
+                        <TableHead>Nome</TableHead>
+                        <TableHead>Telefone</TableHead>
+                        <TableHead>Grupo</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

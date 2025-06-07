@@ -40,8 +40,8 @@ const InstanceManagement = () => {
       setInstances(instancesData);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to load instances",
+        title: "Erro",
+        description: "Falha ao carregar instâncias",
         variant: "destructive",
       });
     } finally {
@@ -52,8 +52,8 @@ const InstanceManagement = () => {
   const createInstance = async () => {
     if (!newInstanceName.trim()) {
       toast({
-        title: "Error",
-        description: "Please enter an instance name",
+        title: "Erro",
+        description: "Por favor, digite um nome para a instância",
         variant: "destructive",
       });
       return;
@@ -63,7 +63,7 @@ const InstanceManagement = () => {
     try {
       const newInstance = await evolutionApiService.createInstance(newInstanceName);
       
-      // Save to NocoDB
+      // Salvar no NocoDB
       await nocodbService.saveInstance(newInstance);
       
       setInstances([...instances, newInstance]);
@@ -71,22 +71,22 @@ const InstanceManagement = () => {
       setShowCreateDialog(false);
       
       toast({
-        title: "Success",
-        description: "Instance created successfully",
+        title: "Sucesso",
+        description: "Instância criada com sucesso",
       });
 
-      // Send notification if phone provided
+      // Enviar notificação se telefone fornecido
       if (notificationPhone) {
         await evolutionApiService.sendMessage(
           newInstance.id,
           notificationPhone,
-          `Instance ${newInstanceName} created successfully.`
+          `Instância ${newInstanceName} criada com sucesso.`
         );
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to create instance",
+        title: "Erro",
+        description: "Falha ao criar instância",
         variant: "destructive",
       });
     } finally {
@@ -103,8 +103,8 @@ const InstanceManagement = () => {
       setShowQrDialog(true);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to generate QR code",
+        title: "Erro",
+        description: "Falha ao gerar código QR",
         variant: "destructive",
       });
     } finally {
@@ -119,16 +119,16 @@ const InstanceManagement = () => {
     try {
       await evolutionApiService.connectInstance(selectedInstance);
       setShowQrDialog(false);
-      await loadInstances(); // Refresh instances
+      await loadInstances(); // Atualizar instâncias
       
       toast({
-        title: "Success",
-        description: "Instance connected successfully",
+        title: "Sucesso",
+        description: "Instância conectada com sucesso",
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to connect instance",
+        title: "Erro",
+        description: "Falha ao conectar instância",
         variant: "destructive",
       });
     } finally {
@@ -137,7 +137,7 @@ const InstanceManagement = () => {
   };
 
   const deleteInstance = async (instanceId: string, instanceName: string) => {
-    if (!confirm(`Are you sure you want to delete instance "${instanceName}"?`)) {
+    if (!confirm(`Tem certeza que deseja excluir a instância "${instanceName}"?`)) {
       return;
     }
 
@@ -147,26 +147,26 @@ const InstanceManagement = () => {
       setInstances(instances.filter(instance => instance.id !== instanceId));
       
       toast({
-        title: "Success",
-        description: "Instance deleted successfully",
+        title: "Sucesso",
+        description: "Instância excluída com sucesso",
       });
 
-      // Send notification if phone provided
+      // Enviar notificação se telefone fornecido
       if (notificationPhone) {
-        // Use a different instance to send the notification
+        // Usar uma instância diferente para enviar a notificação
         const availableInstance = instances.find(i => i.id !== instanceId && i.status === 'connected');
         if (availableInstance) {
           await evolutionApiService.sendMessage(
             availableInstance.id,
             notificationPhone,
-            `Instance ${instanceName} deleted successfully.`
+            `Instância ${instanceName} excluída com sucesso.`
           );
         }
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to delete instance",
+        title: "Erro",
+        description: "Falha ao excluir instância",
         variant: "destructive",
       });
     } finally {
@@ -177,13 +177,29 @@ const InstanceManagement = () => {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'connected':
+      case 'conectado':
         return 'text-green-600 bg-green-100';
       case 'disconnected':
+      case 'desconectado':
         return 'text-red-600 bg-red-100';
       case 'connecting':
+      case 'conectando':
         return 'text-yellow-600 bg-yellow-100';
       default:
         return 'text-gray-600 bg-gray-100';
+    }
+  };
+
+  const translateStatus = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'connected':
+        return 'Conectado';
+      case 'disconnected':
+        return 'Desconectado';
+      case 'connecting':
+        return 'Conectando';
+      default:
+        return status;
     }
   };
 
@@ -194,33 +210,33 @@ const InstanceManagement = () => {
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Settings className="w-5 h-5" />
-              <span>Instance Management</span>
+              <span>Gerenciamento de Instâncias</span>
             </div>
             <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
               <DialogTrigger asChild>
                 <Button className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700">
                   <Plus className="w-4 h-4 mr-2" />
-                  Create Instance
+                  Criar Instância
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Create New WhatsApp Instance</DialogTitle>
+                  <DialogTitle>Criar Nova Instância WhatsApp</DialogTitle>
                   <DialogDescription>
-                    Create a new WhatsApp instance for messaging
+                    Crie uma nova instância WhatsApp para envio de mensagens
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Instance Name</Label>
+                    <Label>Nome da Instância</Label>
                     <Input
                       value={newInstanceName}
                       onChange={(e) => setNewInstanceName(e.target.value)}
-                      placeholder="Enter instance name"
+                      placeholder="Digite o nome da instância"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Notification Phone (optional)</Label>
+                    <Label>Telefone para Notificação (opcional)</Label>
                     <Input
                       value={notificationPhone}
                       onChange={(e) => setNotificationPhone(e.target.value)}
@@ -232,30 +248,30 @@ const InstanceManagement = () => {
                     disabled={isLoading}
                     className="w-full"
                   >
-                    {isLoading ? 'Creating...' : 'Create Instance'}
+                    {isLoading ? 'Criando...' : 'Criar Instância'}
                   </Button>
                 </div>
               </DialogContent>
             </Dialog>
           </CardTitle>
           <CardDescription>
-            Manage your WhatsApp instances for messaging
+            Gerencie suas instâncias WhatsApp para envio de mensagens
           </CardDescription>
         </CardHeader>
         <CardContent>
           {instances.length === 0 ? (
             <div className="text-center py-8">
               <Settings className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">No instances found. Create your first instance to get started.</p>
+              <p className="text-gray-500">Nenhuma instância encontrada. Crie sua primeira instância para começar.</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Instance Name</TableHead>
+                  <TableHead>Nome da Instância</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead>Criado em</TableHead>
+                  <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -264,10 +280,10 @@ const InstanceManagement = () => {
                     <TableCell className="font-medium">{instance.name}</TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(instance.status)}`}>
-                        {instance.status}
+                        {translateStatus(instance.status)}
                       </span>
                     </TableCell>
-                    <TableCell>{new Date(instance.creationDate).toLocaleDateString()}</TableCell>
+                    <TableCell>{new Date(instance.creationDate).toLocaleDateString('pt-BR')}</TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         <Button
@@ -275,6 +291,7 @@ const InstanceManagement = () => {
                           variant="outline"
                           onClick={() => generateQrCode(instance.id)}
                           disabled={isLoading}
+                          title="Gerar QR Code"
                         >
                           <QrCode className="w-4 h-4" />
                         </Button>
@@ -283,6 +300,7 @@ const InstanceManagement = () => {
                           variant="outline"
                           onClick={() => deleteInstance(instance.id, instance.name)}
                           disabled={isLoading}
+                          title="Excluir Instância"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -296,19 +314,19 @@ const InstanceManagement = () => {
         </CardContent>
       </Card>
 
-      {/* QR Code Dialog */}
+      {/* Dialog do QR Code */}
       <Dialog open={showQrDialog} onOpenChange={setShowQrDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Connect WhatsApp Instance</DialogTitle>
+            <DialogTitle>Conectar Instância WhatsApp</DialogTitle>
             <DialogDescription>
-              Scan this QR code with your WhatsApp to connect the instance
+              Escaneie este código QR com seu WhatsApp para conectar a instância
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {qrCode && (
               <div className="flex justify-center p-4 bg-white border rounded-lg">
-                <img src={qrCode} alt="QR Code" className="w-64 h-64" />
+                <img src={qrCode} alt="Código QR" className="w-64 h-64" />
               </div>
             )}
             <div className="flex space-x-2">
@@ -319,14 +337,14 @@ const InstanceManagement = () => {
                 disabled={isLoading}
               >
                 <RefreshCcw className="w-4 h-4 mr-2" />
-                Refresh QR
+                Atualizar QR
               </Button>
               <Button
                 onClick={connectInstance}
                 className="flex-1"
                 disabled={isLoading}
               >
-                {isLoading ? 'Connecting...' : 'Connect'}
+                {isLoading ? 'Conectando...' : 'Conectar'}
               </Button>
             </div>
           </div>

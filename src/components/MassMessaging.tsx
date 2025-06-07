@@ -11,6 +11,7 @@ import { Upload, Plus, Trash2, Send, Download, MessageSquare } from 'lucide-reac
 import { useToast } from "@/hooks/use-toast";
 import { evolutionApiService } from '@/services/evolutionApi';
 import { minioService } from '@/services/minio';
+import { nocodbService } from '@/services/nocodb';
 
 interface Message {
   id: string;
@@ -43,8 +44,8 @@ const MassMessaging = () => {
       setInstances(instancesData);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to load WhatsApp instances",
+        title: "Erro",
+        description: "Falha ao carregar instâncias do WhatsApp",
         variant: "destructive",
       });
     }
@@ -78,13 +79,13 @@ const MassMessaging = () => {
       const fileUrl = await minioService.uploadFile(file);
       updateMessage(messageId, { file, fileUrl });
       toast({
-        title: "Success",
-        description: "File uploaded successfully",
+        title: "Sucesso",
+        description: "Arquivo enviado com sucesso",
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to upload file",
+        title: "Erro",
+        description: "Falha ao enviar arquivo",
         variant: "destructive",
       });
     } finally {
@@ -96,22 +97,20 @@ const MassMessaging = () => {
     const file = event.target.files?.[0];
     if (file) {
       setUploadedFile(file);
-      // Here you would parse the spreadsheet and extract phone numbers
       toast({
-        title: "File uploaded",
-        description: "Spreadsheet processed successfully",
+        title: "Arquivo carregado",
+        description: "Planilha processada com sucesso",
       });
     }
   };
 
   const downloadTemplate = () => {
-    // Create a simple CSV template
-    const csvContent = "PhoneNumber,Name\n+5511999999999,John Doe\n+5511888888888,Jane Smith";
+    const csvContent = "Telefone,Nome\n+5511999999999,João Silva\n+5511888888888,Maria Santos";
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'whatsapp_contacts_template.csv';
+    a.download = 'modelo_contatos_whatsapp.csv';
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -119,8 +118,8 @@ const MassMessaging = () => {
   const handleSendCampaign = async () => {
     if (!selectedInstance || messages.length === 0 || !recipients.trim()) {
       toast({
-        title: "Error",
-        description: "Please fill in all required fields",
+        title: "Erro",
+        description: "Por favor, preencha todos os campos obrigatórios",
         variant: "destructive",
       });
       return;
@@ -136,8 +135,8 @@ const MassMessaging = () => {
         notificationPhone
       };
 
-      // Send to n8n webhook
-      await fetch('https://webhook.novahagencia.com.br/webhook/bb39433b-a53b-484c-8721-f9a66d54f821', {
+      // Enviar para webhook n8n
+      const response = await fetch('https://webhook.novahagencia.com.br/webhook/bb39433b-a53b-484c-8721-f9a66d54f821', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -145,9 +144,16 @@ const MassMessaging = () => {
         body: JSON.stringify(campaignData),
       });
 
+      if (!response.ok) {
+        throw new Error('Falha ao enviar para webhook');
+      }
+
+      // Salvar no NocoDB
+      await nocodbService.saveMassMessagingLog(campaignData);
+
       toast({
-        title: "Campaign Started",
-        description: "Mass messaging campaign has been initiated",
+        title: "Campanha Iniciada",
+        description: "Campanha de disparo em massa foi iniciada",
       });
 
       // Reset form
@@ -155,9 +161,10 @@ const MassMessaging = () => {
       setRecipients('');
       setNotificationPhone('');
     } catch (error) {
+      console.error('Erro ao iniciar campanha:', error);
       toast({
-        title: "Error",
-        description: "Failed to start campaign",
+        title: "Erro",
+        description: "Falha ao iniciar campanha",
         variant: "destructive",
       });
     } finally {
@@ -171,19 +178,19 @@ const MassMessaging = () => {
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <MessageSquare className="w-5 h-5" />
-            <span>Mass Messaging Campaign</span>
+            <span>Campanha de Disparo em Massa</span>
           </CardTitle>
           <CardDescription>
-            Send bulk messages to multiple WhatsApp contacts
+            Envie mensagens em lote para múltiplos contatos do WhatsApp
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Instance Selection */}
+          {/* Seleção de Instância */}
           <div className="space-y-2">
-            <Label htmlFor="instance">WhatsApp Instance</Label>
+            <Label htmlFor="instance">Instância WhatsApp</Label>
             <Select value={selectedInstance} onValueChange={setSelectedInstance}>
               <SelectTrigger>
-                <SelectValue placeholder="Select an instance" />
+                <SelectValue placeholder="Selecione uma instância" />
               </SelectTrigger>
               <SelectContent>
                 {instances.map((instance) => (
@@ -195,10 +202,10 @@ const MassMessaging = () => {
             </Select>
           </div>
 
-          {/* Messages Configuration */}
+          {/* Configuração de Mensagens */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label>Messages (up to 5)</Label>
+              <Label>Mensagens (até 5)</Label>
               {messages.length < 5 && (
                 <Button
                   type="button"
@@ -208,7 +215,7 @@ const MassMessaging = () => {
                   className="flex items-center space-x-1"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>Add Message</span>
+                  <span>Adicionar Mensagem</span>
                 </Button>
               )}
             </div>
@@ -217,7 +224,7 @@ const MassMessaging = () => {
               <Card key={message.id} className="p-4">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <Label>Message {index + 1}</Label>
+                    <Label>Mensagem {index + 1}</Label>
                     {messages.length > 1 && (
                       <Button
                         type="button"
@@ -232,7 +239,7 @@ const MassMessaging = () => {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>Message Type</Label>
+                      <Label>Tipo de Mensagem</Label>
                       <Select
                         value={message.type}
                         onValueChange={(value: any) => updateMessage(message.id, { type: value })}
@@ -241,25 +248,25 @@ const MassMessaging = () => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="text">Text</SelectItem>
-                          <SelectItem value="audio">Audio</SelectItem>
-                          <SelectItem value="video">Video</SelectItem>
-                          <SelectItem value="image">Image</SelectItem>
-                          <SelectItem value="document">Document</SelectItem>
+                          <SelectItem value="text">Texto</SelectItem>
+                          <SelectItem value="audio">Áudio</SelectItem>
+                          <SelectItem value="video">Vídeo</SelectItem>
+                          <SelectItem value="image">Imagem</SelectItem>
+                          <SelectItem value="document">Documento</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
                     {message.type !== 'text' && (
                       <div>
-                        <Label>Upload File</Label>
+                        <Label>Enviar Arquivo</Label>
                         <div className="flex items-center space-x-2">
                           <Input
                             type="file"
-                            accept={message.type === 'audio' ? '.mp3,.wav' : 
-                                   message.type === 'video' ? '.mp4,.avi' :
-                                   message.type === 'image' ? '.jpg,.png,.gif' : 
-                                   '.pdf,.doc,.docx'}
+                            accept={message.type === 'audio' ? '.mp3,.wav,.ogg' : 
+                                   message.type === 'video' ? '.mp4,.avi,.mov' :
+                                   message.type === 'image' ? '.jpg,.png,.gif,.jpeg' : 
+                                   '.pdf,.doc,.docx,.txt'}
                             onChange={(e) => {
                               const file = e.target.files?.[0];
                               if (file) handleFileUpload(message.id, file);
@@ -269,7 +276,7 @@ const MassMessaging = () => {
                           <Upload className="w-4 h-4 text-gray-400" />
                         </div>
                         {message.fileUrl && (
-                          <p className="text-sm text-green-600 mt-1">File uploaded successfully</p>
+                          <p className="text-sm text-green-600 mt-1">Arquivo enviado com sucesso</p>
                         )}
                       </div>
                     )}
@@ -277,15 +284,15 @@ const MassMessaging = () => {
 
                   {message.type === 'text' && (
                     <div>
-                      <Label>Message Content</Label>
+                      <Label>Conteúdo da Mensagem</Label>
                       <Textarea
                         value={message.content}
                         onChange={(e) => updateMessage(message.id, { content: e.target.value })}
-                        placeholder="Enter your message here..."
+                        placeholder="Digite sua mensagem aqui..."
                         className="min-h-[100px]"
                       />
                       <p className="text-sm text-gray-500 mt-1">
-                        {message.content.length} characters
+                        {message.content.length} caracteres
                       </p>
                     </div>
                   )}
@@ -294,21 +301,21 @@ const MassMessaging = () => {
             ))}
           </div>
 
-          {/* Recipients */}
+          {/* Destinatários */}
           <div className="space-y-4">
-            <Label>Recipients</Label>
+            <Label>Destinatários</Label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label className="text-sm">Manual Entry</Label>
+                <Label className="text-sm">Entrada Manual</Label>
                 <Textarea
                   value={recipients}
                   onChange={(e) => setRecipients(e.target.value)}
-                  placeholder="Enter phone numbers (one per line)&#10;+5511999999999&#10;+5511888888888"
+                  placeholder="Digite os números de telefone (um por linha)&#10;+5511999999999&#10;+5511888888888"
                   className="min-h-[120px]"
                 />
               </div>
               <div>
-                <Label className="text-sm">Upload Spreadsheet</Label>
+                <Label className="text-sm">Enviar Planilha</Label>
                 <div className="space-y-2">
                   <Input
                     type="file"
@@ -323,16 +330,16 @@ const MassMessaging = () => {
                     className="w-full"
                   >
                     <Download className="w-4 h-4 mr-2" />
-                    Download Template
+                    Baixar Modelo
                   </Button>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Delay Configuration */}
+          {/* Configuração de Delay */}
           <div className="space-y-2">
-            <Label>Delay Between Messages: {delay[0]} seconds</Label>
+            <Label>Delay Entre Mensagens: {delay[0]} segundos</Label>
             <Slider
               value={delay}
               onValueChange={setDelay}
@@ -343,9 +350,9 @@ const MassMessaging = () => {
             />
           </div>
 
-          {/* Notification Phone */}
+          {/* Telefone para Notificação */}
           <div className="space-y-2">
-            <Label>Completion Notification Phone (optional)</Label>
+            <Label>Telefone para Notificação de Conclusão (opcional)</Label>
             <Input
               value={notificationPhone}
               onChange={(e) => setNotificationPhone(e.target.value)}
@@ -353,14 +360,14 @@ const MassMessaging = () => {
             />
           </div>
 
-          {/* Send Button */}
+          {/* Botão Enviar */}
           <Button
             onClick={handleSendCampaign}
             disabled={isLoading}
             className="w-full bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700"
           >
             <Send className="w-4 h-4 mr-2" />
-            {isLoading ? 'Starting Campaign...' : 'Start Campaign'}
+            {isLoading ? 'Iniciando Campanha...' : 'Iniciar Campanha'}
           </Button>
         </CardContent>
       </Card>
