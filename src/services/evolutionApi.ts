@@ -82,72 +82,46 @@ class EvolutionApiService {
     try {
       console.log('🔍 Buscando contatos pessoais para instância:', instanceId);
       
-      // Usar o endpoint findContacts que já sabemos que funciona
-      console.log('📡 Usando endpoint findContacts');
       const response = await fetch(`${API_BASE_URL}/chat/findContacts/${instanceId}`, {
         method: 'POST',
         headers: this.headers,
-        body: JSON.stringify({}) // Corpo vazio para buscar todos
+        body: JSON.stringify({})
       });
       
       console.log(`📊 Status findContacts: ${response.status}`);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('📦 Resposta findContacts completa:', JSON.stringify(data, null, 2));
+        console.log('📦 Resposta findContacts:', data);
         
-        // A API retorna um array diretamente
         const contacts = Array.isArray(data) ? data : [];
-        
-        console.log(`📋 Total de contatos encontrados: ${contacts.length}`);
+        console.log(`📋 Total de contatos na resposta: ${contacts.length}`);
         
         if (contacts.length === 0) {
           console.log('❌ Nenhum contato encontrado na resposta da API');
           return [];
         }
         
-        // Log do primeiro contato para análise
-        console.log('🔍 Primeiro contato para análise:', JSON.stringify(contacts[0], null, 2));
-        
         const personalContacts = contacts
           .filter((contact: any) => {
             const contactId = contact.remoteJid;
+            if (!contactId) return false;
             
-            if (!contactId) {
-              console.log('⚠️ Contato sem remoteJid:', contact);
-              return false;
-            }
-            
-            // Filtrar apenas contatos pessoais (terminam com @s.whatsapp.net)
+            // Filtrar apenas contatos pessoais
             const isPersonal = contactId.endsWith('@s.whatsapp.net');
+            const isNotGroup = !contactId.endsWith('@g.us');
+            const isNotBroadcast = !contactId.includes('status@broadcast') && !contactId.includes('broadcast');
             
-            // Excluir grupos (terminam com @g.us)
-            const isGroup = contactId.endsWith('@g.us');
-            
-            // Excluir status e broadcasts
-            const isStatusOrBroadcast = 
-              contactId.includes('status@broadcast') ||
-              contactId.includes('broadcast') ||
-              contactId.includes('@lid'); // Também excluir contatos LID
-            
-            console.log(`📱 Contact ${contactId}: pessoal=${isPersonal}, grupo=${isGroup}, status/broadcast=${isStatusOrBroadcast}`);
-            
-            return isPersonal && !isGroup && !isStatusOrBroadcast;
+            return isPersonal && isNotGroup && isNotBroadcast;
           })
           .map((contact: any) => {
             const contactId = contact.remoteJid;
-            
-            // Tentar diferentes campos para o nome
             const contactName = 
               contact.pushName || 
               contact.name || 
               contact.notify || 
-              contact.verifiedName || 
-              contact.displayName ||
               this.extractNameFromId(contactId) ||
               'Contato sem nome';
-            
-            console.log(`👤 Mapeando: ${contactName} (${contactId})`);
             
             return {
               id: contactId,
@@ -160,7 +134,7 @@ class EvolutionApiService {
         return personalContacts;
       } else {
         const errorText = await response.text();
-        console.error('❌ Erro na resposta da API findContacts:', response.status, errorText);
+        console.error('❌ Erro na resposta da API:', response.status, errorText);
         return [];
       }
       
