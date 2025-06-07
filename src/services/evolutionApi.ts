@@ -1,3 +1,4 @@
+
 const API_BASE_URL = 'https://api.novahagencia.com.br';
 const API_KEY = '26bda82495a95caeae71f96534841285';
 
@@ -82,47 +83,47 @@ class EvolutionApiService {
     try {
       console.log('Buscando contatos pessoais para instância:', instanceId);
       
-      // Tentar endpoint de chats primeiro (mais confiável)
-      let response = await fetch(`${API_BASE_URL}/chat/findChats/${instanceId}`, {
+      // Primeiro, tentar o endpoint principal para buscar todos os contatos
+      let response = await fetch(`${API_BASE_URL}/chat/findContacts/${instanceId}`, {
         headers: this.headers,
       });
       
-      console.log(`Response status para findChats: ${response.status}`);
+      console.log(`Response status para findContacts: ${response.status}`);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('Dados de chats recebidos:', data);
+        console.log('Dados de contatos recebidos (findContacts):', data);
         
-        let chats = [];
+        let contacts = [];
         
         if (Array.isArray(data)) {
-          chats = data;
-        } else if (data.chats) {
-          chats = data.chats;
+          contacts = data;
+        } else if (data.contacts) {
+          contacts = data.contacts;
         } else if (data.data) {
-          chats = data.data;
+          contacts = data.data;
         } else if (data.response) {
-          chats = data.response;
+          contacts = data.response;
         }
         
-        console.log('Chats processados:', chats);
+        console.log('Contatos processados:', contacts);
         
         // Filtrar apenas contatos pessoais (não grupos)
-        const personalContacts = chats
-          .filter((chat: any) => {
-            const chatId = chat.id || chat.remoteJid;
-            const isPersonal = chatId && !chatId.includes('@g.us') && chatId.includes('@s.whatsapp.net');
-            console.log('Chat:', chat.name || chat.pushName, 'É pessoal:', isPersonal);
+        const personalContacts = contacts
+          .filter((contact: any) => {
+            const contactId = contact.id || contact.remoteJid;
+            const isPersonal = contactId && !contactId.includes('@g.us') && contactId.includes('@s.whatsapp.net');
+            console.log('Contato:', contact.name || contact.pushName, 'É pessoal:', isPersonal);
             return isPersonal;
           })
-          .map((chat: any) => {
-            const chatId = chat.id || chat.remoteJid;
-            const contactName = chat.name || chat.pushName || chat.notify || chat.verifiedName || 'Contato sem nome';
+          .map((contact: any) => {
+            const contactId = contact.id || contact.remoteJid;
+            const contactName = contact.name || contact.pushName || contact.notify || contact.verifiedName || 'Contato sem nome';
             
             return {
-              id: chatId,
+              id: contactId,
               name: contactName,
-              phoneNumber: this.formatPhoneNumber(chatId),
+              phoneNumber: this.formatPhoneNumber(contactId),
             };
           });
         
@@ -130,17 +131,17 @@ class EvolutionApiService {
         return personalContacts;
       }
       
-      // Se findChats não funcionar, tentar contact/findMany
-      console.log('Tentando endpoint contact/findMany...');
-      response = await fetch(`${API_BASE_URL}/contact/findMany/${instanceId}`, {
+      // Se findContacts não funcionar, tentar fetchAllContacts
+      console.log('Tentando endpoint fetchAllContacts...');
+      response = await fetch(`${API_BASE_URL}/chat/fetchAllContacts/${instanceId}`, {
         headers: this.headers,
       });
       
-      console.log(`Response status para contact/findMany: ${response.status}`);
+      console.log(`Response status para fetchAllContacts: ${response.status}`);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('Dados de contatos recebidos:', data);
+        console.log('Dados de contatos recebidos (fetchAllContacts):', data);
         
         let contacts = [];
         
@@ -179,56 +180,71 @@ class EvolutionApiService {
         return personalContacts;
       }
       
-      // Se ainda não funcionar, tentar message/findMany para extrair contatos das mensagens
-      console.log('Tentando endpoint message/findMany para extrair contatos...');
-      response = await fetch(`${API_BASE_URL}/message/findMany/${instanceId}?limit=100&where={"key.fromMe":false}`, {
+      // Se ainda não funcionar, tentar buscar pelos chats ativos
+      console.log('Tentando endpoint fetchChats...');
+      response = await fetch(`${API_BASE_URL}/chat/fetchChats/${instanceId}`, {
         headers: this.headers,
       });
       
-      console.log(`Response status para message/findMany: ${response.status}`);
+      console.log(`Response status para fetchChats: ${response.status}`);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('Dados de mensagens recebidos:', data);
+        console.log('Dados de chats recebidos (fetchChats):', data);
         
-        let messages = [];
+        let chats = [];
         
         if (Array.isArray(data)) {
-          messages = data;
-        } else if (data.messages) {
-          messages = data.messages;
+          chats = data;
+        } else if (data.chats) {
+          chats = data.chats;
         } else if (data.data) {
-          messages = data.data;
+          chats = data.data;
         } else if (data.response) {
-          messages = data.response;
+          chats = data.response;
         }
         
-        console.log('Mensagens processadas:', messages);
+        console.log('Chats processados:', chats);
         
-        // Extrair contatos únicos das mensagens
-        const contactsMap = new Map();
+        // Filtrar apenas chats de contatos pessoais
+        const personalContacts = chats
+          .filter((chat: any) => {
+            const chatId = chat.id || chat.remoteJid;
+            const isPersonal = chatId && !chatId.includes('@g.us') && chatId.includes('@s.whatsapp.net');
+            console.log('Chat:', chat.name || chat.pushName, 'É pessoal:', isPersonal);
+            return isPersonal;
+          })
+          .map((chat: any) => {
+            const chatId = chat.id || chat.remoteJid;
+            const contactName = chat.name || chat.pushName || chat.notify || chat.verifiedName || 'Contato sem nome';
+            
+            return {
+              id: chatId,
+              name: contactName,
+              phoneNumber: this.formatPhoneNumber(chatId),
+            };
+          });
         
-        messages.forEach((message: any) => {
-          const remoteJid = message.key?.remoteJid || message.remoteJid;
-          const pushName = message.pushName || message.key?.pushName;
-          
-          if (remoteJid && !remoteJid.includes('@g.us') && remoteJid.includes('@s.whatsapp.net')) {
-            if (!contactsMap.has(remoteJid)) {
-              contactsMap.set(remoteJid, {
-                id: remoteJid,
-                name: pushName || 'Contato sem nome',
-                phoneNumber: this.formatPhoneNumber(remoteJid),
-              });
-            }
-          }
-        });
-        
-        const personalContacts = Array.from(contactsMap.values());
-        console.log('Contatos extraídos das mensagens:', personalContacts);
+        console.log('Contatos pessoais finais:', personalContacts);
         return personalContacts;
       }
       
-      throw new Error('Todos os endpoints falharam');
+      // Último recurso: buscar pelo webhook/instance info
+      console.log('Tentando endpoint webhook para buscar informações da instância...');
+      response = await fetch(`${API_BASE_URL}/webhook/find/${instanceId}`, {
+        headers: this.headers,
+      });
+      
+      console.log(`Response status para webhook: ${response.status}`);
+      
+      if (response.ok) {
+        console.log('Webhook endpoint funcionou, mas não retorna contatos diretamente');
+      }
+      
+      // Se todos os endpoints falharam, retornar array vazio ao invés de erro
+      console.log('❌ Todos os endpoints de contatos falharam, retornando lista vazia');
+      return [];
+      
     } catch (error) {
       console.error('Erro ao buscar contatos:', error);
       return [];
