@@ -74,7 +74,7 @@ const ContactManagement = () => {
     setIsLoading(true);
     try {
       let contactsData;
-      if (selectedGroup) {
+      if (selectedGroup && selectedGroup !== 'all') {
         contactsData = await evolutionApiService.getGroupContacts(selectedInstance, selectedGroup);
       } else {
         contactsData = await evolutionApiService.getAllContacts(selectedInstance);
@@ -180,7 +180,7 @@ const ContactManagement = () => {
                   <SelectValue placeholder="All contacts or select group" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All contacts</SelectItem>
+                  <SelectItem value="all">All contacts</SelectItem>
                   {groups.map((group) => (
                     <SelectItem key={group.id} value={group.id}>
                       {group.name}
