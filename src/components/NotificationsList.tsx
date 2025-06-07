@@ -12,13 +12,10 @@ interface Notification {
   ID: string;
   'Tipo de Evento': string;
   'ID da Instância': string;
-  'Função do Usuário': string;
   'Perfil Hotmart': string;
   'URL do Webhook': string;
-  'Quantidade de Mensagens': number;
-  'Telefone de Notificação': string;
   'Criado em': string;
-  'Dados JSON': string;
+  'Dados Completos (JSON)': string;
 }
 
 const NotificationsList = () => {
@@ -65,20 +62,34 @@ const NotificationsList = () => {
     }
   };
 
-  const getUserRoleLabel = (role: string) => {
-    switch (role) {
-      case 'affiliate': return 'Afiliado';
-      case 'producer': return 'Produtor';
-      default: return role;
-    }
-  };
-
   const formatDate = (dateString: string) => {
     try {
       return new Date(dateString).toLocaleString('pt-BR');
     } catch {
       return dateString;
     }
+  };
+
+  const getMessages = (jsonData: string) => {
+    try {
+      const data = JSON.parse(jsonData);
+      return data.messages || [];
+    } catch {
+      return [];
+    }
+  };
+
+  const getMessagePreview = (jsonData: string) => {
+    const messages = getMessages(jsonData);
+    if (messages.length === 0) return 'Nenhuma mensagem';
+    
+    const firstMessage = messages[0];
+    if (firstMessage.type === 'text') {
+      return firstMessage.content.length > 50 
+        ? firstMessage.content.substring(0, 50) + '...' 
+        : firstMessage.content;
+    }
+    return `${firstMessage.type} (${messages.length} mensagens)`;
   };
 
   const viewNotificationDetails = (notification: Notification) => {
@@ -131,11 +142,10 @@ const NotificationsList = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Tipo de Evento</TableHead>
-                    <TableHead>Perfil Hotmart</TableHead>
-                    <TableHead>Função</TableHead>
+                    <TableHead>Perfil</TableHead>
                     <TableHead>Instância</TableHead>
-                    <TableHead>Msgs</TableHead>
-                    <TableHead>Criado em</TableHead>
+                    <TableHead>Mensagem</TableHead>
+                    <TableHead>Data Criada</TableHead>
                     <TableHead>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -150,16 +160,11 @@ const NotificationsList = () => {
                       <TableCell className="font-medium">
                         {notification['Perfil Hotmart'] || '-'}
                       </TableCell>
-                      <TableCell>
-                        {getUserRoleLabel(notification['Função do Usuário'])}
-                      </TableCell>
                       <TableCell className="font-mono text-sm">
                         {notification['ID da Instância']?.slice(0, 8) || '-'}...
                       </TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant="outline">
-                          {notification['Quantidade de Mensagens'] || 0}
-                        </Badge>
+                      <TableCell className="max-w-xs truncate">
+                        {getMessagePreview(notification['Dados Completos (JSON)'])}
                       </TableCell>
                       <TableCell className="text-sm text-gray-600">
                         {formatDate(notification['Criado em'])}
@@ -197,7 +202,7 @@ const NotificationsList = () => {
               </Button>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-700">Tipo de Evento</label>
@@ -214,27 +219,13 @@ const NotificationsList = () => {
               </div>
               
               <div>
-                <label className="text-sm font-medium text-gray-700">Função do Usuário</label>
-                <p className="mt-1">{getUserRoleLabel(selectedNotification['Função do Usuário'])}</p>
-              </div>
-              
-              <div>
                 <label className="text-sm font-medium text-gray-700">ID da Instância</label>
                 <p className="mt-1 font-mono text-sm">{selectedNotification['ID da Instância'] || '-'}</p>
               </div>
               
               <div>
-                <label className="text-sm font-medium text-gray-700">Quantidade de Mensagens</label>
-                <p className="mt-1">
-                  <Badge variant="outline">
-                    {selectedNotification['Quantidade de Mensagens'] || 0} mensagens
-                  </Badge>
-                </p>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium text-gray-700">Telefone de Notificação</label>
-                <p className="mt-1">{selectedNotification['Telefone de Notificação'] || 'Não informado'}</p>
+                <label className="text-sm font-medium text-gray-700">Data de Criação</label>
+                <p className="mt-1">{formatDate(selectedNotification['Criado em'])}</p>
               </div>
               
               <div className="md:col-span-2">
@@ -245,15 +236,29 @@ const NotificationsList = () => {
               </div>
               
               <div className="md:col-span-2">
-                <label className="text-sm font-medium text-gray-700">Criado em</label>
-                <p className="mt-1">{formatDate(selectedNotification['Criado em'])}</p>
-              </div>
-              
-              <div className="md:col-span-2">
-                <label className="text-sm font-medium text-gray-700">Dados Completos (JSON)</label>
-                <pre className="mt-1 text-xs bg-gray-100 p-3 rounded overflow-auto max-h-40">
-                  {JSON.stringify(JSON.parse(selectedNotification['Dados JSON'] || '{}'), null, 2)}
-                </pre>
+                <label className="text-sm font-medium text-gray-700">Mensagens Configuradas</label>
+                <div className="mt-2 space-y-2">
+                  {getMessages(selectedNotification['Dados Completos (JSON)']).map((message: any, index: number) => (
+                    <div key={index} className="bg-gray-50 p-3 rounded border">
+                      <div className="flex items-center justify-between mb-2">
+                        <Badge variant="outline">{message.type}</Badge>
+                        <span className="text-xs text-gray-500">Mensagem {index + 1}</span>
+                      </div>
+                      {message.type === 'text' && (
+                        <p className="text-sm">{message.content}</p>
+                      )}
+                      {message.type === 'image' && (
+                        <p className="text-sm text-gray-600">📷 Imagem: {message.fileUrl || 'URL não disponível'}</p>
+                      )}
+                      {message.type === 'video' && (
+                        <p className="text-sm text-gray-600">🎥 Vídeo: {message.fileUrl || 'URL não disponível'}</p>
+                      )}
+                      {message.type === 'audio' && (
+                        <p className="text-sm text-gray-600">🎵 Áudio: {message.fileUrl || 'URL não disponível'}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </CardContent>
