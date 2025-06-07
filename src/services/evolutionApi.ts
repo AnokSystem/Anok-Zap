@@ -205,17 +205,11 @@ class EvolutionApiService {
   private formatPhoneNumber(jid: string): string {
     if (!jid) return '';
     
+    // Extrair apenas os números, removendo @s.whatsapp.net e @c.us
     const numbers = jid.replace('@s.whatsapp.net', '').replace('@c.us', '');
     
-    if (numbers.startsWith('55') && numbers.length >= 12) {
-      const countryCode = numbers.substring(0, 2);
-      const areaCode = numbers.substring(2, 4);
-      const firstPart = numbers.substring(4, numbers.length - 4);
-      const secondPart = numbers.substring(numbers.length - 4);
-      return `+${countryCode} ${areaCode} ${firstPart}-${secondPart}`;
-    }
-    
-    return `+${numbers}`;
+    // Retornar apenas os números, sem formatação
+    return numbers;
   }
 
   async createInstance(name: string) {
