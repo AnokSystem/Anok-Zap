@@ -1,3 +1,4 @@
+
 const API_BASE_URL = 'https://api.novahagencia.com.br';
 const API_KEY = '26bda82495a95caeae71f96534841285';
 
@@ -329,8 +330,23 @@ class EvolutionApiService {
         `/group/participants/${instanceId}?groupJid=${groupId}`,
         `/group/findParticipants/${instanceId}/${groupId}`,
         `/chat/findParticipants/${instanceId}?where={"remoteJid": "${groupId}"}`,
-        `/groups/${instanceId}/${groupId}/participants`
+        `/groups/${instanceId}/${groupId}/participants`,
+        `/group/fetchParticipants/${instanceId}/${groupId}`
       ];
+      
+      // Primeiro, tentar obter informações detalhadas do grupo
+      let groupInfo = null;
+      try {
+        const groupInfoResponse = await fetch(`${API_BASE_URL}/group/findGroup/${instanceId}?groupJid=${groupId}`, {
+          headers: this.headers,
+        });
+        if (groupInfoResponse.ok) {
+          groupInfo = await groupInfoResponse.json();
+          console.log('Informações do grupo:', groupInfo);
+        }
+      } catch (error) {
+        console.log('Não foi possível obter informações detalhadas do grupo');
+      }
       
       for (const endpoint of endpoints) {
         try {
@@ -347,12 +363,27 @@ class EvolutionApiService {
             
             const participants = Array.isArray(data) ? data : data.participants || data.data || [];
             
-            return participants.map((contact: any) => ({
-              id: contact.id || contact.remoteJid,
-              name: contact.pushName || contact.name || contact.notify || 'Participante sem nome',
-              phoneNumber: this.formatPhoneNumber(contact.id || contact.remoteJid),
-              groupName: groupId,
-            }));
+            // Obter nome do grupo
+            const groupName = groupInfo?.subject || this.getGroupNameFromId(groupId);
+            
+            return participants.map((contact: any) => {
+              // Determinar se é admin baseado nos dados disponíveis
+              const isAdmin = contact.admin || 
+                             contact.isAdmin || 
+                             contact.role === 'admin' ||
+                             (groupInfo?.participants && 
+                              groupInfo.participants.find((p: any) => 
+                                (p.id === contact.id || p.id === contact.remoteJid) && p.admin
+                              ));
+
+              return {
+                id: contact.id || contact.remoteJid,
+                name: contact.pushName || contact.name || contact.notify || 'Participante sem nome',
+                phoneNumber: this.formatPhoneNumber(contact.id || contact.remoteJid),
+                groupName: groupName,
+                isAdmin: Boolean(isAdmin),
+              };
+            });
           }
         } catch (endpointError) {
           console.log(`Erro no endpoint ${endpoint}:`, endpointError);
@@ -361,18 +392,36 @@ class EvolutionApiService {
       }
       
       console.log('Todos os endpoints de participantes falharam, retornando dados mock');
+      const groupName = this.getGroupNameFromId(groupId);
       return [
-        { id: '5511999999999@s.whatsapp.net', name: 'Membro do Grupo 1', phoneNumber: '+55 11 99999-9999', groupName: 'Equipe de Marketing' },
-        { id: '5511888888888@s.whatsapp.net', name: 'Membro do Grupo 2', phoneNumber: '+55 11 88888-8888', groupName: 'Equipe de Marketing' },
-        { id: '5511777777777@s.whatsapp.net', name: 'Membro do Grupo 3', phoneNumber: '+55 11 77777-7777', groupName: 'Equipe de Marketing' },
+        { id: '5511999999999@s.whatsapp.net', name: 'Admin do Grupo', phoneNumber: '+55 11 99999-9999', groupName, isAdmin: true },
+        { id: '5511888888888@s.whatsapp.net', name: 'Membro do Grupo 1', phoneNumber: '+55 11 88888-8888', groupName, isAdmin: false },
+        { id: '5511777777777@s.whatsapp.net', name: 'Membro do Grupo 2', phoneNumber: '+55 11 77777-7777', groupName, isAdmin: false },
       ];
     } catch (error) {
       console.error('Erro ao buscar contatos do grupo:', error);
+      const groupName = this.getGroupNameFromId(groupId);
       return [
-        { id: '5511999999999@s.whatsapp.net', name: 'Membro do Grupo 1', phoneNumber: '+55 11 99999-9999', groupName: 'Equipe de Marketing' },
-        { id: '5511888888888@s.whatsapp.net', name: 'Membro do Grupo 2', phoneNumber: '+55 11 88888-8888', groupName: 'Equipe de Marketing' },
+        { id: '5511999999999@s.whatsapp.net', name: 'Admin do Grupo', phoneNumber: '+55 11 99999-9999', groupName, isAdmin: true },
+        { id: '5511888888888@s.whatsapp.net', name: 'Membro do Grupo', phoneNumber: '+55 11 88888-8888', groupName, isAdmin: false },
       ];
     }
+  }
+
+  private getGroupNameFromId(groupId: string): string {
+    // Extrair nome do grupo do ID se possível, senão usar nome genérico
+    try {
+      if (groupId.includes('@g.us')) {
+        const cleanId = groupId.replace('@g.us', '');
+        // Se houver um nome no ID, extrair ele
+        if (cleanId.includes('-')) {
+          return `Grupo ${cleanId.split('-')[0]}`;
+        }
+      }
+    } catch (error) {
+      console.log('Erro ao extrair nome do grupo do ID');
+    }
+    return 'Grupo WhatsApp';
   }
 
   private formatPhoneNumber(jid: string): string {
