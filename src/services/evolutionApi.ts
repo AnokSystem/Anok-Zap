@@ -82,31 +82,94 @@ class EvolutionApiService {
     try {
       console.log('🔍 Buscando contatos pessoais para instância:', instanceId);
       
-      // Tentativa 1: endpoint /chat/findContacts (POST)
-      try {
-        console.log('📡 Tentando endpoint findContacts (POST)');
-        const response1 = await fetch(`${API_BASE_URL}/chat/findContacts/${instanceId}`, {
-          method: 'POST',
-          headers: this.headers,
-          body: JSON.stringify({})
-        });
-        
-        console.log(`📊 Status findContacts: ${response1.status}`);
-        
-        if (response1.ok) {
-          const data = await response1.json();
-          console.log('📦 Resposta findContacts:', data);
-          const contacts = this.extractAndFilterContacts(data, 'findContacts');
-          if (contacts.length > 0) {
-            return contacts;
+      console.log('📡 Usando endpoint findContacts conforme documentação oficial');
+      const response = await fetch(`${API_BASE_URL}/chat/findContacts/${instanceId}`, {
+        method: 'POST',
+        headers: this.headers,
+        body: JSON.stringify({
+          where: {
+            id: {
+              _neq: "status@broadcast"
+            }
           }
-        }
-      } catch (error) {
-        console.log('❌ Erro findContacts:', error);
-      }
+        })
+      });
       
-      console.log('❌ Nenhum endpoint retornou contatos válidos');
-      return [];
+      console.log(`📊 Status findContacts: ${response.status}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('📦 Resposta findContacts completa:', JSON.stringify(data, null, 2));
+        
+        // A API retorna um array diretamente ou dentro de uma propriedade
+        let contacts = [];
+        if (Array.isArray(data)) {
+          contacts = data;
+        } else if (data.contacts && Array.isArray(data.contacts)) {
+          contacts = data.contacts;
+        } else if (data.data && Array.isArray(data.data)) {
+          contacts = data.data;
+        }
+        
+        console.log(`📋 Total de contatos brutos encontrados: ${contacts.length}`);
+        
+        if (contacts.length === 0) {
+          console.log('❌ Nenhum contato encontrado na resposta da API');
+          return [];
+        }
+        
+        // Log do primeiro contato para análise
+        console.log('🔍 Primeiro contato para análise:', JSON.stringify(contacts[0], null, 2));
+        
+        const personalContacts = contacts
+          .filter((contact: any) => {
+            const contactId = contact.id || contact.remoteJid || contact.jid;
+            
+            if (!contactId) {
+              return false;
+            }
+            
+            // Filtrar apenas contatos pessoais (terminam com @s.whatsapp.net)
+            const isPersonal = contactId.endsWith('@s.whatsapp.net');
+            
+            // Excluir status e broadcasts
+            const isStatusOrBroadcast = 
+              contactId.includes('status@broadcast') ||
+              contactId.includes('broadcast');
+            
+            console.log(`📱 Contato ${contactId}: pessoal=${isPersonal}, status/broadcast=${isStatusOrBroadcast}`);
+            
+            return isPersonal && !isStatusOrBroadcast;
+          })
+          .map((contact: any) => {
+            const contactId = contact.id || contact.remoteJid || contact.jid;
+            
+            // Tentar diferentes campos para o nome
+            const contactName = 
+              contact.pushName || 
+              contact.name || 
+              contact.notify || 
+              contact.verifiedName || 
+              contact.displayName ||
+              this.extractNameFromId(contactId) ||
+              'Contato sem nome';
+            
+            console.log(`👤 Mapeando: ${contactName} (${contactId})`);
+            
+            return {
+              id: contactId,
+              name: contactName,
+              phoneNumber: this.formatPhoneNumber(contactId),
+            };
+          });
+        
+        console.log(`✅ Contatos pessoais filtrados: ${personalContacts.length}`);
+        return personalContacts;
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Erro na resposta da API:', response.status, errorText);
+        throw new Error(`Erro ${response.status}: ${errorText}`);
+      }
       
     } catch (error) {
       console.error('💥 Erro na busca de contatos:', error);
