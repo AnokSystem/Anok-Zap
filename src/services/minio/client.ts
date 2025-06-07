@@ -60,20 +60,32 @@ export class MinioClient {
     try {
       console.log('Iniciando upload para MinIO...', file.name);
       
+      // Simplificar o nome do arquivo para evitar problemas de encoding
       const timestamp = Date.now();
-      const fileName = `${timestamp}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const fileName = `${timestamp}-${cleanFileName}`;
       const filePath = `uploads/${fileName}`;
       
       const url = new URL(this.config.serverUrl);
       const path = `/${this.config.bucketName}/${filePath}`;
       
+      // Headers mais simples e compatíveis
+      const amzDate = new Date().toISOString().replace(/[:\-]|\.\d{3}/g, '');
       const headers: MinioHeaders = {
         'Host': url.hostname,
-        'X-Amz-Date': new Date().toISOString().replace(/[:\-]|\.\d{3}/g, ''),
-        'X-Amz-Content-Sha256': 'UNSIGNED-PAYLOAD',
+        'X-Amz-Date': amzDate,
         'Content-Type': options.contentType || file.type || 'application/octet-stream',
         'Content-Length': file.size.toString()
       };
+
+      // Calcular hash do payload para upload
+      const fileArrayBuffer = await file.arrayBuffer();
+      const fileBytes = new Uint8Array(fileArrayBuffer);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', fileBytes);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const payloadHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      
+      headers['X-Amz-Content-Sha256'] = payloadHash;
 
       try {
         const authorization = await this.auth.createSignature(
