@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -111,46 +112,66 @@ const ContactManagement = () => {
     }
 
     setIsLoading(true);
+    setContacts([]); // Limpar contatos anteriores
+    
     try {
+      console.log('🔍 Iniciando busca de contatos...');
+      console.log('Tipo:', contactType, 'Instância:', selectedInstance, 'Grupo:', selectedGroup);
+      
       let contactsData: Contact[] = [];
 
       if (contactType === 'personal') {
-        console.log('Buscando contatos pessoais...');
+        console.log('📞 Buscando contatos pessoais...');
         contactsData = await evolutionApiService.getAllContacts(selectedInstance);
+        console.log('✅ Contatos pessoais encontrados:', contactsData.length);
       } else if (contactType === 'groups' && selectedGroup) {
-        console.log('Buscando contatos do grupo:', selectedGroup);
+        console.log('👥 Buscando contatos do grupo:', selectedGroup);
         const groupContacts = await evolutionApiService.getGroupContacts(selectedInstance, selectedGroup);
+        console.log('📋 Total de participantes do grupo:', groupContacts.length);
         
         // Filtrar por tipo de membro se especificado
         if (memberType === 'admin') {
           contactsData = groupContacts.filter(contact => contact.isAdmin);
+          console.log('👑 Apenas administradores:', contactsData.length);
         } else if (memberType === 'members') {
           contactsData = groupContacts.filter(contact => !contact.isAdmin);
+          console.log('👤 Apenas membros:', contactsData.length);
         } else {
           contactsData = groupContacts;
+          console.log('👥 Todos os participantes:', contactsData.length);
         }
       }
 
-      console.log('Contatos encontrados:', contactsData);
+      console.log('📊 Total de contatos filtrados:', contactsData.length);
       setContacts(contactsData);
       
-      // Salvar no NocoDB
+      // Salvar no NocoDB apenas se houver contatos
       if (contactsData.length > 0) {
-        await nocodbService.saveContacts(contactsData, selectedInstance);
+        console.log('💾 Salvando contatos no NocoDB...');
+        try {
+          await nocodbService.saveContacts(contactsData, selectedInstance);
+          console.log('✅ Contatos salvos no NocoDB com sucesso');
+        } catch (saveError) {
+          console.error('❌ Erro ao salvar no NocoDB:', saveError);
+          // Não bloquear a UI se falhar o salvamento
+        }
       }
       
       toast({
         title: "Sucesso",
         description: `${contactsData.length} contatos carregados com sucesso`,
       });
+      
     } catch (error) {
-      console.error('Erro ao buscar contatos:', error);
+      console.error('💥 Erro ao buscar contatos:', error);
       toast({
         title: "Erro",
-        description: "Falha ao buscar contatos da Evolution API",
+        description: `Falha ao buscar contatos: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
         variant: "destructive",
       });
+      setContacts([]); // Garantir que a lista seja limpa em caso de erro
     } finally {
+      console.log('🏁 Finalizando busca de contatos');
       setIsLoading(false);
     }
   };
