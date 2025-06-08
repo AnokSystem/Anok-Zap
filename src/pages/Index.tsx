@@ -98,7 +98,7 @@ const Index = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`nav-card ${isActive ? 'active' : ''} animate-scale-in`}
+                className={`group nav-card ${isActive ? 'active' : ''} animate-scale-in`}
               >
                 <div className="flex flex-col items-center space-y-3">
                   <div className="w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 bg-purple-primary/10">

@@ -216,7 +216,7 @@
 
   /* Cards de Navegação */
   .nav-card {
-    @apply group relative p-6 rounded-2xl transition-all duration-300 cursor-pointer;
+    @apply relative p-6 rounded-2xl transition-all duration-300 cursor-pointer;
     background: var(--gradient-card);
     border: 1px solid rgba(107, 70, 193, 0.2);
     box-shadow: var(--shadow-soft);
