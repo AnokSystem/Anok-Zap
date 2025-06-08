@@ -230,7 +230,7 @@ const IntelligentNotifications = () => {
           {/* Configurações básicas */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
-              <Label className="text-gray-300 font-medium text-sm">Tipo de Evento</Label>
+              <Label className="text-gray-200 font-medium text-sm">Tipo de Evento</Label>
               <Select
                 value={newRule.eventType}
                 onValueChange={(value) => setNewRule(prev => ({ ...prev, eventType: value }))}
@@ -247,7 +247,7 @@ const IntelligentNotifications = () => {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-gray-300 font-medium text-sm">Instância WhatsApp</Label>
+              <Label className="text-gray-200 font-medium text-sm">Instância WhatsApp</Label>
               <Select
                 value={newRule.instanceId}
                 onValueChange={(value) => setNewRule(prev => ({ ...prev, instanceId: value }))}
@@ -266,7 +266,7 @@ const IntelligentNotifications = () => {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-gray-300 font-medium text-sm">Perfil Hotmart (Opcional)</Label>
+              <Label className="text-gray-200 font-medium text-sm">Perfil Hotmart (Opcional)</Label>
               <Input
                 value={newRule.hotmartProfile || ''}
                 onChange={(e) => setNewRule(prev => ({ ...prev, hotmartProfile: e.target.value }))}
@@ -279,7 +279,7 @@ const IntelligentNotifications = () => {
           {/* Mensagens */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label className="text-gray-300 font-medium text-sm">Mensagens (até 5)</Label>
+              <Label className="text-gray-200 font-medium text-sm">Mensagens (até 5)</Label>
               {(newRule.messages?.length || 0) < 5 && (
                 <Button
                   type="button"
@@ -298,7 +298,7 @@ const IntelligentNotifications = () => {
               <div key={message.id} className="p-4 bg-gray-700/30 rounded-lg border border-gray-600/50">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <Label className="text-gray-300 font-medium">Mensagem {index + 1}</Label>
+                    <Label className="text-gray-200 font-medium">Mensagem {index + 1}</Label>
                     {(newRule.messages?.length || 0) > 1 && (
                       <Button
                         type="button"
@@ -314,7 +314,7 @@ const IntelligentNotifications = () => {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label className="text-gray-300 font-medium text-sm">Tipo</Label>
+                      <Label className="text-gray-200 font-medium text-sm">Tipo</Label>
                       <Select
                         value={message.type}
                         onValueChange={(value: any) => updateMessage(message.id, { type: value })}
@@ -334,7 +334,7 @@ const IntelligentNotifications = () => {
 
                     {message.type !== 'text' && (
                       <div>
-                        <Label className="text-gray-300 font-medium text-sm">Arquivo</Label>
+                        <Label className="text-gray-200 font-medium text-sm">Arquivo</Label>
                         <div className="flex items-center space-x-2">
                           <Input
                             type="file"
@@ -359,7 +359,7 @@ const IntelligentNotifications = () => {
 
                   {message.type === 'text' && (
                     <div>
-                      <Label className="text-gray-300 font-medium text-sm">Conteúdo</Label>
+                      <Label className="text-gray-200 font-medium text-sm">Conteúdo</Label>
                       <Textarea
                         value={message.content}
                         onChange={(e) => updateMessage(message.id, { content: e.target.value })}
