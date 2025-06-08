@@ -30,7 +30,8 @@ const ContactActions: React.FC<ContactActionsProps> = ({
       <Button
         onClick={onFetchContacts}
         disabled={isLoading || !selectedInstance || (contactType === 'groups' && !selectedGroup)}
-        className="btn-primary"
+        variant="default"
+        size="default"
       >
         <Upload className="w-4 h-4 mr-2" />
         {isLoading ? 'Buscando...' : 'Buscar Contatos'}
@@ -39,7 +40,8 @@ const ContactActions: React.FC<ContactActionsProps> = ({
       <Button
         onClick={onExportContacts}
         disabled={contactsCount === 0}
-        className="btn-secondary"
+        variant="secondary"
+        size="default"
       >
         <Download className="w-4 h-4 mr-2" />
         Exportar CSV
@@ -48,7 +50,8 @@ const ContactActions: React.FC<ContactActionsProps> = ({
       <Button
         onClick={onStartMassMessaging}
         disabled={contactsCount === 0}
-        className="btn-secondary"
+        variant="info"
+        size="default"
       >
         <MessageSquare className="w-4 h-4 mr-2" />
         Usar para Disparo

@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
@@ -231,86 +230,6 @@
   .form-card:hover {
     border-color: rgba(157, 78, 221, 0.2);
     box-shadow: var(--shadow-form);
-  }
-
-  /* Botões Modernos */
-  .btn-primary {
-    @apply relative overflow-hidden rounded-lg px-6 py-3 font-medium text-white transition-all duration-300;
-    background: var(--gradient-primary);
-    box-shadow: var(--shadow-purple);
-    font-family: 'Poppins', system-ui, sans-serif;
-    font-weight: 500;
-    letter-spacing: -0.01em;
-  }
-
-  .btn-primary:hover {
-    background: var(--gradient-secondary);
-    box-shadow: var(--shadow-purple-lg);
-    transform: translateY(-1px);
-  }
-
-  .btn-primary:active {
-    transform: translateY(0);
-  }
-
-  .btn-secondary {
-    @apply bg-gray-800 text-gray-200 hover:bg-gray-700 rounded-lg px-6 py-3 font-medium transition-all duration-200;
-    box-shadow: var(--shadow-sm);
-    font-family: 'Poppins', system-ui, sans-serif;
-    font-weight: 500;
-  }
-
-  .btn-secondary:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
-  }
-
-  .btn-ghost {
-    @apply bg-transparent text-gray-400 hover:text-white hover:bg-gray-800/50 rounded-lg px-4 py-2 font-medium transition-all duration-200;
-    font-family: 'Poppins', system-ui, sans-serif;
-  }
-
-  /* Botões de Formulário */
-  .btn-form-success {
-    @apply relative overflow-hidden rounded-lg px-5 py-2.5 font-medium text-white transition-all duration-300;
-    background: linear-gradient(135deg, rgb(34, 197, 94) 0%, rgb(22, 163, 74) 100%);
-    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
-    font-family: 'Poppins', system-ui, sans-serif;
-    font-weight: 500;
-  }
-
-  .btn-form-success:hover {
-    background: linear-gradient(135deg, rgb(22, 163, 74) 0%, rgb(21, 128, 61) 100%);
-    box-shadow: 0 6px 16px rgba(34, 197, 94, 0.3);
-    transform: translateY(-1px);
-  }
-
-  .btn-form-warning {
-    @apply relative overflow-hidden rounded-lg px-5 py-2.5 font-medium text-white transition-all duration-300;
-    background: linear-gradient(135deg, rgb(249, 115, 22) 0%, rgb(234, 88, 12) 100%);
-    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.2);
-    font-family: 'Poppins', system-ui, sans-serif;
-    font-weight: 500;
-  }
-
-  .btn-form-warning:hover {
-    background: linear-gradient(135deg, rgb(234, 88, 12) 0%, rgb(194, 65, 12) 100%);
-    box-shadow: 0 6px 16px rgba(249, 115, 22, 0.3);
-    transform: translateY(-1px);
-  }
-
-  .btn-form-info {
-    @apply relative overflow-hidden rounded-lg px-5 py-2.5 font-medium text-white transition-all duration-300;
-    background: linear-gradient(135deg, rgb(59, 130, 246) 0%, rgb(37, 99, 235) 100%);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
-    font-family: 'Poppins', system-ui, sans-serif;
-    font-weight: 500;
-  }
-
-  .btn-form-info:hover {
-    background: linear-gradient(135deg, rgb(37, 99, 235) 0%, rgb(29, 78, 216) 100%);
-    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
-    transform: translateY(-1px);
   }
 
   /* Navigation Cards */
