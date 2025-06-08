@@ -69,16 +69,16 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 p-4 bg-gray-700/30 rounded-lg border border-gray-600">
       <div className="flex items-center justify-between">
-        <Label>Mensagens (até 5)</Label>
+        <Label className="text-purple-300 font-medium text-sm">Mensagens (até 5)</Label>
         {messages.length < 5 && (
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={addMessage}
-            className="flex items-center space-x-1"
+            className="flex items-center space-x-1 bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600"
           >
             <Plus className="w-4 h-4" />
             <span>Adicionar Mensagem</span>
@@ -87,16 +87,17 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
       </div>
 
       {messages.map((message, index) => (
-        <Card key={message.id} className="p-4">
+        <Card key={message.id} className="p-4 bg-gray-800/50 border-gray-700">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label>Mensagem {index + 1}</Label>
+              <Label className="text-purple-300 font-medium">Mensagem {index + 1}</Label>
               {messages.length > 1 && (
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   onClick={() => removeMessage(message.id)}
+                  className="text-gray-400 hover:text-gray-200 hover:bg-gray-700"
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>
@@ -105,27 +106,27 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Tipo de Mensagem</Label>
+                <Label className="text-purple-300 font-medium text-sm">Tipo de Mensagem</Label>
                 <Select
                   value={message.type}
                   onValueChange={(value: any) => updateMessage(message.id, { type: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-gray-700 border-gray-600 text-gray-200 focus:border-purple-400">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="text">Texto</SelectItem>
-                    <SelectItem value="audio">Áudio</SelectItem>
-                    <SelectItem value="video">Vídeo</SelectItem>
-                    <SelectItem value="image">Imagem</SelectItem>
-                    <SelectItem value="document">Documento</SelectItem>
+                  <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectItem value="text" className="text-gray-200 hover:bg-gray-700 focus:bg-gray-700">Texto</SelectItem>
+                    <SelectItem value="audio" className="text-gray-200 hover:bg-gray-700 focus:bg-gray-700">Áudio</SelectItem>
+                    <SelectItem value="video" className="text-gray-200 hover:bg-gray-700 focus:bg-gray-700">Vídeo</SelectItem>
+                    <SelectItem value="image" className="text-gray-200 hover:bg-gray-700 focus:bg-gray-700">Imagem</SelectItem>
+                    <SelectItem value="document" className="text-gray-200 hover:bg-gray-700 focus:bg-gray-700">Documento</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               {message.type !== 'text' && (
                 <div>
-                  <Label>Enviar Arquivo</Label>
+                  <Label className="text-purple-300 font-medium text-sm">Enviar Arquivo</Label>
                   <div className="flex items-center space-x-2">
                     <Input
                       type="file"
@@ -137,12 +138,12 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
                         const file = e.target.files?.[0];
                         if (file) handleFileUpload(message.id, file);
                       }}
-                      className="flex-1"
+                      className="flex-1 bg-gray-700 border-gray-600 text-gray-200 focus:border-purple-400"
                     />
-                    <Upload className="w-4 h-4 text-gray-400" />
+                    <Upload className="w-4 h-4 text-purple-400" />
                   </div>
                   {message.fileUrl && (
-                    <p className="text-sm text-green-600 mt-1">Arquivo enviado com sucesso</p>
+                    <p className="text-sm text-purple-400 mt-1">Arquivo enviado com sucesso</p>
                   )}
                 </div>
               )}
@@ -150,14 +151,14 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
 
             {message.type === 'text' && (
               <div>
-                <Label>Conteúdo da Mensagem</Label>
+                <Label className="text-purple-300 font-medium text-sm">Conteúdo da Mensagem</Label>
                 <Textarea
                   value={message.content}
                   onChange={(e) => updateMessage(message.id, { content: e.target.value })}
                   placeholder="Digite sua mensagem aqui..."
-                  className="min-h-[100px]"
+                  className="min-h-[100px] bg-gray-700 border-gray-600 text-gray-200 focus:border-purple-400"
                 />
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm text-gray-400 mt-1">
                   {message.content.length} caracteres
                 </p>
               </div>
