@@ -177,12 +177,6 @@ export const useNotificationForm = (onRulesUpdate: () => void) => {
       // Mostrar URL do webhook criado apenas para novas notificações
       if (!editingRule) {
         setCreatedWebhookUrl(webhookUrl);
-        
-        // Redirecionar para a URL do webhook após 2 segundos
-        setTimeout(() => {
-          console.log('🔗 Redirecionando para:', webhookUrl);
-          window.open(webhookUrl, '_blank');
-        }, 2000);
       }
 
       // Limpar formulário
@@ -196,7 +190,7 @@ export const useNotificationForm = (onRulesUpdate: () => void) => {
         title: "✅ Sucesso",
         description: editingRule ? 
           "Notificação atualizada com sucesso no banco de dados!" : 
-          "Notificação criada com sucesso! Redirecionando para o webhook...",
+          "Notificação criada com sucesso! Use a URL do webhook exibida acima.",
       });
       
       console.log(editingRule ? '✅ Notificação atualizada com sucesso' : '✅ Notificação criada com sucesso');
