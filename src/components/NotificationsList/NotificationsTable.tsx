@@ -53,10 +53,10 @@ const NotificationsTable = ({ notifications, isLoading, onViewDetails, onDelete,
 
   const getEventTypeBadgeColor = (type: string) => {
     switch (type) {
-      case 'purchase-approved': return 'bg-green-500/20 text-green-300 border-green-500/30';
-      case 'awaiting-payment': return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30';
-      case 'cart-abandoned': return 'bg-red-500/20 text-red-300 border-red-500/30';
-      default: return 'bg-gray-500/20 text-gray-300 border-gray-500/30';
+      case 'purchase-approved': return 'bg-green-500/10 text-green-400 border-green-500/20';
+      case 'awaiting-payment': return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
+      case 'cart-abandoned': return 'bg-red-500/10 text-red-400 border-red-500/20';
+      default: return 'bg-gray-500/10 text-gray-400 border-gray-500/20';
     }
   };
 

@@ -4,6 +4,7 @@ import { useNotifications } from './NotificationsList/useNotifications';
 import SyncStatusCard from './NotificationsList/SyncStatusCard';
 import NotificationsTable from './NotificationsList/NotificationsTable';
 import NotificationDetailsModal from './NotificationsList/NotificationDetailsModal';
+import DeleteConfirmationDialog from './NotificationsList/DeleteConfirmationDialog';
 
 const NotificationsList = () => {
   const {
@@ -12,8 +13,11 @@ const NotificationsList = () => {
     selectedNotification,
     lastSync,
     syncStatus,
+    deleteConfirmation,
     loadNotifications,
-    deleteNotification,
+    showDeleteConfirmation,
+    hideDeleteConfirmation,
+    confirmDelete,
     viewNotificationDetails,
     closeNotificationDetails,
   } = useNotifications();
@@ -32,13 +36,20 @@ const NotificationsList = () => {
         notifications={notifications}
         isLoading={isLoading}
         onViewDetails={viewNotificationDetails}
-        onDelete={deleteNotification}
+        onDelete={showDeleteConfirmation}
         onRefresh={loadNotifications}
       />
 
       <NotificationDetailsModal
         notification={selectedNotification}
         onClose={closeNotificationDetails}
+      />
+
+      <DeleteConfirmationDialog
+        isOpen={deleteConfirmation.isOpen}
+        onClose={hideDeleteConfirmation}
+        onConfirm={confirmDelete}
+        notificationId={deleteConfirmation.notificationId || ''}
       />
     </div>
   );

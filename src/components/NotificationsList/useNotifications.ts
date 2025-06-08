@@ -11,6 +11,10 @@ export const useNotifications = () => {
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    notificationId: string | null;
+  }>({ isOpen: false, notificationId: null });
 
   const loadNotifications = async () => {
     setIsLoading(true);
@@ -53,17 +57,29 @@ export const useNotifications = () => {
     }
   };
 
-  const deleteNotification = async (notificationId: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta notificação?')) {
-      return;
-    }
+  const showDeleteConfirmation = (notificationId: string) => {
+    setDeleteConfirmation({
+      isOpen: true,
+      notificationId
+    });
+  };
+
+  const hideDeleteConfirmation = () => {
+    setDeleteConfirmation({
+      isOpen: false,
+      notificationId: null
+    });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmation.notificationId) return;
 
     try {
-      console.log('🗑️ Excluindo notificação:', notificationId);
+      console.log('🗑️ Excluindo notificação:', deleteConfirmation.notificationId);
       
       // Aqui você implementaria a chamada para deletar no NocoDB
       // Por enquanto, vamos apenas remover da lista local
-      setNotifications(prev => prev.filter(n => n.ID !== notificationId));
+      setNotifications(prev => prev.filter(n => n.ID !== deleteConfirmation.notificationId));
       
       toast({
         title: "Sucesso",
@@ -76,6 +92,8 @@ export const useNotifications = () => {
         description: "Falha ao excluir notificação",
         variant: "destructive",
       });
+    } finally {
+      hideDeleteConfirmation();
     }
   };
 
@@ -107,8 +125,11 @@ export const useNotifications = () => {
     selectedNotification,
     lastSync,
     syncStatus,
+    deleteConfirmation,
     loadNotifications,
-    deleteNotification,
+    showDeleteConfirmation,
+    hideDeleteConfirmation,
+    confirmDelete,
     viewNotificationDetails,
     closeNotificationDetails,
   };
