@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
@@ -293,7 +292,7 @@
 
   /* Inputs */
   .input-modern {
-    @apply bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-foreground placeholder:text-gray-400 focus:border-purple-accent focus:ring-2 focus:ring-purple-accent/20 transition-all duration-200;
+    @apply bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-foreground placeholder:text-gray-400 focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all duration-200;
     box-shadow: var(--shadow-sm);
   }
 
