@@ -20,10 +20,10 @@ export const RecipientManager: React.FC<RecipientManagerProps> = ({
 
   return (
     <div className="space-y-6 p-4 bg-gray-700/30 rounded-lg border border-gray-600">
-      <Label className="text-gray-200 font-medium text-sm">Destinatários</Label>
+      <Label className="text-white font-medium text-sm">Destinatários</Label>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-3">
-          <Label className="text-gray-200 font-medium text-sm">Entrada Manual</Label>
+          <Label className="text-white font-medium text-sm">Entrada Manual</Label>
           <Textarea
             value={recipients}
             onChange={(e) => onRecipientsChange(e.target.value)}
@@ -35,7 +35,7 @@ export const RecipientManager: React.FC<RecipientManagerProps> = ({
           </p>
         </div>
         <div className="space-y-3">
-          <Label className="text-gray-200 font-medium text-sm">Enviar Planilha (CSV)</Label>
+          <Label className="text-white font-medium text-sm">Enviar Planilha (CSV)</Label>
           <div className="space-y-3">
             <Input
               type="file"
