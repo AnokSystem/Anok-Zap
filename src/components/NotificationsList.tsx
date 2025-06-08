@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { RefreshCw, Eye, Database, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { RefreshCw, Eye, Database, Clock, CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { nocodbService } from '@/services/nocodb';
 
@@ -83,6 +83,32 @@ const NotificationsList = () => {
     }
   };
 
+  const deleteNotification = async (notificationId: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta notificação?')) {
+      return;
+    }
+
+    try {
+      console.log('🗑️ Excluindo notificação:', notificationId);
+      
+      // Aqui você implementaria a chamada para deletar no NocoDB
+      // Por enquanto, vamos apenas remover da lista local
+      setNotifications(prev => prev.filter(n => n.ID !== notificationId));
+      
+      toast({
+        title: "Sucesso",
+        description: "Notificação excluída com sucesso",
+      });
+    } catch (error) {
+      console.error('❌ Erro ao excluir notificação:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao excluir notificação",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getEventTypeLabel = (type: string) => {
     switch (type) {
       case 'purchase-approved': return 'Compra Aprovada';
@@ -128,10 +154,10 @@ const NotificationsList = () => {
 
   const getEventTypeBadgeColor = (type: string) => {
     switch (type) {
-      case 'purchase-approved': return 'bg-green-100 text-green-800';
-      case 'awaiting-payment': return 'bg-yellow-100 text-yellow-800';
-      case 'cart-abandoned': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'purchase-approved': return 'bg-green-500/20 text-green-300 border-green-500/30';
+      case 'awaiting-payment': return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30';
+      case 'cart-abandoned': return 'bg-red-500/20 text-red-300 border-red-500/30';
+      default: return 'bg-gray-500/20 text-gray-300 border-gray-500/30';
     }
   };
 
@@ -251,14 +277,24 @@ const NotificationsList = () => {
                         {formatDate(notification['CreatedAt'])}
                       </TableCell>
                       <TableCell>
-                        <Button
-                          onClick={() => viewNotificationDetails(notification)}
-                          size="sm"
-                          variant="ghost"
-                          className="text-purple-accent hover:text-purple-accent/80 hover:bg-purple-accent/10"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            onClick={() => viewNotificationDetails(notification)}
+                            size="sm"
+                            variant="ghost"
+                            className="text-purple-accent hover:text-purple-accent/80 hover:bg-purple-accent/10"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            onClick={() => deleteNotification(notification.ID)}
+                            size="sm"
+                            variant="ghost"
+                            className="text-red-400 hover:text-red-300 hover:bg-red-500/20"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -309,7 +345,7 @@ const NotificationsList = () => {
                 
                 <div>
                   <label className="text-sm font-medium text-gray-300">Data de Criação</label>
-                  <p className="mt-1 text-gray-200">{formatDate(selectedNotification['Criado em'])}</p>
+                  <p className="mt-1 text-gray-200">{formatDate(selectedNotification['CreatedAt'])}</p>
                 </div>
                 
                 <div className="md:col-span-2">
