@@ -36,9 +36,9 @@ const ContactSelection: React.FC<ContactSelectionProps> = ({
     <div className="space-y-6">
       {/* Seleção de Instância */}
       <div className="space-y-2">
-        <label className="text-sm font-medium">Instância WhatsApp</label>
+        <label className="text-sm font-medium text-primary-contrast">Instância WhatsApp</label>
         <Select value={selectedInstance} onValueChange={setSelectedInstance}>
-          <SelectTrigger>
+          <SelectTrigger className="select-form">
             <SelectValue placeholder="Selecione uma instância" />
           </SelectTrigger>
           <SelectContent>
@@ -53,19 +53,19 @@ const ContactSelection: React.FC<ContactSelectionProps> = ({
 
       {/* Tipo de Contatos */}
       <div className="space-y-3">
-        <label className="text-sm font-medium">Tipo de Contatos</label>
+        <label className="text-sm font-medium text-primary-contrast">Tipo de Contatos</label>
         <RadioGroup value={contactType} onValueChange={setContactType}>
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="personal" id="personal" />
-            <label htmlFor="personal" className="flex items-center space-x-2 cursor-pointer">
-              <User className="w-4 h-4" />
+            <RadioGroupItem value="personal" id="personal" className="checkbox-form" />
+            <label htmlFor="personal" className="flex items-center space-x-2 cursor-pointer text-gray-300">
+              <User className="w-4 h-4 text-purple-accent" />
               <span>Contatos Pessoais</span>
             </label>
           </div>
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="groups" id="groups" />
-            <label htmlFor="groups" className="flex items-center space-x-2 cursor-pointer">
-              <Users2 className="w-4 h-4" />
+            <RadioGroupItem value="groups" id="groups" className="checkbox-form" />
+            <label htmlFor="groups" className="flex items-center space-x-2 cursor-pointer text-gray-300">
+              <Users2 className="w-4 h-4 text-purple-accent" />
               <span>Contatos de Grupos</span>
             </label>
           </div>
@@ -75,15 +75,15 @@ const ContactSelection: React.FC<ContactSelectionProps> = ({
       {/* Seleção de Grupo */}
       {contactType === 'groups' && (
         <div className="space-y-2">
-          <label className="text-sm font-medium">Grupo WhatsApp</label>
+          <label className="text-sm font-medium text-primary-contrast">Grupo WhatsApp</label>
           {isLoadingGroups ? (
-            <div className="flex items-center justify-center p-3 border rounded-md bg-muted">
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              <span className="text-sm text-muted-foreground">Buscando grupos...</span>
+            <div className="flex items-center justify-center p-3 border rounded-md bg-gray-800/50 border-gray-700">
+              <Loader2 className="w-4 h-4 animate-spin mr-2 text-purple-accent" />
+              <span className="text-sm text-gray-400">Buscando grupos...</span>
             </div>
           ) : (
             <Select value={selectedGroup} onValueChange={setSelectedGroup}>
-              <SelectTrigger>
+              <SelectTrigger className="select-form">
                 <SelectValue placeholder="Selecione um grupo" />
               </SelectTrigger>
               <SelectContent>
@@ -101,26 +101,26 @@ const ContactSelection: React.FC<ContactSelectionProps> = ({
       {/* Tipo de Membros */}
       {contactType === 'groups' && selectedGroup && (
         <div className="space-y-3">
-          <label className="text-sm font-medium">Tipo de Membros</label>
+          <label className="text-sm font-medium text-primary-contrast">Tipo de Membros</label>
           <RadioGroup value={memberType} onValueChange={setMemberType}>
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="all" id="all" />
-              <label htmlFor="all" className="flex items-center space-x-2 cursor-pointer">
-                <Users className="w-4 h-4" />
+              <RadioGroupItem value="all" id="all" className="checkbox-form" />
+              <label htmlFor="all" className="flex items-center space-x-2 cursor-pointer text-gray-300">
+                <Users className="w-4 h-4 text-purple-accent" />
                 <span>Todos os Membros</span>
               </label>
             </div>
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="admin" id="admin" />
-              <label htmlFor="admin" className="flex items-center space-x-2 cursor-pointer">
-                <Crown className="w-4 h-4" />
+              <RadioGroupItem value="admin" id="admin" className="checkbox-form" />
+              <label htmlFor="admin" className="flex items-center space-x-2 cursor-pointer text-gray-300">
+                <Crown className="w-4 h-4 text-purple-accent" />
                 <span>Apenas Administradores</span>
               </label>
             </div>
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="members" id="members" />
-              <label htmlFor="members" className="flex items-center space-x-2 cursor-pointer">
-                <UserCheck className="w-4 h-4" />
+              <RadioGroupItem value="members" id="members" className="checkbox-form" />
+              <label htmlFor="members" className="flex items-center space-x-2 cursor-pointer text-gray-300">
+                <UserCheck className="w-4 h-4 text-purple-accent" />
                 <span>Apenas Membros</span>
               </label>
             </div>

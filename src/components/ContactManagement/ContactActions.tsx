@@ -30,7 +30,7 @@ const ContactActions: React.FC<ContactActionsProps> = ({
       <Button
         onClick={onFetchContacts}
         disabled={isLoading || !selectedInstance || (contactType === 'groups' && !selectedGroup)}
-        className="btn-primary text-white font-medium"
+        className="btn-primary"
       >
         <Upload className="w-4 h-4 mr-2" />
         {isLoading ? 'Buscando...' : 'Buscar Contatos'}

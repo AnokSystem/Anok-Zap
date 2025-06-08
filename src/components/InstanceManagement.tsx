@@ -90,23 +90,23 @@ const InstanceManagement = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'open':
-        return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">Conectado</Badge>;
+        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Conectado</Badge>;
       case 'close':
         return <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Desconectado</Badge>;
       default:
-        return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">Aguardando</Badge>;
+        return <Badge className="bg-purple-accent/20 text-purple-accent border-purple-accent/30">Aguardando</Badge>;
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 space-y-8 p-8">
+    <div className="space-y-8">
       {/* Header da Seção */}
       <div className="text-center pb-6 border-b border-white/10">
         <div className="flex items-center justify-center space-x-3 mb-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl flex items-center justify-center">
+          <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center shadow-purple">
             <Smartphone className="w-6 h-6 text-white" />
           </div>
-          <h3 className="text-2xl font-bold text-white">Gerenciamento de Instâncias</h3>
+          <h3 className="text-2xl font-bold text-primary-contrast">Gerenciamento de Instâncias</h3>
         </div>
         <p className="text-gray-400 text-lg">
           Configure e monitore suas instâncias do WhatsApp
@@ -114,13 +114,13 @@ const InstanceManagement = () => {
       </div>
 
       {/* Criar Nova Instância */}
-      <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-6">
+      <div className="card-glass p-6">
         <div className="flex items-center space-x-3 mb-6">
-          <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-            <Plus className="w-5 h-5 text-blue-400" />
+          <div className="w-10 h-10 bg-purple-accent/20 rounded-lg flex items-center justify-center">
+            <Plus className="w-5 h-5 text-purple-accent" />
           </div>
           <div>
-            <Label className="font-semibold text-white text-lg">Nova Instância</Label>
+            <Label className="font-semibold text-primary-contrast text-lg">Nova Instância</Label>
             <p className="text-sm text-gray-400 mt-1">
               Crie uma nova instância do WhatsApp
             </p>
@@ -132,12 +132,12 @@ const InstanceManagement = () => {
             value={newInstanceName}
             onChange={(e) => setNewInstanceName(e.target.value)}
             placeholder="Nome da instância"
-            className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-400"
+            className="input-form"
           />
           <Button
             onClick={createInstance}
             disabled={isLoading || !newInstanceName.trim()}
-            className="bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white font-semibold px-6"
+            className="btn-primary"
           >
             <Plus className="w-4 h-4 mr-2" />
             Criar
@@ -146,14 +146,14 @@ const InstanceManagement = () => {
       </div>
 
       {/* Lista de Instâncias */}
-      <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-6">
+      <div className="card-glass p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
-              <Settings className="w-5 h-5 text-emerald-400" />
+            <div className="w-10 h-10 bg-purple-accent/20 rounded-lg flex items-center justify-center">
+              <Settings className="w-5 h-5 text-purple-accent" />
             </div>
             <div>
-              <Label className="font-semibold text-white text-lg">Instâncias Ativas</Label>
+              <Label className="font-semibold text-primary-contrast text-lg">Instâncias Ativas</Label>
               <p className="text-sm text-gray-400 mt-1">
                 {instances.length} instâncias configuradas
               </p>

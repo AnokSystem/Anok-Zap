@@ -27,35 +27,35 @@ const Index = () => {
       label: 'Disparo',
       icon: MessageSquare,
       description: 'Envie mensagens para múltiplos contatos',
-      color: 'text-purple-400'
+      color: 'text-purple-accent'
     },
     {
       id: 'contacts',
       label: 'Contatos',
       icon: Users,
       description: 'Gerencie seus contatos e grupos',
-      color: 'text-blue-400'
+      color: 'text-purple-accent'
     },
     {
       id: 'notifications',
       label: 'Notificações',
       icon: Bell,
       description: 'Configure alertas inteligentes',
-      color: 'text-emerald-400'
+      color: 'text-purple-accent'
     },
     {
       id: 'instances',
       label: 'Config',
       icon: Settings,
       description: 'Configurações do WhatsApp',
-      color: 'text-orange-400'
+      color: 'text-purple-accent'
     },
     {
       id: 'status',
       label: 'Status',
       icon: Activity,
       description: 'Status das integrações',
-      color: 'text-cyan-400'
+      color: 'text-purple-accent'
     }
   ];
 
@@ -72,7 +72,7 @@ const Index = () => {
                 <div className="w-16 h-16 gradient-primary rounded-2xl flex items-center justify-center shadow-lg">
                   <Zap className="w-9 h-9 text-white" />
                 </div>
-                <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                <div className="absolute -top-1 -right-1 w-6 h-6 gradient-primary rounded-full flex items-center justify-center">
                   <Sparkles className="w-3 h-3 text-white" />
                 </div>
               </div>
@@ -114,7 +114,7 @@ const Index = () => {
               >
                 <div className="flex flex-col items-center space-y-4">
                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 ${
-                    isActive ? 'bg-white/10' : 'bg-purple-500/10'
+                    isActive ? 'bg-white/10' : 'bg-purple-accent/10'
                   }`}>
                     <Icon className="nav-icon" />
                   </div>
@@ -131,7 +131,7 @@ const Index = () => {
 
                 {/* Active Indicator */}
                 {isActive && (
-                  <div className="absolute inset-0 rounded-xl opacity-20 bg-gradient-to-br from-purple-400 to-purple-600"></div>
+                  <div className="absolute inset-0 rounded-xl opacity-20 gradient-primary"></div>
                 )}
               </button>
             );

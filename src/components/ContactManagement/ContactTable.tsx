@@ -14,9 +14,9 @@ const ContactTable: React.FC<ContactTableProps> = ({ contacts, contactType }) =>
   if (contacts.length === 0) return null;
 
   return (
-    <Card>
+    <Card className="bg-transparent border-0">
       <CardHeader>
-        <CardTitle className="text-lg">
+        <CardTitle className="text-lg text-primary-contrast">
           Contatos Encontrados ({contacts.length})
         </CardTitle>
       </CardHeader>
@@ -24,33 +24,33 @@ const ContactTable: React.FC<ContactTableProps> = ({ contacts, contactType }) =>
         <div className="max-h-96 overflow-auto">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Telefone</TableHead>
-                {contactType === 'groups' && <TableHead>Grupo</TableHead>}
-                {contactType === 'groups' && <TableHead>Tipo</TableHead>}
+              <TableRow className="border-gray-700/50">
+                <TableHead className="text-gray-300">Nome</TableHead>
+                <TableHead className="text-gray-300">Telefone</TableHead>
+                {contactType === 'groups' && <TableHead className="text-gray-300">Grupo</TableHead>}
+                {contactType === 'groups' && <TableHead className="text-gray-300">Tipo</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {contacts.map((contact) => (
-                <TableRow key={contact.id}>
-                  <TableCell className="font-medium">{contact.name}</TableCell>
-                  <TableCell>{contact.phoneNumber}</TableCell>
+                <TableRow key={contact.id} className="border-gray-700/50 hover:bg-gray-700/30">
+                  <TableCell className="font-medium text-gray-200">{contact.name}</TableCell>
+                  <TableCell className="text-gray-300">{contact.phoneNumber}</TableCell>
                   {contactType === 'groups' && (
-                    <TableCell>{contact.groupName || 'N/A'}</TableCell>
+                    <TableCell className="text-gray-300">{contact.groupName || 'N/A'}</TableCell>
                   )}
                   {contactType === 'groups' && (
                     <TableCell>
                       <div className="flex items-center space-x-1">
                         {contact.isAdmin ? (
                           <>
-                            <Crown className="w-4 h-4 text-yellow-500" />
-                            <span>Admin</span>
+                            <Crown className="w-4 h-4 text-purple-accent" />
+                            <span className="text-gray-300">Admin</span>
                           </>
                         ) : (
                           <>
-                            <UserCheck className="w-4 h-4 text-blue-500" />
-                            <span>Membro</span>
+                            <UserCheck className="w-4 h-4 text-purple-accent" />
+                            <span className="text-gray-300">Membro</span>
                           </>
                         )}
                       </div>
