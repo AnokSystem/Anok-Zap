@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +44,7 @@ const IntelligentNotifications = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [instances, setInstances] = useState<any[]>([]);
+  const [createdWebhookUrl, setCreatedWebhookUrl] = useState<string>('');
 
   useEffect(() => {
     loadInstances();
@@ -167,6 +167,9 @@ const IntelligentNotifications = () => {
       // Salvar no NocoDB
       await nocodbService.saveHotmartNotification(notificationData);
 
+      // Mostrar URL do webhook criado
+      setCreatedWebhookUrl(webhookUrl);
+
       // Limpar formulário
       setNewRule({
         eventType: '',
@@ -181,7 +184,7 @@ const IntelligentNotifications = () => {
 
       toast({
         title: "Sucesso",
-        description: `Notificação criada! URL do webhook: ${webhookUrl}`,
+        description: "Notificação criada com sucesso!",
       });
     } catch (error) {
       toast({
@@ -251,6 +254,53 @@ const IntelligentNotifications = () => {
           Configure notificações automáticas baseadas em eventos das plataformas de venda
         </p>
       </div>
+
+      {/* URL do Webhook criado */}
+      {createdWebhookUrl && (
+        <div className="card-glass p-6 border-green-500/30">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+              <Zap className="w-5 h-5 text-green-400" />
+            </div>
+            <div>
+              <h4 className="font-semibold text-primary-contrast text-lg">Notificação Criada!</h4>
+              <p className="text-sm text-gray-400 mt-1">
+                Use esta URL no webhook da plataforma
+              </p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-gray-200 font-medium text-sm">URL do Webhook</Label>
+            <div className="p-3 bg-gray-700/30 rounded-lg border border-gray-600/50 flex items-center justify-between">
+              <p className="text-sm text-gray-300 break-all">
+                {createdWebhookUrl}
+              </p>
+              <Button
+                onClick={() => {
+                  navigator.clipboard.writeText(createdWebhookUrl);
+                  toast({
+                    title: "Copiado!",
+                    description: "URL copiada para a área de transferência",
+                  });
+                }}
+                size="sm"
+                variant="outline"
+                className="ml-2 bg-gray-700/50 border-gray-600 text-gray-200"
+              >
+                Copiar
+              </Button>
+            </div>
+            <Button
+              onClick={() => setCreatedWebhookUrl('')}
+              size="sm"
+              variant="ghost"
+              className="text-gray-400 hover:text-gray-200"
+            >
+              Fechar
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Configuração de Nova Regra */}
       <div className="card-glass p-6">
@@ -352,18 +402,6 @@ const IntelligentNotifications = () => {
               />
             </div>
           </div>
-
-          {/* URL do Webhook (apenas exibição) */}
-          {newRule.eventType && (
-            <div className="space-y-2">
-              <Label className="text-gray-200 font-medium text-sm">URL do Webhook</Label>
-              <div className="p-3 bg-gray-700/30 rounded-lg border border-gray-600/50">
-                <p className="text-sm text-gray-300 break-all">
-                  {getWebhookUrl(newRule.eventType)}
-                </p>
-              </div>
-            </div>
-          )}
 
           {/* Mensagens */}
           <div className="space-y-4">
