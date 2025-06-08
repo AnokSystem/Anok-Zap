@@ -28,13 +28,13 @@ const MassMessaging = () => {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="bg-gray-800/50 border-gray-700">
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <MessageSquare className="w-5 h-5" />
+          <CardTitle className="flex items-center space-x-2 text-white">
+            <MessageSquare className="w-5 h-5 text-purple-400" />
             <span>Campanha de Disparo em Massa</span>
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-gray-300">
             Envie mensagens em lote para múltiplos contatos do WhatsApp
           </CardDescription>
         </CardHeader>
