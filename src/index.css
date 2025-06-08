@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
@@ -9,22 +8,22 @@
 @layer base {
   :root {
     --background: 16 16 20;
-    --foreground: 248 250 252;
+    --foreground: 255 255 255; /* Garantindo que foreground seja branco */
 
     --card: 24 24 29;
-    --card-foreground: 248 250 252;
+    --card-foreground: 255 255 255; /* Garantindo que card-foreground seja branco */
 
     --popover: 30 30 36;
-    --popover-foreground: 248 250 252;
+    --popover-foreground: 255 255 255; /* Garantindo que popover-foreground seja branco */
 
     --primary: 123 44 191;
     --primary-foreground: 255 255 255;
 
     --secondary: 39 39 47;
-    --secondary-foreground: 203 213 225;
+    --secondary-foreground: 255 255 255; /* Alterado para branco */
 
     --muted: 30 30 36;
-    --muted-foreground: 148 163 184;
+    --muted-foreground: 203 213 225; /* Mantendo cinza claro */
 
     --accent: 157 78 221;
     --accent-foreground: 255 255 255;
@@ -51,7 +50,7 @@
     --gray-800: 30 30 36; /* #1e1e24 */
     --gray-700: 39 39 47; /* #27272f */
     --gray-600: 82 82 91; /* #52525b */
-    --gray-400: 148 163 184; /* #94a3b8 */
+    --gray-400: 203 213 225; /* Alterado para cinza mais claro */
     --gray-200: 226 232 240; /* #e2e8f0 */
     --white: 255 255 255;
     
@@ -59,7 +58,7 @@
     --form-success: 34 197 94; /* #22c55e - Verde suave */
     --form-warning: 249 115 22; /* #f97316 - Laranja suave */
     --form-info: 59 130 246; /* #3b82f6 - Azul suave */
-    --form-highlight: 168 85 247; /* #a855f7 - Roxo claro para destaques */
+    --form-highlight: 255 255 255; /* Alterado para branco */
     
     /* Gradientes Modernos */
     --gradient-primary: linear-gradient(135deg, rgb(123, 44, 191) 0%, rgb(157, 78, 221) 100%);
@@ -101,6 +100,7 @@
     font-weight: 600;
     line-height: 1.3;
     letter-spacing: -0.025em;
+    color: rgb(var(--foreground)) !important; /* Garantindo que títulos sejam brancos */
   }
 
   h1 {
@@ -117,7 +117,22 @@
 
   p {
     @apply text-base leading-relaxed;
-    color: rgb(var(--muted-foreground));
+    color: rgb(var(--foreground)) !important; /* Garantindo que parágrafos sejam brancos */
+  }
+
+  /* Regra global para garantir que textos não sejam amarelos */
+  span, div, label, button, input, textarea, select {
+    color: inherit;
+  }
+  
+  /* Sobrescrever qualquer cor amarela que possa existir */
+  *[style*="color: #ffff00"],
+  *[style*="color: #ff0"],
+  *[style*="color: yellow"],
+  .text-yellow-400,
+  .text-yellow-500,
+  .text-yellow-600 {
+    color: #ffffff !important;
   }
 }
 
