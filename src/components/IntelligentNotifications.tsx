@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -411,7 +412,7 @@ const IntelligentNotifications = () => {
 
               {/* Notification Phone */}
               <div className="space-y-2">
-                <Label className="text-[#bdb2ff] font-medium">Notificação de Conclusão</Label>
+                <Label className="text-[#bdb2ff] font-semibold">Notificação de Conclusão</Label>
                 <Input
                   value={notificationPhone}
                   onChange={(e) => setNotificationPhone(e.target.value)}
