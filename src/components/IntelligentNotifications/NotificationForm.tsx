@@ -1,7 +1,9 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Zap, X, RefreshCw, Save } from 'lucide-react';
 import { Message } from './types';
@@ -18,7 +20,7 @@ interface NotificationRule {
 
 interface NotificationFormProps {
   newRule: Partial<NotificationRule>;
-  setNewRule: (rule: Partial<NotificationRule>) => void;
+  setNewRule: (rule: Partial<NotificationRule> | ((prev: Partial<NotificationRule>) => Partial<NotificationRule>)) => void;
   instances: any[];
   isLoading: boolean;
   onSave: () => void;

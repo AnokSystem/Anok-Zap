@@ -68,7 +68,7 @@ export class NotificationService extends BaseNocodbService {
 
   async saveHotmartNotification(baseId: string, notificationData: any): Promise<boolean> {
     try {
-      console.log('💾 Salvando notificação Hotmart no NocoDB...');
+      console.log('💾 Salvando/Atualizando notificação Hotmart no NocoDB...');
       console.log('📋 Dados originais:', notificationData);
       
       // Estruturar os dados corretamente para o NocoDB
@@ -103,16 +103,27 @@ export class NotificationService extends BaseNocodbService {
         return false;
       }
 
-      const success = await this.saveToTable(baseId, finalTableId, data);
-      if (success) {
-        console.log('✅ Dados salvos com sucesso na tabela de notificações');
-        return true;
+      // Verificar se é uma atualização ou criação
+      if (notificationData.ruleId) {
+        console.log('📝 Atualizando notificação existente com ID:', notificationData.ruleId);
+        const success = await this.updateInTable(baseId, finalTableId, notificationData.ruleId, data);
+        if (success) {
+          console.log('✅ Notificação atualizada com sucesso');
+          return true;
+        }
+      } else {
+        console.log('➕ Criando nova notificação');
+        const success = await this.saveToTable(baseId, finalTableId, data);
+        if (success) {
+          console.log('✅ Nova notificação criada com sucesso');
+          return true;
+        }
       }
       
       return false;
       
     } catch (error) {
-      console.error('❌ Erro geral ao salvar notificação Hotmart:', error);
+      console.error('❌ Erro geral ao salvar/atualizar notificação Hotmart:', error);
       return false;
     }
   }
@@ -120,7 +131,7 @@ export class NotificationService extends BaseNocodbService {
   private async saveToTable(baseId: string, tableId: string, data: any): Promise<boolean> {
     try {
       const url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}`;
-      console.log('🌐 URL de salvamento:', url);
+      console.log('🌐 URL de criação:', url);
       console.log('📤 Dados a serem enviados:', data);
       
       const response = await fetch(url, {
@@ -129,19 +140,48 @@ export class NotificationService extends BaseNocodbService {
         body: JSON.stringify(data),
       });
       
-      console.log('📡 Status do salvamento:', response.status);
+      console.log('📡 Status da criação:', response.status);
       
       if (response.ok) {
         const result = await response.json();
-        console.log('✅ Dados salvos com sucesso:', result);
+        console.log('✅ Dados criados com sucesso:', result);
         return true;
       } else {
         const errorText = await response.text();
-        console.error(`❌ Erro ao salvar ${response.status}:`, errorText);
+        console.error(`❌ Erro ao criar ${response.status}:`, errorText);
         return false;
       }
     } catch (error) {
-      console.error('❌ Erro interno ao salvar:', error);
+      console.error('❌ Erro interno ao criar:', error);
+      return false;
+    }
+  }
+
+  private async updateInTable(baseId: string, tableId: string, recordId: string, data: any): Promise<boolean> {
+    try {
+      const url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}/${recordId}`;
+      console.log('🌐 URL de atualização:', url);
+      console.log('📤 Dados a serem atualizados:', data);
+      
+      const response = await fetch(url, {
+        method: 'PATCH',
+        headers: this.headers,
+        body: JSON.stringify(data),
+      });
+      
+      console.log('📡 Status da atualização:', response.status);
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Dados atualizados com sucesso:', result);
+        return true;
+      } else {
+        const errorText = await response.text();
+        console.error(`❌ Erro ao atualizar ${response.status}:`, errorText);
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Erro interno ao atualizar:', error);
       return false;
     }
   }

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Bell } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
@@ -57,30 +58,41 @@ const IntelligentNotifications = () => {
 
   const handleEditRule = (rule: any) => {
     try {
-      console.log('Editando regra:', rule);
+      console.log('📝 Iniciando edição da regra:', rule);
       
       // Parse dos dados JSON para preencher o formulário
-      const data = rule['Dados Completos (JSON)'] 
-        ? JSON.parse(rule['Dados Completos (JSON)'])
-        : {};
+      let parsedData: any = {};
       
-      setNewRule({
-        eventType: data.eventType || rule['Tipo de Evento'] || '',
-        userRole: data.userRole || rule['Função do Usuário'] || '',
-        platform: data.platform || rule['Plataforma'] || '',
-        profileName: data.profileName || rule['Perfil Hotmart'] || '',
-        instanceId: data.instance || rule['ID da Instância'] || '',
-        messages: data.messages || [{ id: '1', type: 'text', content: '', delay: 0 }],
-      });
+      if (rule['Dados Completos (JSON)']) {
+        try {
+          parsedData = JSON.parse(rule['Dados Completos (JSON)']);
+          console.log('✅ Dados JSON parseados:', parsedData);
+        } catch (e) {
+          console.error('❌ Erro ao fazer parse do JSON:', e);
+          parsedData = {};
+        }
+      }
       
+      const editRule = {
+        eventType: parsedData.eventType || rule['Tipo de Evento'] || '',
+        userRole: parsedData.userRole || rule['Função do Usuário'] || rule['Papel do Usuário'] || '',
+        platform: parsedData.platform || rule['Plataforma'] || '',
+        profileName: parsedData.profileName || rule['Perfil Hotmart'] || '',
+        instanceId: parsedData.instance || rule['ID da Instância'] || '',
+        messages: parsedData.messages || [{ id: '1', type: 'text', content: '', delay: 0 }],
+      };
+      
+      console.log('📋 Dados carregados para edição:', editRule);
+      
+      setNewRule(editRule);
       setEditingRule(rule);
       
       toast({
-        title: "Modo de Edição",
-        description: "Regra carregada para edição. Modifique os campos e salve as alterações.",
+        title: "Modo de Edição Ativado",
+        description: "Regra carregada para edição. Modifique os campos e clique em 'Atualizar Notificação'.",
       });
     } catch (error) {
-      console.error('Erro ao editar regra:', error);
+      console.error('❌ Erro ao editar regra:', error);
       toast({
         title: "Erro",
         description: "Não foi possível carregar os dados da regra para edição",
@@ -90,6 +102,7 @@ const IntelligentNotifications = () => {
   };
 
   const cancelEdit = () => {
+    console.log('❌ Cancelando edição');
     setEditingRule(null);
     setNewRule({
       eventType: '',
@@ -98,6 +111,11 @@ const IntelligentNotifications = () => {
       profileName: '',
       instanceId: '',
       messages: [{ id: '1', type: 'text', content: '', delay: 0 }],
+    });
+    
+    toast({
+      title: "Edição Cancelada",
+      description: "Formulário limpo e pronto para nova notificação",
     });
   };
 
@@ -184,16 +202,24 @@ const IntelligentNotifications = () => {
         profileName: newRule.profileName!,
         messages: newRule.messages,
         webhookUrl,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        // Se estamos editando, incluir o ID da notificação
+        ...(editingRule && { ruleId: editingRule.ID || editingRule.id })
       };
 
-      console.log(editingRule ? 'Atualizando notificação:' : 'Criando notificação:', notificationData);
+      console.log(editingRule ? '📝 Atualizando notificação:' : '➕ Criando notificação:', notificationData);
 
-      // Salvar no NocoDB
-      await nocodbService.saveHotmartNotification(notificationData);
+      // Salvar no NocoDB - o serviço já trata criação/atualização
+      const success = await nocodbService.saveHotmartNotification(notificationData);
+      
+      if (!success) {
+        throw new Error('Falha ao salvar no banco de dados');
+      }
 
-      // Mostrar URL do webhook criado
-      setCreatedWebhookUrl(webhookUrl);
+      // Mostrar URL do webhook criado apenas para novas notificações
+      if (!editingRule) {
+        setCreatedWebhookUrl(webhookUrl);
+      }
 
       // Limpar formulário
       setNewRule({
@@ -206,16 +232,26 @@ const IntelligentNotifications = () => {
       });
 
       setEditingRule(null);
+      
+      // Recarregar as regras
       await loadRules();
 
       toast({
-        title: "Sucesso",
-        description: editingRule ? "Notificação atualizada com sucesso!" : "Notificação criada com sucesso!",
+        title: "✅ Sucesso",
+        description: editingRule ? 
+          "Notificação atualizada com sucesso no banco de dados!" : 
+          "Notificação criada com sucesso no banco de dados!",
       });
+      
+      console.log(editingRule ? '✅ Notificação atualizada com sucesso' : '✅ Notificação criada com sucesso');
+      
     } catch (error) {
+      console.error('❌ Erro ao salvar notificação:', error);
       toast({
-        title: "Erro",
-        description: editingRule ? "Falha ao atualizar notificação" : "Falha ao criar notificação",
+        title: "❌ Erro",
+        description: editingRule ? 
+          "Falha ao atualizar notificação no banco de dados" : 
+          "Falha ao criar notificação no banco de dados",
         variant: "destructive",
       });
     } finally {
@@ -226,7 +262,7 @@ const IntelligentNotifications = () => {
   const deleteRule = async (ruleId: string) => {
     setIsLoading(true);
     try {
-      console.log('Deletando regra:', ruleId);
+      console.log('🗑️ Deletando regra:', ruleId);
       await loadRules();
       toast({
         title: "Sucesso",
@@ -257,7 +293,7 @@ const IntelligentNotifications = () => {
         </div>
         <p className="text-gray-400 text-lg">
           {editingRule 
-            ? 'Modifique os campos desejados e salve as alterações'
+            ? 'Modifique os campos desejados e salve as alterações no banco de dados'
             : 'Configure notificações automáticas baseadas em eventos das plataformas de venda'
           }
         </p>
