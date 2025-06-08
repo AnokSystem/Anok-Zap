@@ -28,7 +28,7 @@ const Index = () => {
       shortLabel: 'Disparo',
       icon: MessageSquare,
       description: 'Envie mensagens para múltiplos contatos',
-      gradient: 'from-purple-600 to-purple-800'
+      highlightColor: 'text-highlight-cyan'
     },
     {
       id: 'contacts',
@@ -36,7 +36,7 @@ const Index = () => {
       shortLabel: 'Contatos',
       icon: Users,
       description: 'Gerencie seus contatos e grupos',
-      gradient: 'from-blue-600 to-blue-800'
+      highlightColor: 'text-highlight-emerald'
     },
     {
       id: 'notifications',
@@ -44,7 +44,7 @@ const Index = () => {
       shortLabel: 'Notif.',
       icon: Bell,
       description: 'Configure alertas inteligentes',
-      gradient: 'from-emerald-600 to-emerald-800'
+      highlightColor: 'text-highlight-amber'
     },
     {
       id: 'instances',
@@ -52,7 +52,7 @@ const Index = () => {
       shortLabel: 'Config',
       icon: Settings,
       description: 'Configurações do WhatsApp',
-      gradient: 'from-orange-600 to-orange-800'
+      highlightColor: 'text-highlight-rose'
     },
     {
       id: 'status',
@@ -60,7 +60,7 @@ const Index = () => {
       shortLabel: 'Status',
       icon: Activity,
       description: 'Status das integrações',
-      gradient: 'from-red-600 to-red-800'
+      highlightColor: 'text-purple-400'
     }
   ];
 
@@ -71,14 +71,14 @@ const Index = () => {
       {/* Background Effects */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-0 left-0 w-full h-full">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl animate-float"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '3s' }}></div>
-          <div className="absolute top-3/4 left-1/2 w-64 h-64 bg-emerald-600/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '1.5s' }}></div>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/5 rounded-full blur-3xl animate-float"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-600/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '4s' }}></div>
+          <div className="absolute top-3/4 left-1/2 w-64 h-64 bg-emerald-600/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }}></div>
         </div>
       </div>
 
       {/* Header Futurístico */}
-      <header className="relative z-50 border-b border-white/10 backdrop-blur-xl bg-background/80">
+      <header className="relative z-50 border-b border-white/5 backdrop-blur-xl bg-background/80">
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -86,10 +86,10 @@ const Index = () => {
                 <div className="w-14 h-14 gradient-primary rounded-2xl flex items-center justify-center shadow-lg animate-pulse-glow">
                   <Zap className="w-8 h-8 text-white" />
                 </div>
-                <div className="absolute inset-0 w-14 h-14 gradient-primary rounded-2xl blur-xl opacity-30 group-hover:opacity-50 transition-opacity"></div>
+                <div className="absolute inset-0 w-14 h-14 gradient-primary rounded-2xl blur-lg opacity-20 group-hover:opacity-30 transition-opacity"></div>
               </div>
               <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-purple-500 to-purple-600 bg-clip-text text-transparent text-glow">
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-purple-500 to-purple-600 bg-clip-text text-transparent">
                   Anok Zap
                 </h1>
                 <p className="text-sm text-muted-foreground font-medium">
@@ -99,7 +99,7 @@ const Index = () => {
             </div>
             
             <div className="flex items-center space-x-4">
-              <div className="px-4 py-2 rounded-full gradient-primary text-white text-sm font-semibold shadow-lg border border-white/20">
+              <div className="px-4 py-2 rounded-full gradient-primary text-white text-sm font-semibold shadow-md border border-white/15">
                 Pro
               </div>
             </div>
@@ -119,10 +119,10 @@ const Index = () => {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`
-                  group relative p-6 rounded-2xl transition-all duration-300 transform hover:scale-105
+                  group relative p-6 rounded-2xl transition-all duration-300 transform hover:scale-102
                   ${isActive 
-                    ? 'card-futuristic border-purple-500/50 shadow-2xl' 
-                    : 'glass-morphism hover:border-purple-500/30'
+                    ? 'card-futuristic border-purple-500/30 shadow-lg' 
+                    : 'glass-morphism hover:border-purple-500/20'
                   }
                 `}
               >
@@ -130,8 +130,8 @@ const Index = () => {
                   <div className={`
                     w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300
                     ${isActive 
-                      ? 'gradient-primary shadow-lg' 
-                      : 'bg-muted group-hover:bg-purple-600/20'
+                      ? 'gradient-primary shadow-md' 
+                      : 'bg-muted/50 group-hover:bg-purple-600/15'
                     }
                   `}>
                     <Icon className={`w-6 h-6 ${isActive ? 'text-white' : 'text-muted-foreground group-hover:text-purple-400'}`} />
@@ -140,19 +140,19 @@ const Index = () => {
                   <div className="text-center">
                     <h3 className={`
                       font-semibold text-sm mb-1 transition-colors
-                      ${isActive ? 'text-purple-400 text-glow' : 'text-foreground group-hover:text-purple-400'}
+                      ${isActive ? `${tab.highlightColor} font-bold` : 'text-foreground group-hover:text-purple-400'}
                     `}>
                       <span className="hidden sm:inline">{tab.label}</span>
                       <span className="sm:hidden">{tab.shortLabel}</span>
                     </h3>
-                    <p className="text-xs text-muted-foreground hidden md:block">
+                    <p className="text-xs text-muted-foreground hidden md:block leading-tight">
                       {tab.description}
                     </p>
                   </div>
                 </div>
 
                 {isActive && (
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-600/20 to-purple-800/20 animate-pulse-glow"></div>
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-600/10 to-purple-800/10 animate-pulse-glow"></div>
                 )}
               </button>
             );
@@ -163,7 +163,7 @@ const Index = () => {
         {activeTabInfo && (
           <div className="mb-8 animate-slide-in">
             <div className="flex items-center space-x-3 mb-2">
-              <activeTabInfo.icon className="w-6 h-6 text-purple-400" />
+              <activeTabInfo.icon className={`w-6 h-6 ${activeTabInfo.highlightColor}`} />
               <h2 className="text-2xl font-bold text-foreground">{activeTabInfo.label}</h2>
               <ChevronRight className="w-5 h-5 text-muted-foreground" />
             </div>

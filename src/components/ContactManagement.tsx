@@ -30,14 +30,16 @@ const ContactManagement = () => {
   } = useContactManagement();
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Users className="w-5 h-5" />
+    <div className="space-y-6 p-6">
+      <Card className="card-futuristic border-white/5">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center space-x-3 text-highlight-cyan">
+            <div className="w-8 h-8 bg-cyan-600/20 rounded-lg flex items-center justify-center">
+              <Users className="w-5 h-5" />
+            </div>
             <span>Gerenciamento de Contatos</span>
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-muted-foreground">
             Recupere e gerencie contatos do WhatsApp das suas instâncias Evolution API
           </CardDescription>
         </CardHeader>
@@ -69,15 +71,15 @@ const ContactManagement = () => {
 
           {/* Informações da Seleção */}
           {selectedInstance && (
-            <Card className="bg-blue-50 border-blue-200">
+            <Card className="glass-morphism border-cyan-500/20">
               <CardContent className="pt-4">
                 <div className="text-sm space-y-1">
-                  <p><strong>Instância:</strong> {getSelectedInstanceName()}</p>
-                  <p><strong>Tipo:</strong> {contactType === 'personal' ? 'Contatos Pessoais' : 'Contatos de Grupos'}</p>
+                  <p className="text-foreground"><strong>Instância:</strong> {getSelectedInstanceName()}</p>
+                  <p className="text-foreground"><strong>Tipo:</strong> {contactType === 'personal' ? 'Contatos Pessoais' : 'Contatos de Grupos'}</p>
                   {contactType === 'groups' && selectedGroup && (
                     <>
-                      <p><strong>Grupo:</strong> {getSelectedGroupName()}</p>
-                      <p><strong>Membros:</strong> {
+                      <p className="text-foreground"><strong>Grupo:</strong> {getSelectedGroupName()}</p>
+                      <p className="text-foreground"><strong>Membros:</strong> {
                         memberType === 'all' ? 'Todos' :
                         memberType === 'admin' ? 'Apenas Administradores' :
                         'Apenas Membros'
