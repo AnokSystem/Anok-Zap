@@ -6,10 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Plus, Trash2, Upload, Settings, Zap, MessageSquare } from 'lucide-react';
+import { Bell, Plus, Trash2, Upload, Settings, Zap, MessageSquare, Clock } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { nocodbService } from '@/services/nocodb';
 import { minioService } from '@/services/minio';
+import { evolutionApiService } from '@/services/evolutionApi';
 
 interface Message {
   id: string;
@@ -17,12 +18,15 @@ interface Message {
   content: string;
   file?: File;
   fileUrl?: string;
+  delay: number; // tempo em minutos
 }
 
 interface NotificationRule {
   id: string;
   eventType: string;
-  hotmartProfile: string;
+  userRole: string; // produtor ou afiliado
+  platform: string; // Hotmart, Braip, Kiwfy, Monetize
+  profileName: string;
   instanceId: string;
   messages: Message[];
   webhookUrl: string;
@@ -33,9 +37,11 @@ const IntelligentNotifications = () => {
   const [rules, setRules] = useState<NotificationRule[]>([]);
   const [newRule, setNewRule] = useState<Partial<NotificationRule>>({
     eventType: '',
-    hotmartProfile: '',
+    userRole: '',
+    platform: '',
+    profileName: '',
     instanceId: '',
-    messages: [{ id: '1', type: 'text', content: '' }],
+    messages: [{ id: '1', type: 'text', content: '', delay: 0 }],
   });
   const [isLoading, setIsLoading] = useState(false);
   const [instances, setInstances] = useState<any[]>([]);
@@ -47,13 +53,17 @@ const IntelligentNotifications = () => {
 
   const loadInstances = async () => {
     try {
-      const data = [
-        { id: 'inst1', name: 'Instância Principal', status: 'Conectado' },
-        { id: 'inst2', name: 'Instância Secundária', status: 'Conectado' }
-      ];
+      console.log('🔄 Carregando instâncias...');
+      const data = await evolutionApiService.getInstances();
+      console.log('✅ Instâncias carregadas:', data);
       setInstances(data);
     } catch (error) {
       console.error('Erro ao carregar instâncias:', error);
+      // Fallback para desenvolvimento
+      setInstances([
+        { id: 'inst1', name: 'Instância Principal', status: 'conectado' },
+        { id: 'inst2', name: 'Instância Secundária', status: 'conectado' }
+      ]);
     }
   };
 
@@ -72,7 +82,8 @@ const IntelligentNotifications = () => {
     const newMessage: Message = {
       id: Date.now().toString(),
       type: 'text',
-      content: ''
+      content: '',
+      delay: 0
     };
     
     setNewRule(prev => ({
@@ -117,8 +128,17 @@ const IntelligentNotifications = () => {
     }
   };
 
+  const getWebhookUrl = (eventType: string): string => {
+    const webhookUrls = {
+      'purchase-approved': 'https://webhook.novahagencia.com.br/webhook/4759af4e-61f0-47b8-b2c0-d730000ca2b5',
+      'awaiting-payment': 'https://webhook.novahagencia.com.br/webhook/5f5fd8b0-0733-4cfc-b5e7-319462991065',
+      'cart-abandoned': 'https://webhook.novahagencia.com.br/webhook/6631e496-f119-48a4-b198-7d1d5010bbf7'
+    };
+    return webhookUrls[eventType] || '';
+  };
+
   const saveRule = async () => {
-    if (!newRule.eventType || !newRule.instanceId || !newRule.messages?.length) {
+    if (!newRule.eventType || !newRule.instanceId || !newRule.userRole || !newRule.platform || !newRule.profileName || !newRule.messages?.length) {
       toast({
         title: "Erro",
         description: "Preencha todos os campos obrigatórios",
@@ -129,26 +149,32 @@ const IntelligentNotifications = () => {
 
     setIsLoading(true);
     try {
-      const webhookUrl = `${window.location.origin}/webhook/hotmart/${newRule.instanceId}`;
+      const webhookUrl = getWebhookUrl(newRule.eventType!);
       
-      console.log('Criando notificação:', {
-        'Tipo de Evento': newRule.eventType!,
-        'ID da Instância': newRule.instanceId!,
-        'Perfil Hotmart': newRule.hotmartProfile || '',
-        'URL do Webhook': webhookUrl,
-        'Dados Completos (JSON)': JSON.stringify({
-          messages: newRule.messages,
-          eventType: newRule.eventType,
-          instanceId: newRule.instanceId,
-          hotmartProfile: newRule.hotmartProfile,
-        })
-      });
+      const notificationData = {
+        eventType: newRule.eventType!,
+        instance: newRule.instanceId!,
+        userRole: newRule.userRole!,
+        platform: newRule.platform!,
+        profileName: newRule.profileName!,
+        messages: newRule.messages,
+        webhookUrl,
+        timestamp: new Date().toISOString()
+      };
 
+      console.log('Criando notificação:', notificationData);
+
+      // Salvar no NocoDB
+      await nocodbService.saveHotmartNotification(notificationData);
+
+      // Limpar formulário
       setNewRule({
         eventType: '',
-        hotmartProfile: '',
+        userRole: '',
+        platform: '',
+        profileName: '',
         instanceId: '',
-        messages: [{ id: '1', type: 'text', content: '' }],
+        messages: [{ id: '1', type: 'text', content: '', delay: 0 }],
       });
 
       await loadRules();
@@ -197,6 +223,20 @@ const IntelligentNotifications = () => {
     }
   };
 
+  const getPlatformLabel = (platform: string) => {
+    switch (platform) {
+      case 'hotmart': return 'Hotmart';
+      case 'braip': return 'Braip';
+      case 'kiwfy': return 'Kiwfy';
+      case 'monetize': return 'Monetize';
+      default: return platform;
+    }
+  };
+
+  const getRoleLabel = (role: string) => {
+    return role === 'producer' ? 'Produtor' : 'Afiliado';
+  };
+
   return (
     <div className="space-y-8">
       {/* Header da Seção */}
@@ -208,7 +248,7 @@ const IntelligentNotifications = () => {
           <h3 className="text-2xl font-bold text-primary-contrast">Notificações Inteligentes</h3>
         </div>
         <p className="text-gray-400 text-lg">
-          Configure notificações automáticas baseadas em eventos da Hotmart
+          Configure notificações automáticas baseadas em eventos das plataformas de venda
         </p>
       </div>
 
@@ -227,27 +267,10 @@ const IntelligentNotifications = () => {
         </div>
 
         <div className="space-y-6">
-          {/* Configurações básicas */}
+          {/* Configurações básicas - Primeira linha */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
-              <Label className="text-gray-200 font-medium text-sm">Tipo de Evento</Label>
-              <Select
-                value={newRule.eventType}
-                onValueChange={(value) => setNewRule(prev => ({ ...prev, eventType: value }))}
-              >
-                <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-accent">
-                  <SelectValue placeholder="Selecione o evento" />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-700">
-                  <SelectItem value="purchase-approved" className="text-gray-200 hover:bg-gray-700 focus:bg-gray-700">Compra Aprovada</SelectItem>
-                  <SelectItem value="awaiting-payment" className="text-gray-200 hover:bg-gray-700 focus:bg-gray-700">Aguardando Pagamento</SelectItem>
-                  <SelectItem value="cart-abandoned" className="text-gray-200 hover:bg-gray-700 focus:bg-gray-700">Carrinho Abandonado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-gray-200 font-medium text-sm">Instância WhatsApp</Label>
+              <Label className="text-gray-200 font-medium text-sm">Instância WhatsApp *</Label>
               <Select
                 value={newRule.instanceId}
                 onValueChange={(value) => setNewRule(prev => ({ ...prev, instanceId: value }))}
@@ -266,15 +289,81 @@ const IntelligentNotifications = () => {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-gray-200 font-medium text-sm">Perfil Hotmart (Opcional)</Label>
+              <Label className="text-gray-200 font-medium text-sm">Tipo de Evento *</Label>
+              <Select
+                value={newRule.eventType}
+                onValueChange={(value) => setNewRule(prev => ({ ...prev, eventType: value }))}
+              >
+                <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-accent">
+                  <SelectValue placeholder="Selecione o evento" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-700">
+                  <SelectItem value="purchase-approved" className="text-gray-200 hover:bg-gray-700 focus:bg-gray-700">Compra Aprovada</SelectItem>
+                  <SelectItem value="awaiting-payment" className="text-gray-200 hover:bg-gray-700 focus:bg-gray-700">Aguardando Pagamento</SelectItem>
+                  <SelectItem value="cart-abandoned" className="text-gray-200 hover:bg-gray-700 focus:bg-gray-700">Carrinho Abandonado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-gray-200 font-medium text-sm">Você é *</Label>
+              <Select
+                value={newRule.userRole}
+                onValueChange={(value) => setNewRule(prev => ({ ...prev, userRole: value }))}
+              >
+                <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-accent">
+                  <SelectValue placeholder="Selecione seu papel" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-700">
+                  <SelectItem value="producer" className="text-gray-200 hover:bg-gray-700 focus:bg-gray-700">Produtor</SelectItem>
+                  <SelectItem value="affiliate" className="text-gray-200 hover:bg-gray-700 focus:bg-gray-700">Afiliado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Segunda linha */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label className="text-gray-200 font-medium text-sm">Plataforma *</Label>
+              <Select
+                value={newRule.platform}
+                onValueChange={(value) => setNewRule(prev => ({ ...prev, platform: value }))}
+              >
+                <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-accent">
+                  <SelectValue placeholder="Selecione a plataforma" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-700">
+                  <SelectItem value="hotmart" className="text-gray-200 hover:bg-gray-700 focus:bg-gray-700">Hotmart</SelectItem>
+                  <SelectItem value="braip" className="text-gray-200 hover:bg-gray-700 focus:bg-gray-700">Braip</SelectItem>
+                  <SelectItem value="kiwfy" className="text-gray-200 hover:bg-gray-700 focus:bg-gray-700">Kiwfy</SelectItem>
+                  <SelectItem value="monetize" className="text-gray-200 hover:bg-gray-700 focus:bg-gray-700">Monetize</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-gray-200 font-medium text-sm">Nome do Perfil *</Label>
               <Input
-                value={newRule.hotmartProfile || ''}
-                onChange={(e) => setNewRule(prev => ({ ...prev, hotmartProfile: e.target.value }))}
-                placeholder="ID do perfil"
+                value={newRule.profileName || ''}
+                onChange={(e) => setNewRule(prev => ({ ...prev, profileName: e.target.value }))}
+                placeholder="Nome cadastrado na plataforma"
                 className="input-form"
               />
             </div>
           </div>
+
+          {/* URL do Webhook (apenas exibição) */}
+          {newRule.eventType && (
+            <div className="space-y-2">
+              <Label className="text-gray-200 font-medium text-sm">URL do Webhook</Label>
+              <div className="p-3 bg-gray-700/30 rounded-lg border border-gray-600/50">
+                <p className="text-sm text-gray-300 break-all">
+                  {getWebhookUrl(newRule.eventType)}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Mensagens */}
           <div className="space-y-4">
@@ -312,7 +401,7 @@ const IntelligentNotifications = () => {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <Label className="text-gray-200 font-medium text-sm">Tipo</Label>
                       <Select
@@ -330,6 +419,21 @@ const IntelligentNotifications = () => {
                           <SelectItem value="document" className="text-gray-200 hover:bg-gray-700 focus:bg-gray-700">Documento</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+
+                    <div>
+                      <Label className="text-gray-200 font-medium text-sm flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        Delay (minutos)
+                      </Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={message.delay}
+                        onChange={(e) => updateMessage(message.id, { delay: parseInt(e.target.value) || 0 })}
+                        placeholder="0"
+                        className="input-form"
+                      />
                     </div>
 
                     {message.type !== 'text' && (
@@ -411,7 +515,13 @@ const IntelligentNotifications = () => {
                   <Badge className="bg-purple-accent/20 text-purple-accent border-purple-accent/30">
                     {getEventTypeLabel(rule.eventType)}
                   </Badge>
-                  <span className="text-gray-200">{rule.hotmartProfile || 'Todos os perfis'}</span>
+                  <span className="text-gray-200">{getPlatformLabel(rule.platform || '')}</span>
+                  <span className="text-sm text-gray-400">
+                    {rule.profileName || 'Perfil não definido'}
+                  </span>
+                  <span className="text-sm text-gray-400">
+                    {getRoleLabel(rule.userRole || '')}
+                  </span>
                   <span className="text-sm text-gray-400">Instância: {rule.instanceId}</span>
                 </div>
                 <Button
