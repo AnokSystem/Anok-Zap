@@ -2,7 +2,8 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Settings, Trash2 } from 'lucide-react';
+import { Settings, Trash2, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface ActiveNotificationsListProps {
   rules: any[];
@@ -13,6 +14,8 @@ export const ActiveNotificationsList: React.FC<ActiveNotificationsListProps> = (
   rules,
   onDeleteRule
 }) => {
+  const navigate = useNavigate();
+
   const getEventTypeLabel = (type: string) => {
     switch (type) {
       case 'purchase-approved': return 'Compra Aprovada';
@@ -42,16 +45,28 @@ export const ActiveNotificationsList: React.FC<ActiveNotificationsListProps> = (
 
   return (
     <div className="card-glass p-6">
-      <div className="flex items-center space-x-3 mb-6">
-        <div className="w-10 h-10 bg-purple-accent/20 rounded-lg flex items-center justify-center">
-          <Settings className="w-5 h-5 text-purple-accent" />
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-purple-accent/20 rounded-lg flex items-center justify-center">
+            <Settings className="w-5 h-5 text-purple-accent" />
+          </div>
+          <div>
+            <h4 className="font-semibold text-primary-contrast text-lg">Notificações Ativas</h4>
+            <p className="text-sm text-gray-400 mt-1">
+              {rules.length} regras configuradas
+            </p>
+          </div>
         </div>
-        <div>
-          <h4 className="font-semibold text-primary-contrast text-lg">Notificações Ativas</h4>
-          <p className="text-sm text-gray-400 mt-1">
-            {rules.length} regras configuradas
-          </p>
-        </div>
+        
+        <Button
+          onClick={() => navigate('/notifications')}
+          variant="outline"
+          size="sm"
+          className="bg-gray-700/50 border-gray-600 text-gray-200 hover:bg-gray-600/50"
+        >
+          <Eye className="w-4 h-4 mr-2" />
+          Ver Todas
+        </Button>
       </div>
 
       <div className="space-y-4">
