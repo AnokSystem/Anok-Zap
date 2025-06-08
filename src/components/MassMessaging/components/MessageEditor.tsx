@@ -71,7 +71,7 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
   return (
     <div className="space-y-6 p-4 bg-gray-700/30 rounded-lg border border-gray-600">
       <div className="flex items-center justify-between">
-        <Label className="text-purple-300 font-medium text-sm">Mensagens (até 5)</Label>
+        <Label className="text-gray-200 font-medium text-sm">Mensagens (até 5)</Label>
         {messages.length < 5 && (
           <Button
             type="button"
@@ -90,7 +90,7 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
         <Card key={message.id} className="p-4 bg-gray-800/50 border-gray-700">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label className="text-purple-300 font-medium">Mensagem {index + 1}</Label>
+              <Label className="text-gray-200 font-medium">Mensagem {index + 1}</Label>
               {messages.length > 1 && (
                 <Button
                   type="button"
@@ -106,7 +106,7 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-purple-300 font-medium text-sm">Tipo de Mensagem</Label>
+                <Label className="text-gray-200 font-medium text-sm">Tipo de Mensagem</Label>
                 <Select
                   value={message.type}
                   onValueChange={(value: any) => updateMessage(message.id, { type: value })}
@@ -126,7 +126,7 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
 
               {message.type !== 'text' && (
                 <div>
-                  <Label className="text-purple-300 font-medium text-sm">Enviar Arquivo</Label>
+                  <Label className="text-gray-200 font-medium text-sm">Enviar Arquivo</Label>
                   <div className="flex items-center space-x-2">
                     <Input
                       type="file"
@@ -151,7 +151,7 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
 
             {message.type === 'text' && (
               <div>
-                <Label className="text-purple-300 font-medium text-sm">Conteúdo da Mensagem</Label>
+                <Label className="text-gray-200 font-medium text-sm">Conteúdo da Mensagem</Label>
                 <Textarea
                   value={message.content}
                   onChange={(e) => updateMessage(message.id, { content: e.target.value })}
