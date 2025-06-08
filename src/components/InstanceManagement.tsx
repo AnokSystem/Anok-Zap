@@ -1,11 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, Plus, Trash2, Power, Smartphone, Wifi, WifiOff, Clock } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { RefreshCw, Plus, Trash2, Power, Smartphone, Wifi, WifiOff, Clock, QrCode } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { evolutionApiService } from '@/services/evolutionApi';
 
@@ -22,6 +22,9 @@ const InstanceManagement = () => {
   const [instances, setInstances] = useState<Instance[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [newInstanceName, setNewInstanceName] = useState('');
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [currentQrCode, setCurrentQrCode] = useState('');
+  const [connectingInstance, setConnectingInstance] = useState<string | null>(null);
 
   useEffect(() => {
     loadInstances();
@@ -114,10 +117,19 @@ const InstanceManagement = () => {
         });
       } else {
         console.log('🔄 Conectando instância:', instanceId);
+        setConnectingInstance(instanceId);
+        
+        // Primeiro, conecta a instância
         await evolutionApiService.connectInstance(instanceId);
+        
+        // Em seguida, gera o QR code
+        const qrCode = await evolutionApiService.generateQrCode(instanceId);
+        setCurrentQrCode(qrCode);
+        setShowQrModal(true);
+        
         toast({
-          title: "Sucesso",
-          description: "Instância conectada",
+          title: "QR Code Gerado",
+          description: "Escaneie o QR code para conectar a instância",
         });
       }
       
@@ -131,6 +143,7 @@ const InstanceManagement = () => {
       });
     } finally {
       setIsLoading(false);
+      setConnectingInstance(null);
     }
   };
 
@@ -188,6 +201,11 @@ const InstanceManagement = () => {
 
   const isConnected = (status: string) => {
     return status === 'open' || status === 'conectado';
+  };
+
+  const closeQrModal = () => {
+    setShowQrModal(false);
+    setCurrentQrCode('');
   };
 
   return (
@@ -319,10 +337,19 @@ const InstanceManagement = () => {
                         variant={isConnected(instance.status) ? "destructive" : "default"}
                         className="w-full"
                         onClick={() => toggleInstanceConnection(instance.id, instance.status)}
-                        disabled={isLoading}
+                        disabled={isLoading || connectingInstance === instance.id}
                       >
-                        <Power className="w-3 h-3 mr-2" />
-                        {isConnected(instance.status) ? 'Desconectar' : 'Conectar'}
+                        {connectingInstance === instance.id ? (
+                          <>
+                            <RefreshCw className="w-3 h-3 mr-2 animate-spin" />
+                            Conectando...
+                          </>
+                        ) : (
+                          <>
+                            <Power className="w-3 h-3 mr-2" />
+                            {isConnected(instance.status) ? 'Desconectar' : 'Conectar'}
+                          </>
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -332,6 +359,37 @@ const InstanceManagement = () => {
           </div>
         )}
       </div>
+
+      {/* Modal do QR Code */}
+      <Dialog open={showQrModal} onOpenChange={closeQrModal}>
+        <DialogContent className="sm:max-w-md bg-gray-900 border-gray-700">
+          <DialogHeader>
+            <DialogTitle className="text-primary-contrast flex items-center gap-2">
+              <QrCode className="w-5 h-5" />
+              QR Code para Conectar
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center space-y-4">
+            <div className="bg-white p-4 rounded-lg">
+              <img 
+                src={currentQrCode} 
+                alt="QR Code" 
+                className="w-64 h-64"
+              />
+            </div>
+            <p className="text-gray-400 text-center text-sm">
+              Escaneie este QR code com o WhatsApp no seu celular para conectar a instância
+            </p>
+            <Button 
+              onClick={closeQrModal}
+              className="w-full"
+              variant="outline"
+            >
+              Fechar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
