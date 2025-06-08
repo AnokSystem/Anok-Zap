@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RefreshCw, CheckCircle, XCircle, AlertTriangle, Activity, Server, Database } from 'lucide-react';
@@ -115,14 +114,14 @@ const IntegrationStatus = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 space-y-8 p-8">
+    <div className="space-y-8">
       {/* Header da Seção */}
       <div className="text-center pb-6 border-b border-white/10">
         <div className="flex items-center justify-center space-x-3 mb-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl flex items-center justify-center">
+          <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center shadow-purple">
             <Activity className="w-6 h-6 text-white" />
           </div>
-          <h3 className="text-2xl font-bold text-white">Status das Integrações</h3>
+          <h3 className="text-2xl font-bold text-primary-contrast">Status das Integrações</h3>
         </div>
         <p className="text-gray-400 text-lg">
           Monitore o status de todos os serviços conectados
@@ -130,14 +129,14 @@ const IntegrationStatus = () => {
       </div>
 
       {/* Controles */}
-      <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-6">
+      <div className="card-glass p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-              <RefreshCw className="w-5 h-5 text-blue-400" />
+            <div className="w-10 h-10 bg-purple-accent/20 rounded-lg flex items-center justify-center">
+              <RefreshCw className="w-5 h-5 text-purple-accent" />
             </div>
             <div>
-              <h4 className="font-semibold text-white text-lg">Verificação de Status</h4>
+              <h4 className="font-semibold text-primary-contrast text-lg">Verificação de Status</h4>
               <p className="text-sm text-gray-400 mt-1">
                 Última verificação: {integrations[0]?.lastCheck || 'Nunca'}
               </p>
@@ -146,7 +145,7 @@ const IntegrationStatus = () => {
           <Button
             onClick={checkIntegrations}
             disabled={isLoading}
-            className="bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white font-semibold px-6"
+            className="btn-primary"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             {isLoading ? 'Verificando...' : 'Atualizar Status'}
@@ -157,7 +156,7 @@ const IntegrationStatus = () => {
       {/* Lista de Integrações */}
       <div className="space-y-4">
         {integrations.length === 0 ? (
-          <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-12 text-center">
+          <div className="card-glass p-12 text-center">
             <Server className="w-16 h-16 mx-auto text-gray-500 mb-4" />
             <p className="text-gray-400 text-lg">
               {isLoading ? 'Verificando integrações...' : 'Nenhuma integração configurada'}
@@ -165,7 +164,7 @@ const IntegrationStatus = () => {
           </div>
         ) : (
           integrations.map((integration) => (
-            <div key={integration.id} className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-6">
+            <div key={integration.id} className="card-glass p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 bg-gray-700/50 rounded-lg flex items-center justify-center text-gray-300">
@@ -173,12 +172,12 @@ const IntegrationStatus = () => {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="text-lg font-semibold text-white">{integration.name}</h3>
+                      <h3 className="text-lg font-semibold text-primary-contrast">{integration.name}</h3>
                       {getStatusBadge(integration.status)}
                     </div>
                     <p className="text-gray-400 mb-1">{integration.description}</p>
                     {integration.details && (
-                      <p className="text-sm text-purple-400">{integration.details}</p>
+                      <p className="text-sm text-purple-accent">{integration.details}</p>
                     )}
                     <p className="text-xs text-gray-500 mt-2">
                       Última verificação: {integration.lastCheck}
@@ -196,13 +195,13 @@ const IntegrationStatus = () => {
 
       {/* Resumo do Status */}
       {integrations.length > 0 && (
-        <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-6">
+        <div className="card-glass p-6">
           <div className="flex items-center space-x-3 mb-4">
-            <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
-              <Activity className="w-5 h-5 text-emerald-400" />
+            <div className="w-10 h-10 bg-purple-accent/20 rounded-lg flex items-center justify-center">
+              <Activity className="w-5 h-5 text-purple-accent" />
             </div>
             <div>
-              <h4 className="font-semibold text-white text-lg">Resumo Geral</h4>
+              <h4 className="font-semibold text-primary-contrast text-lg">Resumo Geral</h4>
               <p className="text-sm text-gray-400 mt-1">
                 Estado atual dos serviços conectados
               </p>
@@ -215,7 +214,7 @@ const IntegrationStatus = () => {
                 <CheckCircle className="w-5 h-5 text-emerald-400" />
                 <span className="font-medium text-emerald-400">Conectados</span>
               </div>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-2xl font-bold text-primary-contrast">
                 {integrations.filter(i => i.status === 'connected').length}
               </p>
             </div>
@@ -225,7 +224,7 @@ const IntegrationStatus = () => {
                 <AlertTriangle className="w-5 h-5 text-yellow-400" />
                 <span className="font-medium text-yellow-400">Atenção</span>
               </div>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-2xl font-bold text-primary-contrast">
                 {integrations.filter(i => i.status === 'warning').length}
               </p>
             </div>
@@ -235,7 +234,7 @@ const IntegrationStatus = () => {
                 <XCircle className="w-5 h-5 text-red-400" />
                 <span className="font-medium text-red-400">Desconectados</span>
               </div>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-2xl font-bold text-primary-contrast">
                 {integrations.filter(i => i.status === 'disconnected').length}
               </p>
             </div>

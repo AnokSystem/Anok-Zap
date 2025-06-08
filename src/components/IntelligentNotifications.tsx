@@ -1,12 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Plus, Trash2, Send, Upload, Settings, Zap } from 'lucide-react';
+import { Bell, Plus, Trash2, Upload, Settings, Zap, MessageSquare } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { nocodbService } from '@/services/nocodb';
 import { minioService } from '@/services/minio';
@@ -198,14 +198,14 @@ const IntelligentNotifications = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 space-y-8 p-8">
+    <div className="space-y-8">
       {/* Header da Seção */}
       <div className="text-center pb-6 border-b border-white/10">
         <div className="flex items-center justify-center space-x-3 mb-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl flex items-center justify-center">
+          <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center shadow-purple">
             <Bell className="w-6 h-6 text-white" />
           </div>
-          <h3 className="text-2xl font-bold text-white">Notificações Inteligentes</h3>
+          <h3 className="text-2xl font-bold text-primary-contrast">Notificações Inteligentes</h3>
         </div>
         <p className="text-gray-400 text-lg">
           Configure notificações automáticas baseadas em eventos da Hotmart
@@ -213,13 +213,13 @@ const IntelligentNotifications = () => {
       </div>
 
       {/* Configuração de Nova Regra */}
-      <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-6">
+      <div className="card-glass p-6">
         <div className="flex items-center space-x-3 mb-6">
-          <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-            <Plus className="w-5 h-5 text-blue-400" />
+          <div className="w-10 h-10 bg-purple-accent/20 rounded-lg flex items-center justify-center">
+            <Plus className="w-5 h-5 text-purple-accent" />
           </div>
           <div>
-            <Label className="font-semibold text-white text-lg">Nova Notificação</Label>
+            <h4 className="font-semibold text-primary-contrast text-lg">Nova Notificação</h4>
             <p className="text-sm text-gray-400 mt-1">
               Configure uma nova regra de notificação automática
             </p>
@@ -230,12 +230,12 @@ const IntelligentNotifications = () => {
           {/* Configurações básicas */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
-              <Label className="text-purple-300 font-medium text-sm">Tipo de Evento</Label>
+              <Label className="text-gray-300 font-medium text-sm">Tipo de Evento</Label>
               <Select
                 value={newRule.eventType}
                 onValueChange={(value) => setNewRule(prev => ({ ...prev, eventType: value }))}
               >
-                <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-400">
+                <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-accent">
                   <SelectValue placeholder="Selecione o evento" />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 border-gray-700">
@@ -247,12 +247,12 @@ const IntelligentNotifications = () => {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-purple-300 font-medium text-sm">Instância WhatsApp</Label>
+              <Label className="text-gray-300 font-medium text-sm">Instância WhatsApp</Label>
               <Select
                 value={newRule.instanceId}
                 onValueChange={(value) => setNewRule(prev => ({ ...prev, instanceId: value }))}
               >
-                <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-400">
+                <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-accent">
                   <SelectValue placeholder="Selecione a instância" />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 border-gray-700">
@@ -266,12 +266,12 @@ const IntelligentNotifications = () => {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-purple-300 font-medium text-sm">Perfil Hotmart (Opcional)</Label>
+              <Label className="text-gray-300 font-medium text-sm">Perfil Hotmart (Opcional)</Label>
               <Input
                 value={newRule.hotmartProfile || ''}
                 onChange={(e) => setNewRule(prev => ({ ...prev, hotmartProfile: e.target.value }))}
                 placeholder="ID do perfil"
-                className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-400"
+                className="input-form"
               />
             </div>
           </div>
@@ -279,7 +279,7 @@ const IntelligentNotifications = () => {
           {/* Mensagens */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label className="text-purple-300 font-medium text-sm">Mensagens (até 5)</Label>
+              <Label className="text-gray-300 font-medium text-sm">Mensagens (até 5)</Label>
               {(newRule.messages?.length || 0) < 5 && (
                 <Button
                   type="button"
@@ -298,7 +298,7 @@ const IntelligentNotifications = () => {
               <div key={message.id} className="p-4 bg-gray-700/30 rounded-lg border border-gray-600/50">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <Label className="text-purple-300 font-medium">Mensagem {index + 1}</Label>
+                    <Label className="text-gray-300 font-medium">Mensagem {index + 1}</Label>
                     {(newRule.messages?.length || 0) > 1 && (
                       <Button
                         type="button"
@@ -314,12 +314,12 @@ const IntelligentNotifications = () => {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label className="text-purple-300 font-medium text-sm">Tipo</Label>
+                      <Label className="text-gray-300 font-medium text-sm">Tipo</Label>
                       <Select
                         value={message.type}
                         onValueChange={(value: any) => updateMessage(message.id, { type: value })}
                       >
-                        <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-400">
+                        <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-accent">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="bg-gray-800 border-gray-700">
@@ -334,7 +334,7 @@ const IntelligentNotifications = () => {
 
                     {message.type !== 'text' && (
                       <div>
-                        <Label className="text-purple-300 font-medium text-sm">Arquivo</Label>
+                        <Label className="text-gray-300 font-medium text-sm">Arquivo</Label>
                         <div className="flex items-center space-x-2">
                           <Input
                             type="file"
@@ -346,12 +346,12 @@ const IntelligentNotifications = () => {
                               const file = e.target.files?.[0];
                               if (file) handleFileUpload(message.id, file);
                             }}
-                            className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-400"
+                            className="input-form"
                           />
-                          <Upload className="w-4 h-4 text-purple-400" />
+                          <Upload className="w-4 h-4 text-purple-accent" />
                         </div>
                         {message.fileUrl && (
-                          <p className="text-sm text-purple-400 mt-1">✓ Arquivo enviado</p>
+                          <p className="text-sm text-purple-accent mt-1">✓ Arquivo enviado</p>
                         )}
                       </div>
                     )}
@@ -359,12 +359,12 @@ const IntelligentNotifications = () => {
 
                   {message.type === 'text' && (
                     <div>
-                      <Label className="text-purple-300 font-medium text-sm">Conteúdo</Label>
+                      <Label className="text-gray-300 font-medium text-sm">Conteúdo</Label>
                       <Textarea
                         value={message.content}
                         onChange={(e) => updateMessage(message.id, { content: e.target.value })}
                         placeholder="Digite sua mensagem..."
-                        className="min-h-[100px] bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-400"
+                        className="min-h-[100px] input-form"
                       />
                     </div>
                   )}
@@ -378,7 +378,7 @@ const IntelligentNotifications = () => {
             <Button
               onClick={saveRule}
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white font-semibold h-12"
+              className="w-full btn-primary h-12"
             >
               <div className="flex items-center justify-center space-x-2">
                 <Zap className="w-5 h-5" />
@@ -391,13 +391,13 @@ const IntelligentNotifications = () => {
 
       {/* Lista de Regras Existentes */}
       {rules.length > 0 && (
-        <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-6">
+        <div className="card-glass p-6">
           <div className="flex items-center space-x-3 mb-6">
-            <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
-              <Settings className="w-5 h-5 text-emerald-400" />
+            <div className="w-10 h-10 bg-purple-accent/20 rounded-lg flex items-center justify-center">
+              <Settings className="w-5 h-5 text-purple-accent" />
             </div>
             <div>
-              <Label className="font-semibold text-white text-lg">Notificações Ativas</Label>
+              <h4 className="font-semibold text-primary-contrast text-lg">Notificações Ativas</h4>
               <p className="text-sm text-gray-400 mt-1">
                 {rules.length} regras configuradas
               </p>
@@ -408,7 +408,7 @@ const IntelligentNotifications = () => {
             {rules.map((rule) => (
               <div key={rule.id} className="p-4 bg-gray-700/30 rounded-lg border border-gray-600/50 flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+                  <Badge className="bg-purple-accent/20 text-purple-accent border-purple-accent/30">
                     {getEventTypeLabel(rule.eventType)}
                   </Badge>
                   <span className="text-gray-200">{rule.hotmartProfile || 'Todos os perfis'}</span>
