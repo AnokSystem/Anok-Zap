@@ -115,7 +115,7 @@ const IntegrationStatus = () => {
   };
 
   return (
-    <div className="space-y-8 p-8 bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50">
+    <div className="min-h-screen bg-gray-950 space-y-8 p-8">
       {/* Header da Seção */}
       <div className="text-center pb-6 border-b border-white/10">
         <div className="flex items-center justify-center space-x-3 mb-4">
@@ -130,7 +130,7 @@ const IntegrationStatus = () => {
       </div>
 
       {/* Controles */}
-      <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700/50">
+      <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
@@ -157,7 +157,7 @@ const IntegrationStatus = () => {
       {/* Lista de Integrações */}
       <div className="space-y-4">
         {integrations.length === 0 ? (
-          <div className="bg-gray-800/50 p-12 rounded-xl border border-gray-700/50 text-center">
+          <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-12 text-center">
             <Server className="w-16 h-16 mx-auto text-gray-500 mb-4" />
             <p className="text-gray-400 text-lg">
               {isLoading ? 'Verificando integrações...' : 'Nenhuma integração configurada'}
@@ -165,7 +165,7 @@ const IntegrationStatus = () => {
           </div>
         ) : (
           integrations.map((integration) => (
-            <div key={integration.id} className="bg-gray-800/50 p-6 rounded-xl border border-gray-700/50">
+            <div key={integration.id} className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 bg-gray-700/50 rounded-lg flex items-center justify-center text-gray-300">
@@ -196,7 +196,7 @@ const IntegrationStatus = () => {
 
       {/* Resumo do Status */}
       {integrations.length > 0 && (
-        <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700/50">
+        <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-6">
           <div className="flex items-center space-x-3 mb-4">
             <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
               <Activity className="w-5 h-5 text-emerald-400" />

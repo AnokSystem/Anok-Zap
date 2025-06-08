@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -132,7 +131,6 @@ const IntelligentNotifications = () => {
     try {
       const webhookUrl = `${window.location.origin}/webhook/hotmart/${newRule.instanceId}`;
       
-      // Simulando criação da notificação - substituir por método real quando disponível
       console.log('Criando notificação:', {
         'Tipo de Evento': newRule.eventType!,
         'ID da Instância': newRule.instanceId!,
@@ -173,7 +171,6 @@ const IntelligentNotifications = () => {
   const deleteRule = async (ruleId: string) => {
     setIsLoading(true);
     try {
-      // Simulando exclusão - substituir por método real quando disponível
       console.log('Deletando regra:', ruleId);
       await loadRules();
       toast({
@@ -201,7 +198,7 @@ const IntelligentNotifications = () => {
   };
 
   return (
-    <div className="space-y-8 p-8 bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50">
+    <div className="min-h-screen bg-gray-950 space-y-8 p-8">
       {/* Header da Seção */}
       <div className="text-center pb-6 border-b border-white/10">
         <div className="flex items-center justify-center space-x-3 mb-4">
@@ -216,7 +213,7 @@ const IntelligentNotifications = () => {
       </div>
 
       {/* Configuração de Nova Regra */}
-      <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700/50">
+      <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-6">
         <div className="flex items-center space-x-3 mb-6">
           <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
             <Plus className="w-5 h-5 text-blue-400" />
@@ -394,7 +391,7 @@ const IntelligentNotifications = () => {
 
       {/* Lista de Regras Existentes */}
       {rules.length > 0 && (
-        <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700/50">
+        <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-6">
           <div className="flex items-center space-x-3 mb-6">
             <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
               <Settings className="w-5 h-5 text-emerald-400" />

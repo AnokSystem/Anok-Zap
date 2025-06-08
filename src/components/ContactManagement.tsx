@@ -28,7 +28,7 @@ const ContactManagement = () => {
   } = useContactManagement();
 
   return (
-    <div className="space-y-8 p-8 bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50">
+    <div className="min-h-screen bg-gray-950 space-y-8 p-8">
       {/* Header da Seção */}
       <div className="text-center pb-6 border-b border-white/10">
         <div className="flex items-center justify-center space-x-3 mb-4">
@@ -43,7 +43,7 @@ const ContactManagement = () => {
       </div>
 
       {/* Seleção de Instância e Grupo */}
-      <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700/50">
+      <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-6">
         <div className="flex items-center space-x-3 mb-6">
           <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
             <UserPlus className="w-5 h-5 text-blue-400" />
@@ -72,7 +72,7 @@ const ContactManagement = () => {
       </div>
 
       {/* Ações de Contato */}
-      <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700/50">
+      <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-6">
         <div className="flex items-center space-x-3 mb-6">
           <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
             <Download className="w-5 h-5 text-emerald-400" />
@@ -98,7 +98,7 @@ const ContactManagement = () => {
       </div>
 
       {/* Tabela de Contatos */}
-      <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 overflow-hidden">
+      <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 overflow-hidden">
         <ContactTable
           contacts={contacts}
           contactType={contactType}
