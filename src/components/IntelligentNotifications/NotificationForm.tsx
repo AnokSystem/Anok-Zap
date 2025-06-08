@@ -101,7 +101,7 @@ export const NotificationForm: React.FC<NotificationFormProps> = ({
           </div>
         </div>
 
-        {/* Segunda linha - Plataforma e Nome do Perfil */}
+        {/* Segunda linha - Plataforma e Nome do Perfil alinhados */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <Label className="text-gray-200 font-medium text-sm">Plataforma *</Label>

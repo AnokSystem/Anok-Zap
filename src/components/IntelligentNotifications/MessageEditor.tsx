@@ -60,13 +60,13 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-              <div className="md:col-span-2">
+              <div className="md:col-span-1">
                 <Label className="text-gray-200 font-medium text-sm">Tipo</Label>
                 <Select
                   value={message.type}
                   onValueChange={(value: any) => onUpdateMessage(message.id, { type: value })}
                 >
-                  <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-accent h-10">
+                  <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-accent h-10 w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-gray-800 border-gray-700">
@@ -95,7 +95,7 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
               </div>
 
               {message.type !== 'text' && (
-                <div>
+                <div className="md:col-span-2">
                   <Label className="text-gray-200 font-medium text-sm">Arquivo</Label>
                   <div className="flex items-center space-x-2">
                     <Input
