@@ -411,7 +411,7 @@ const IntelligentNotifications = () => {
 
               {/* Notification Phone */}
               <div className="space-y-2">
-                <Label>Telefone para Notificação de Conclusão (opcional)</Label>
+                <Label className="text-[#bdb2ff] font-medium">Notificação de Conclusão</Label>
                 <Input
                   value={notificationPhone}
                   onChange={(e) => setNotificationPhone(e.target.value)}
