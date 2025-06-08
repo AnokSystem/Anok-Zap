@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Settings, Trash2, Eye } from 'lucide-react';
+import { Settings, Trash2, Eye, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface ActiveNotificationsListProps {
@@ -39,10 +39,6 @@ export const ActiveNotificationsList: React.FC<ActiveNotificationsListProps> = (
     return role === 'producer' ? 'Produtor' : 'Afiliado';
   };
 
-  if (rules.length === 0) {
-    return null;
-  }
-
   return (
     <div className="card-glass p-6">
       <div className="flex items-center justify-between mb-6">
@@ -58,44 +54,86 @@ export const ActiveNotificationsList: React.FC<ActiveNotificationsListProps> = (
           </div>
         </div>
         
-        <Button
-          onClick={() => navigate('/notifications')}
-          variant="outline"
-          size="sm"
-          className="bg-gray-700/50 border-gray-600 text-gray-200 hover:bg-gray-600/50"
-        >
-          <Eye className="w-4 h-4 mr-2" />
-          Ver Todas
-        </Button>
+        <div className="flex items-center space-x-2">
+          <Button
+            onClick={() => navigate('/notifications')}
+            variant="outline"
+            size="sm"
+            className="bg-purple-accent/20 border-purple-accent text-purple-accent hover:bg-purple-accent/30"
+          >
+            <ExternalLink className="w-4 h-4 mr-2" />
+            Página Completa
+          </Button>
+          
+          <Button
+            onClick={() => navigate('/notifications')}
+            variant="outline"
+            size="sm"
+            className="bg-gray-700/50 border-gray-600 text-gray-200 hover:bg-gray-600/50"
+          >
+            <Eye className="w-4 h-4 mr-2" />
+            Ver Todas
+          </Button>
+        </div>
       </div>
 
-      <div className="space-y-4">
-        {rules.map((rule) => (
-          <div key={rule.id} className="p-4 bg-gray-700/30 rounded-lg border border-gray-600/50 flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Badge className="bg-purple-accent/20 text-purple-accent border-purple-accent/30">
-                {getEventTypeLabel(rule.eventType)}
-              </Badge>
-              <span className="text-gray-200">{getPlatformLabel(rule.platform || '')}</span>
-              <span className="text-sm text-gray-400">
-                {rule.profileName || 'Perfil não definido'}
-              </span>
-              <span className="text-sm text-gray-400">
-                {getRoleLabel(rule.userRole || '')}
-              </span>
-              <span className="text-sm text-gray-400">Instância: {rule.instanceId}</span>
+      {rules.length === 0 ? (
+        <div className="text-center py-8">
+          <Settings className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+          <p className="text-gray-500 mb-4">Nenhuma notificação ativa</p>
+          <Button
+            onClick={() => navigate('/notifications')}
+            variant="outline"
+            size="sm"
+            className="bg-purple-accent/20 border-purple-accent text-purple-accent hover:bg-purple-accent/30"
+          >
+            <Eye className="w-4 h-4 mr-2" />
+            Ver Página de Notificações
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {rules.slice(0, 3).map((rule) => (
+            <div key={rule.id} className="p-4 bg-gray-700/30 rounded-lg border border-gray-600/50 flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <Badge className="bg-purple-accent/20 text-purple-accent border-purple-accent/30">
+                  {getEventTypeLabel(rule.eventType)}
+                </Badge>
+                <span className="text-gray-200">{getPlatformLabel(rule.platform || '')}</span>
+                <span className="text-sm text-gray-400">
+                  {rule.profileName || 'Perfil não definido'}
+                </span>
+                <span className="text-sm text-gray-400">
+                  {getRoleLabel(rule.userRole || '')}
+                </span>
+                <span className="text-sm text-gray-400">Instância: {rule.instanceId}</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onDeleteRule(rule.id)}
+                className="text-red-400 hover:text-red-300 hover:bg-red-500/20"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onDeleteRule(rule.id)}
-              className="text-red-400 hover:text-red-300 hover:bg-red-500/20"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-        ))}
-      </div>
+          ))}
+          
+          {rules.length > 3 && (
+            <div className="text-center pt-4">
+              <Button
+                onClick={() => navigate('/notifications')}
+                variant="outline"
+                size="sm"
+                className="bg-purple-accent/20 border-purple-accent text-purple-accent hover:bg-purple-accent/30"
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Ver todas as {rules.length} notificações
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
