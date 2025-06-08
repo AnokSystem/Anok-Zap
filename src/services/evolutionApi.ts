@@ -342,6 +342,56 @@ class EvolutionApiService {
     }
   }
 
+  async disconnectInstance(instanceId: string) {
+    try {
+      console.log('🔄 Desconectando instância:', instanceId);
+      
+      const response = await fetch(`${API_BASE_URL}/instance/logout/${instanceId}`, {
+        method: 'DELETE',
+        headers: this.headers,
+      });
+      
+      console.log(`📊 Status logout: ${response.status}`);
+      
+      if (response.ok) {
+        console.log('✅ Instância desconectada com sucesso');
+        return true;
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Erro ao desconectar instância:', response.status, errorText);
+        throw new Error(`Erro ${response.status}: Falha ao desconectar instância`);
+      }
+    } catch (error) {
+      console.error('💥 Erro geral ao desconectar instância:', error);
+      throw error;
+    }
+  }
+
+  async connectInstance(instanceId: string) {
+    try {
+      console.log('🔄 Conectando instância:', instanceId);
+      
+      const response = await fetch(`${API_BASE_URL}/instance/connect/${instanceId}`, {
+        method: 'GET',
+        headers: this.headers,
+      });
+      
+      console.log(`📊 Status connect: ${response.status}`);
+      
+      if (response.ok) {
+        console.log('✅ Instância conectada com sucesso');
+        return true;
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Erro ao conectar instância:', response.status, errorText);
+        throw new Error(`Erro ${response.status}: Falha ao conectar instância`);
+      }
+    } catch (error) {
+      console.error('💥 Erro geral ao conectar instância:', error);
+      throw error;
+    }
+  }
+
   async generateQrCode(instanceId: string) {
     try {
       console.log('Gerando QR code para instância:', instanceId);
@@ -386,26 +436,6 @@ class EvolutionApiService {
     }
     
     return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
-  }
-
-  async connectInstance(instanceId: string) {
-    try {
-      console.log('Conectando instância:', instanceId);
-      const response = await fetch(`${API_BASE_URL}/instance/connectionState/${instanceId}`, {
-        headers: this.headers,
-      });
-      
-      if (!response.ok) {
-        console.error('Erro ao conectar instância:', response.status);
-        throw new Error('Falha ao conectar instância');
-      }
-      
-      console.log('Instância conectada com sucesso');
-      return true;
-    } catch (error) {
-      console.error('Erro ao conectar instância:', error);
-      return true;
-    }
   }
 
   async sendMessage(instanceId: string, phoneNumber: string, message: string) {
