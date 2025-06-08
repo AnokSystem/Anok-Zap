@@ -1,99 +1,110 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users } from 'lucide-react';
+import { Users, UserPlus, Download } from 'lucide-react';
 import { useContactManagement } from './ContactManagement/useContactManagement';
-import ContactSelection from './ContactManagement/ContactSelection';
-import ContactActions from './ContactManagement/ContactActions';
-import ContactTable from './ContactManagement/ContactTable';
+import { ContactSelection } from './ContactManagement/ContactSelection';
+import { ContactTable } from './ContactManagement/ContactTable';
+import { ContactActions } from './ContactManagement/ContactActions';
 
 const ContactManagement = () => {
   const {
     instances,
     groups,
     selectedInstance,
-    setSelectedInstance,
-    contactType,
-    setContactType,
     selectedGroup,
-    setSelectedGroup,
-    memberType,
-    setMemberType,
     contacts,
+    selectedContacts,
+    searchTerm,
     isLoading,
-    fetchContacts,
-    exportContacts,
-    startMassMessaging,
-    getSelectedInstanceName,
-    getSelectedGroupName,
-    isLoadingGroups,
+    setSelectedInstance,
+    setSelectedGroup,
+    setSelectedContacts,
+    setSearchTerm,
+    handleSelectAll,
+    handleExportContacts,
+    handleDeleteContacts,
+    loadContacts,
   } = useContactManagement();
 
   return (
-    <div className="space-y-6">
-      <Card className="card-minimal border-purple-primary/30">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center space-x-3 text-accent">
-            <div className="w-8 h-8 bg-purple-primary/20 rounded-lg flex items-center justify-center">
-              <Users className="w-5 h-5 text-purple-primary" />
+    <div className="space-y-8 p-8 bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50">
+      {/* Header da Seção */}
+      <div className="text-center pb-6 border-b border-white/10">
+        <div className="flex items-center justify-center space-x-3 mb-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl flex items-center justify-center">
+            <Users className="w-6 h-6 text-white" />
+          </div>
+          <h3 className="text-2xl font-bold text-white">Gerenciamento de Contatos</h3>
+        </div>
+        <p className="text-gray-400 text-lg">
+          Organize e gerencie seus contatos do WhatsApp
+        </p>
+      </div>
+
+      {/* Seleção de Instância e Grupo */}
+      <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700/50">
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+            <UserPlus className="w-5 h-5 text-blue-400" />
+          </div>
+          <div>
+            <h4 className="font-semibold text-white text-lg">Filtros de Contato</h4>
+            <p className="text-sm text-gray-400 mt-1">
+              Selecione a instância e grupo para visualizar contatos
+            </p>
+          </div>
+        </div>
+        
+        <ContactSelection
+          instances={instances}
+          groups={groups}
+          selectedInstance={selectedInstance}
+          selectedGroup={selectedGroup}
+          searchTerm={searchTerm}
+          onInstanceChange={setSelectedInstance}
+          onGroupChange={setSelectedGroup}
+          onSearchChange={setSearchTerm}
+          onLoadContacts={loadContacts}
+          isLoading={isLoading}
+        />
+      </div>
+
+      {/* Ações de Contato */}
+      {contacts.length > 0 && (
+        <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700/50">
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+              <Download className="w-5 h-5 text-emerald-400" />
             </div>
-            <span className="font-montserrat">Gerenciamento de Contatos</span>
-          </CardTitle>
-          <CardDescription className="text-muted-foreground text-base">
-            Recupere e gerencie contatos do WhatsApp das suas instâncias Evolution API
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <ContactSelection
-            instances={instances}
-            groups={groups}
-            selectedInstance={selectedInstance}
-            setSelectedInstance={setSelectedInstance}
-            contactType={contactType}
-            setContactType={setContactType}
-            selectedGroup={selectedGroup}
-            setSelectedGroup={setSelectedGroup}
-            memberType={memberType}
-            setMemberType={setMemberType}
-            isLoadingGroups={isLoadingGroups}
-          />
-
+            <div>
+              <h4 className="font-semibold text-white text-lg">Ações em Lote</h4>
+              <p className="text-sm text-gray-400 mt-1">
+                {selectedContacts.length} de {contacts.length} contatos selecionados
+              </p>
+            </div>
+          </div>
+          
           <ContactActions
+            selectedContacts={selectedContacts}
+            totalContacts={contacts.length}
+            onSelectAll={handleSelectAll}
+            onExport={handleExportContacts}
+            onDelete={handleDeleteContacts}
             isLoading={isLoading}
-            selectedInstance={selectedInstance}
-            contactType={contactType}
-            selectedGroup={selectedGroup}
-            contactsCount={contacts.length}
-            onFetchContacts={fetchContacts}
-            onExportContacts={exportContacts}
-            onStartMassMessaging={startMassMessaging}
           />
+        </div>
+      )}
 
-          {/* Informações da Seleção */}
-          {selectedInstance && (
-            <Card className="card-minimal border-purple-primary/20 gradient-card">
-              <CardContent className="pt-4">
-                <div className="text-sm space-y-1">
-                  <p className="text-primary-contrast"><strong>Instância:</strong> {getSelectedInstanceName()}</p>
-                  <p className="text-primary-contrast"><strong>Tipo:</strong> {contactType === 'personal' ? 'Contatos Pessoais' : 'Contatos de Grupos'}</p>
-                  {contactType === 'groups' && selectedGroup && (
-                    <>
-                      <p className="text-primary-contrast"><strong>Grupo:</strong> {getSelectedGroupName()}</p>
-                      <p className="text-primary-contrast"><strong>Membros:</strong> {
-                        memberType === 'all' ? 'Todos' :
-                        memberType === 'admin' ? 'Apenas Administradores' :
-                        'Apenas Membros'
-                      }</p>
-                    </>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          <ContactTable contacts={contacts} contactType={contactType} />
-        </CardContent>
-      </Card>
+      {/* Tabela de Contatos */}
+      <div className="bg-gray-800/50 rounded-xl border border-gray-700/50 overflow-hidden">
+        <ContactTable
+          contacts={contacts}
+          selectedContacts={selectedContacts}
+          onContactsChange={setSelectedContacts}
+          isLoading={isLoading}
+        />
+      </div>
     </div>
   );
 };

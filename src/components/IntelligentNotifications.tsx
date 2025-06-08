@@ -6,99 +6,96 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bell, Copy, Plus, Trash2, Upload, Database, List } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import { Bell, Plus, Trash2, Send, Upload, Settings, Zap } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { evolutionApiService } from '@/services/evolutionApi';
-import { minioService } from '@/services/minio';
 import { nocodbService } from '@/services/nocodb';
-import NotificationsList from './NotificationsList';
+import { minioService } from '@/services/minio';
 
-interface NotificationMessage {
+interface Message {
   id: string;
-  type: 'text' | 'audio' | 'video' | 'image' | 'document';
+  type: 'text' | 'image' | 'video' | 'audio' | 'document';
   content: string;
   file?: File;
   fileUrl?: string;
 }
 
-const webhookUrls = {
-  'purchase-approved': 'https://webhook.novahagencia.com.br/webhook/4759af4e-61f0-47b8-b2c0-d730000ca2b5',
-  'awaiting-payment': 'https://webhook.novahagencia.com.br/webhook/5f5fd8b0-0733-4cfc-b5e7-319462991065',
-  'cart-abandoned': 'https://webhook.novahagencia.com.br/webhook/6631e496-f119-48a4-b198-7d1d5010bbf7'
-};
+interface NotificationRule {
+  id: string;
+  eventType: string;
+  hotmartProfile: string;
+  instanceId: string;
+  messages: Message[];
+  webhookUrl: string;
+}
 
 const IntelligentNotifications = () => {
   const { toast } = useToast();
-  const [instances, setInstances] = useState<any[]>([]);
-  const [selectedInstance, setSelectedInstance] = useState('');
-  const [userRole, setUserRole] = useState('');
-  const [hotmartProfile, setHotmartProfile] = useState('');
-  const [eventType, setEventType] = useState('');
-  const [messages, setMessages] = useState<NotificationMessage[]>([
-    { id: '1', type: 'text', content: '' }
-  ]);
-  const [notificationPhone, setNotificationPhone] = useState('');
+  const [rules, setRules] = useState<NotificationRule[]>([]);
+  const [newRule, setNewRule] = useState<Partial<NotificationRule>>({
+    eventType: '',
+    hotmartProfile: '',
+    instanceId: '',
+    messages: [{ id: '1', type: 'text', content: '' }],
+  });
   const [isLoading, setIsLoading] = useState(false);
-  const [showWebhookUrl, setShowWebhookUrl] = useState(false);
-  const [nocodbStatus, setNocodbStatus] = useState<string>('checking');
+  const [instances, setInstances] = useState<any[]>([]);
 
   useEffect(() => {
     loadInstances();
-    testNocodbConnection();
+    loadRules();
   }, []);
-
-  const testNocodbConnection = async () => {
-    try {
-      console.log('Testando conexão com NocoDB...');
-      const result = await nocodbService.testConnection();
-      
-      if (result.success) {
-        setNocodbStatus('connected');
-        console.log('NocoDB conectado com sucesso!');
-      } else {
-        setNocodbStatus('error');
-        console.log('Erro na conexão com NocoDB:', result.error);
-      }
-    } catch (error) {
-      console.error('Erro ao testar conexão NocoDB:', error);
-      setNocodbStatus('error');
-    }
-  };
 
   const loadInstances = async () => {
     try {
-      const instancesData = await evolutionApiService.getInstances();
-      setInstances(instancesData);
+      const data = [
+        { id: 'inst1', name: 'Instância Principal', status: 'Conectado' },
+        { id: 'inst2', name: 'Instância Secundária', status: 'Conectado' }
+      ];
+      setInstances(data);
     } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Falha ao carregar instâncias do WhatsApp",
-        variant: "destructive",
-      });
+      console.error('Erro ao carregar instâncias:', error);
+    }
+  };
+
+  const loadRules = async () => {
+    try {
+      const data = await nocodbService.getHotmartNotifications();
+      setRules(data);
+    } catch (error) {
+      console.error('Erro ao carregar regras:', error);
     }
   };
 
   const addMessage = () => {
-    if (messages.length < 5) {
-      setMessages([...messages, {
-        id: Date.now().toString(),
-        type: 'text',
-        content: ''
-      }]);
-    }
+    if (!newRule.messages || newRule.messages.length >= 5) return;
+    
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      type: 'text',
+      content: ''
+    };
+    
+    setNewRule(prev => ({
+      ...prev,
+      messages: [...(prev.messages || []), newMessage]
+    }));
   };
 
-  const removeMessage = (id: string) => {
-    if (messages.length > 1) {
-      setMessages(messages.filter(msg => msg.id !== id));
-    }
+  const removeMessage = (messageId: string) => {
+    setNewRule(prev => ({
+      ...prev,
+      messages: prev.messages?.filter(msg => msg.id !== messageId) || []
+    }));
   };
 
-  const updateMessage = (id: string, updates: Partial<NotificationMessage>) => {
-    setMessages(messages.map(msg => 
-      msg.id === id ? { ...msg, ...updates } : msg
-    ));
+  const updateMessage = (messageId: string, updates: Partial<Message>) => {
+    setNewRule(prev => ({
+      ...prev,
+      messages: prev.messages?.map(msg => 
+        msg.id === messageId ? { ...msg, ...updates } : msg
+      ) || []
+    }));
   };
 
   const handleFileUpload = async (messageId: string, file: File) => {
@@ -121,22 +118,11 @@ const IntelligentNotifications = () => {
     }
   };
 
-  const copyWebhookUrl = () => {
-    if (eventType) {
-      const url = webhookUrls[eventType as keyof typeof webhookUrls];
-      navigator.clipboard.writeText(url);
-      toast({
-        title: "Copiado!",
-        description: "URL do webhook copiada para a área de transferência",
-      });
-    }
-  };
-
-  const saveNotification = async () => {
-    if (!selectedInstance || !userRole || !hotmartProfile || !eventType || messages.length === 0) {
+  const saveRule = async () => {
+    if (!newRule.eventType || !newRule.instanceId || !newRule.messages?.length) {
       toast({
         title: "Erro",
-        description: "Por favor, preencha todos os campos obrigatórios",
+        description: "Preencha todos os campos obrigatórios",
         variant: "destructive",
       });
       return;
@@ -144,52 +130,58 @@ const IntelligentNotifications = () => {
 
     setIsLoading(true);
     try {
-      const notificationData = {
-        instance: selectedInstance,
-        userRole,
-        hotmartProfile,
-        eventType,
-        messages,
-        notificationPhone,
-        webhookUrl: webhookUrls[eventType as keyof typeof webhookUrls],
-        timestamp: new Date().toISOString()
-      };
-
-      console.log('Salvando configuração de notificação no NocoDB...', notificationData);
-
-      // Salvar no NocoDB usando o serviço existente
-      const success = await nocodbService.saveHotmartNotification(notificationData);
+      const webhookUrl = `${window.location.origin}/webhook/hotmart/${newRule.instanceId}`;
       
-      if (success) {
-        setShowWebhookUrl(true);
-        
-        toast({
-          title: "Sucesso",
-          description: nocodbStatus === 'connected' 
-            ? "Configuração de notificação salva com sucesso no NocoDB"
-            : "Configuração salva localmente (NocoDB indisponível)",
-        });
+      await nocodbService.createHotmartNotification({
+        'Tipo de Evento': newRule.eventType!,
+        'ID da Instância': newRule.instanceId!,
+        'Perfil Hotmart': newRule.hotmartProfile || '',
+        'URL do Webhook': webhookUrl,
+        'Dados Completos (JSON)': JSON.stringify({
+          messages: newRule.messages,
+          eventType: newRule.eventType,
+          instanceId: newRule.instanceId,
+          hotmartProfile: newRule.hotmartProfile,
+        })
+      });
 
-        // Enviar notificação de conclusão se o telefone foi fornecido
-        if (notificationPhone) {
-          try {
-            await evolutionApiService.sendMessage(
-              selectedInstance,
-              notificationPhone,
-              `✅ Notificação do Hotmart para "${getEventTypeLabel(eventType)}" configurada com sucesso!\n\n🔗 Webhook configurado para: ${webhookUrls[eventType as keyof typeof webhookUrls]}`
-            );
-          } catch (error) {
-            console.log('Erro ao enviar notificação de conclusão:', error);
-          }
-        }
-      } else {
-        throw new Error('Falha ao salvar no NocoDB');
-      }
+      setNewRule({
+        eventType: '',
+        hotmartProfile: '',
+        instanceId: '',
+        messages: [{ id: '1', type: 'text', content: '' }],
+      });
+
+      await loadRules();
+
+      toast({
+        title: "Sucesso",
+        description: `Notificação criada! URL do webhook: ${webhookUrl}`,
+      });
     } catch (error) {
-      console.error('Erro ao salvar configuração de notificação:', error);
       toast({
         title: "Erro",
-        description: "Falha ao salvar configuração de notificação",
+        description: "Falha ao criar notificação",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deleteRule = async (ruleId: string) => {
+    setIsLoading(true);
+    try {
+      await nocodbService.deleteHotmartNotification(ruleId);
+      await loadRules();
+      toast({
+        title: "Sucesso",
+        description: "Regra removida com sucesso",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Falha ao remover regra",
         variant: "destructive",
       });
     } finally {
@@ -206,281 +198,236 @@ const IntelligentNotifications = () => {
     }
   };
 
-  const getNocodbStatusColor = () => {
-    switch (nocodbStatus) {
-      case 'connected': return 'text-green-600';
-      case 'error': return 'text-red-600';
-      default: return 'text-yellow-600';
-    }
-  };
-
-  const getNocodbStatusText = () => {
-    switch (nocodbStatus) {
-      case 'connected': return 'NocoDB Conectado';
-      case 'error': return 'NocoDB Desconectado';
-      default: return 'Verificando NocoDB...';
-    }
-  };
-
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Bell className="w-5 h-5" />
-              <span>Notificações Inteligentes</span>
+    <div className="space-y-8 p-8 bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50">
+      {/* Header da Seção */}
+      <div className="text-center pb-6 border-b border-white/10">
+        <div className="flex items-center justify-center space-x-3 mb-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl flex items-center justify-center">
+            <Bell className="w-6 h-6 text-white" />
+          </div>
+          <h3 className="text-2xl font-bold text-white">Notificações Inteligentes</h3>
+        </div>
+        <p className="text-gray-400 text-lg">
+          Configure notificações automáticas baseadas em eventos da Hotmart
+        </p>
+      </div>
+
+      {/* Configuração de Nova Regra */}
+      <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700/50">
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+            <Plus className="w-5 h-5 text-blue-400" />
+          </div>
+          <div>
+            <Label className="font-semibold text-white text-lg">Nova Notificação</Label>
+            <p className="text-sm text-gray-400 mt-1">
+              Configure uma nova regra de notificação automática
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          {/* Configurações básicas */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-2">
+              <Label className="text-purple-300 font-medium text-sm">Tipo de Evento</Label>
+              <Select
+                value={newRule.eventType}
+                onValueChange={(value) => setNewRule(prev => ({ ...prev, eventType: value }))}
+              >
+                <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-400">
+                  <SelectValue placeholder="Selecione o evento" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-700">
+                  <SelectItem value="purchase-approved" className="text-gray-200 hover:bg-gray-700 focus:bg-gray-700">Compra Aprovada</SelectItem>
+                  <SelectItem value="awaiting-payment" className="text-gray-200 hover:bg-gray-700 focus:bg-gray-700">Aguardando Pagamento</SelectItem>
+                  <SelectItem value="cart-abandoned" className="text-gray-200 hover:bg-gray-700 focus:bg-gray-700">Carrinho Abandonado</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div className="flex items-center space-x-2">
-              <Database className="w-4 h-4" />
-              <span className={`text-sm font-medium ${getNocodbStatusColor()}`}>
-                {getNocodbStatusText()}
-              </span>
+
+            <div className="space-y-2">
+              <Label className="text-purple-300 font-medium text-sm">Instância WhatsApp</Label>
+              <Select
+                value={newRule.instanceId}
+                onValueChange={(value) => setNewRule(prev => ({ ...prev, instanceId: value }))}
+              >
+                <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-400">
+                  <SelectValue placeholder="Selecione a instância" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-700">
+                  {instances.map((instance) => (
+                    <SelectItem key={instance.id} value={instance.id} className="text-gray-200 hover:bg-gray-700 focus:bg-gray-700">
+                      {instance.name} ({instance.status})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          </CardTitle>
-          <CardDescription>
-            Configure e visualize notificações automáticas do WhatsApp para eventos do Hotmart
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="create" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="create" className="flex items-center space-x-2">
-                <Plus className="w-4 h-4" />
-                <span>Criar Notificação</span>
-              </TabsTrigger>
-              <TabsTrigger value="list" className="flex items-center space-x-2">
-                <List className="w-4 h-4" />
-                <span>Ver Notificações</span>
-              </TabsTrigger>
-            </TabsList>
 
-            <TabsContent value="create" className="space-y-6">
-              {/* Basic Configuration */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Instância WhatsApp</Label>
-                  <Select value={selectedInstance} onValueChange={setSelectedInstance}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma instância" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {instances.map((instance) => (
-                        <SelectItem key={instance.id} value={instance.id}>
-                          {instance.name} ({instance.status})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+            <div className="space-y-2">
+              <Label className="text-purple-300 font-medium text-sm">Perfil Hotmart (Opcional)</Label>
+              <Input
+                value={newRule.hotmartProfile || ''}
+                onChange={(e) => setNewRule(prev => ({ ...prev, hotmartProfile: e.target.value }))}
+                placeholder="ID do perfil"
+                className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-400"
+              />
+            </div>
+          </div>
 
-                <div className="space-y-2">
-                  <Label>Função do Usuário</Label>
-                  <Select value={userRole} onValueChange={setUserRole}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione sua função" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="affiliate">Afiliado</SelectItem>
-                      <SelectItem value="producer">Produtor</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+          {/* Mensagens */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label className="text-purple-300 font-medium text-sm">Mensagens (até 5)</Label>
+              {(newRule.messages?.length || 0) < 5 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addMessage}
+                  className="bg-gray-700/50 border-gray-600 text-gray-200 hover:bg-gray-600/50"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar Mensagem
+                </Button>
+              )}
+            </div>
 
-                <div className="space-y-2">
-                  <Label>Nome do Perfil Hotmart</Label>
-                  <Input
-                    value={hotmartProfile}
-                    onChange={(e) => setHotmartProfile(e.target.value)}
-                    placeholder="Digite o nome do seu perfil Hotmart"
-                  />
-                </div>
+            {newRule.messages?.map((message, index) => (
+              <div key={message.id} className="p-4 bg-gray-700/30 rounded-lg border border-gray-600/50">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-purple-300 font-medium">Mensagem {index + 1}</Label>
+                    {(newRule.messages?.length || 0) > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeMessage(message.id)}
+                        className="text-gray-400 hover:text-gray-200 hover:bg-gray-600/50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
 
-                <div className="space-y-2">
-                  <Label>Tipo de Evento</Label>
-                  <Select value={eventType} onValueChange={setEventType}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo de evento" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="purchase-approved">Compra Aprovada</SelectItem>
-                      <SelectItem value="awaiting-payment">Aguardando Pagamento</SelectItem>
-                      <SelectItem value="cart-abandoned">Carrinho Abandonado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-purple-300 font-medium text-sm">Tipo</Label>
+                      <Select
+                        value={message.type}
+                        onValueChange={(value: any) => updateMessage(message.id, { type: value })}
+                      >
+                        <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-400">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-gray-800 border-gray-700">
+                          <SelectItem value="text" className="text-gray-200 hover:bg-gray-700 focus:bg-gray-700">Texto</SelectItem>
+                          <SelectItem value="image" className="text-gray-200 hover:bg-gray-700 focus:bg-gray-700">Imagem</SelectItem>
+                          <SelectItem value="video" className="text-gray-200 hover:bg-gray-700 focus:bg-gray-700">Vídeo</SelectItem>
+                          <SelectItem value="audio" className="text-gray-200 hover:bg-gray-700 focus:bg-gray-700">Áudio</SelectItem>
+                          <SelectItem value="document" className="text-gray-200 hover:bg-gray-700 focus:bg-gray-700">Documento</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-              {/* Messages Configuration */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label>Mensagens de Notificação (até 5)</Label>
-                  {messages.length < 5 && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={addMessage}
-                      className="flex items-center space-x-1"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Adicionar Mensagem</span>
-                    </Button>
+                    {message.type !== 'text' && (
+                      <div>
+                        <Label className="text-purple-300 font-medium text-sm">Arquivo</Label>
+                        <div className="flex items-center space-x-2">
+                          <Input
+                            type="file"
+                            accept={message.type === 'audio' ? '.mp3,.wav,.ogg' : 
+                                   message.type === 'video' ? '.mp4,.avi,.mov' :
+                                   message.type === 'image' ? '.jpg,.png,.gif,.jpeg' : 
+                                   '.pdf,.doc,.docx,.txt'}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleFileUpload(message.id, file);
+                            }}
+                            className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-400"
+                          />
+                          <Upload className="w-4 h-4 text-purple-400" />
+                        </div>
+                        {message.fileUrl && (
+                          <p className="text-sm text-purple-400 mt-1">✓ Arquivo enviado</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {message.type === 'text' && (
+                    <div>
+                      <Label className="text-purple-300 font-medium text-sm">Conteúdo</Label>
+                      <Textarea
+                        value={message.content}
+                        onChange={(e) => updateMessage(message.id, { content: e.target.value })}
+                        placeholder="Digite sua mensagem..."
+                        className="min-h-[100px] bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-400"
+                      />
+                    </div>
                   )}
                 </div>
-
-                {messages.map((message, index) => (
-                  <Card key={message.id} className="p-4">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <Label>Mensagem {index + 1}</Label>
-                        {messages.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeMessage(message.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label>Tipo de Mensagem</Label>
-                          <Select
-                            value={message.type}
-                            onValueChange={(value: any) => updateMessage(message.id, { type: value })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="text">Texto</SelectItem>
-                              <SelectItem value="audio">Áudio</SelectItem>
-                              <SelectItem value="video">Vídeo</SelectItem>
-                              <SelectItem value="image">Imagem</SelectItem>
-                              <SelectItem value="document">Documento</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {message.type !== 'text' && (
-                          <div>
-                            <Label>Enviar Arquivo</Label>
-                            <div className="flex items-center space-x-2">
-                              <Input
-                                type="file"
-                                accept={message.type === 'audio' ? '.mp3,.wav' : 
-                                       message.type === 'video' ? '.mp4,.avi' :
-                                       message.type === 'image' ? '.jpg,.png,.gif' : 
-                                       '.pdf,.doc,.docx'}
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) handleFileUpload(message.id, file);
-                                }}
-                                className="flex-1"
-                              />
-                              <Upload className="w-4 h-4 text-gray-400" />
-                            </div>
-                            {message.fileUrl && (
-                              <p className="text-sm text-green-600 mt-1">Arquivo enviado com sucesso</p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {message.type === 'text' && (
-                        <div>
-                          <Label>Conteúdo da Mensagem</Label>
-                          <Textarea
-                            value={message.content}
-                            onChange={(e) => updateMessage(message.id, { content: e.target.value })}
-                            placeholder="Digite sua mensagem de notificação aqui..."
-                            className="min-h-[100px]"
-                          />
-                          <p className="text-sm text-gray-500 mt-1">
-                            {message.content.length} caracteres
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </Card>
-                ))}
               </div>
+            ))}
+          </div>
 
-              {/* Notification Phone */}
-              <div className="space-y-2">
-                <Label className="text-[#bdb2ff] font-semibold">Notificação de Conclusão</Label>
-                <Input
-                  value={notificationPhone}
-                  onChange={(e) => setNotificationPhone(e.target.value)}
-                  placeholder="+5511999999999"
-                />
+          {/* Botão Salvar */}
+          <div className="pt-4">
+            <Button
+              onClick={saveRule}
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white font-semibold h-12"
+            >
+              <div className="flex items-center justify-center space-x-2">
+                <Zap className="w-5 h-5" />
+                <span>{isLoading ? 'Criando...' : 'Criar Notificação'}</span>
               </div>
+            </Button>
+          </div>
+        </div>
+      </div>
 
-              {/* Save Button */}
-              <Button
-                onClick={saveNotification}
-                disabled={isLoading}
-                className="w-full bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700"
-              >
-                <Bell className="w-4 h-4 mr-2" />
-                {isLoading ? (nocodbStatus === 'connected' ? 'Salvando no NocoDB...' : 'Salvando...') : 'Salvar Configuração de Notificação'}
-              </Button>
+      {/* Lista de Regras Existentes */}
+      {rules.length > 0 && (
+        <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700/50">
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+              <Settings className="w-5 h-5 text-emerald-400" />
+            </div>
+            <div>
+              <Label className="font-semibold text-white text-lg">Notificações Ativas</Label>
+              <p className="text-sm text-gray-400 mt-1">
+                {rules.length} regras configuradas
+              </p>
+            </div>
+          </div>
 
-              {/* Webhook URL Display */}
-              {showWebhookUrl && eventType && (
-                <Card className="bg-green-50 border-green-200">
-                  <CardHeader>
-                    <CardTitle className="text-lg text-green-800">
-                      ✅ Configuração Salva com Sucesso!
-                    </CardTitle>
-                    <CardDescription className="text-green-700">
-                      {nocodbStatus === 'connected' 
-                        ? 'Os dados foram salvos no NocoDB. Copie esta URL do webhook e cole na sua plataforma Hotmart'
-                        : 'Os dados foram salvos localmente (NocoDB temporariamente indisponível). Copie esta URL do webhook e cole na sua plataforma Hotmart'
-                      }
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center space-x-2">
-                      <Input
-                        value={webhookUrls[eventType as keyof typeof webhookUrls]}
-                        readOnly
-                        className="flex-1 bg-white"
-                      />
-                      <Button
-                        onClick={copyWebhookUrl}
-                        variant="outline"
-                        size="sm"
-                      >
-                        <Copy className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    <div className="mt-3 p-3 bg-green-100 rounded-lg">
-                      <p className="text-sm text-green-800 font-medium">
-                        📋 Evento configurado: {getEventTypeLabel(eventType)}
-                      </p>
-                      <p className="text-sm text-green-700 mt-1">
-                        {nocodbStatus === 'connected' 
-                          ? '💾 Dados salvos na planilha NocoDB automaticamente'
-                          : '💽 Dados salvos localmente (tentará sincronizar com NocoDB quando disponível)'
-                        }
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-
-            <TabsContent value="list">
-              <NotificationsList />
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+          <div className="space-y-4">
+            {rules.map((rule) => (
+              <div key={rule.id} className="p-4 bg-gray-700/30 rounded-lg border border-gray-600/50 flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+                    {getEventTypeLabel(rule.eventType)}
+                  </Badge>
+                  <span className="text-gray-200">{rule.hotmartProfile || 'Todos os perfis'}</span>
+                  <span className="text-sm text-gray-400">Instância: {rule.instanceId}</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => deleteRule(rule.id)}
+                  className="text-red-400 hover:text-red-300 hover:bg-red-500/20"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

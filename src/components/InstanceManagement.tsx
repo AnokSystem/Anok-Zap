@@ -4,18 +4,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Settings, Plus, Trash2, RefreshCcw, QrCode } from 'lucide-react';
+import { RefreshCw, Plus, Trash2, Power, Settings, Smartphone } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { evolutionApiService } from '@/services/evolutionApi';
-import { nocodbService } from '@/services/nocodb';
 
 interface Instance {
   id: string;
   name: string;
   status: string;
-  creationDate: string;
+  qrCode?: string;
+  phoneNumber?: string;
 }
 
 const InstanceManagement = () => {
@@ -23,11 +23,6 @@ const InstanceManagement = () => {
   const [instances, setInstances] = useState<Instance[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [newInstanceName, setNewInstanceName] = useState('');
-  const [qrCode, setQrCode] = useState('');
-  const [selectedInstance, setSelectedInstance] = useState('');
-  const [notificationPhone, setNotificationPhone] = useState('');
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showQrDialog, setShowQrDialog] = useState(false);
 
   useEffect(() => {
     loadInstances();
@@ -36,8 +31,8 @@ const InstanceManagement = () => {
   const loadInstances = async () => {
     setIsLoading(true);
     try {
-      const instancesData = await evolutionApiService.getInstances();
-      setInstances(instancesData);
+      const data = await evolutionApiService.getInstances();
+      setInstances(data);
     } catch (error) {
       toast({
         title: "Erro",
@@ -50,39 +45,17 @@ const InstanceManagement = () => {
   };
 
   const createInstance = async () => {
-    if (!newInstanceName.trim()) {
-      toast({
-        title: "Erro",
-        description: "Por favor, digite um nome para a instância",
-        variant: "destructive",
-      });
-      return;
-    }
-
+    if (!newInstanceName.trim()) return;
+    
     setIsLoading(true);
     try {
-      const newInstance = await evolutionApiService.createInstance(newInstanceName);
-      
-      // Salvar no NocoDB
-      await nocodbService.saveInstance(newInstance);
-      
-      setInstances([...instances, newInstance]);
+      await evolutionApiService.createInstance(newInstanceName);
       setNewInstanceName('');
-      setShowCreateDialog(false);
-      
+      await loadInstances();
       toast({
         title: "Sucesso",
         description: "Instância criada com sucesso",
       });
-
-      // Enviar notificação se telefone fornecido
-      if (notificationPhone) {
-        await evolutionApiService.sendMessage(
-          newInstance.id,
-          notificationPhone,
-          `Instância ${newInstanceName} criada com sucesso.`
-        );
-      }
     } catch (error) {
       toast({
         title: "Erro",
@@ -94,79 +67,19 @@ const InstanceManagement = () => {
     }
   };
 
-  const generateQrCode = async (instanceId: string) => {
-    setIsLoading(true);
-    try {
-      const qrCodeData = await evolutionApiService.generateQrCode(instanceId);
-      setQrCode(qrCodeData);
-      setSelectedInstance(instanceId);
-      setShowQrDialog(true);
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Falha ao gerar código QR",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const connectInstance = async () => {
-    if (!selectedInstance) return;
-    
-    setIsLoading(true);
-    try {
-      await evolutionApiService.connectInstance(selectedInstance);
-      setShowQrDialog(false);
-      await loadInstances(); // Atualizar instâncias
-      
-      toast({
-        title: "Sucesso",
-        description: "Instância conectada com sucesso",
-      });
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Falha ao conectar instância",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const deleteInstance = async (instanceId: string, instanceName: string) => {
-    if (!confirm(`Tem certeza que deseja excluir a instância "${instanceName}"?`)) {
-      return;
-    }
-
+  const deleteInstance = async (instanceId: string) => {
     setIsLoading(true);
     try {
       await evolutionApiService.deleteInstance(instanceId);
-      setInstances(instances.filter(instance => instance.id !== instanceId));
-      
+      await loadInstances();
       toast({
         title: "Sucesso",
-        description: "Instância excluída com sucesso",
+        description: "Instância removida com sucesso",
       });
-
-      // Enviar notificação se telefone fornecido
-      if (notificationPhone) {
-        // Usar uma instância diferente para enviar a notificação
-        const availableInstance = instances.find(i => i.id !== instanceId && i.status === 'connected');
-        if (availableInstance) {
-          await evolutionApiService.sendMessage(
-            availableInstance.id,
-            notificationPhone,
-            `Instância ${instanceName} excluída com sucesso.`
-          );
-        }
-      }
     } catch (error) {
       toast({
         title: "Erro",
-        description: "Falha ao excluir instância",
+        description: "Falha ao remover instância",
         variant: "destructive",
       });
     } finally {
@@ -174,133 +87,127 @@ const InstanceManagement = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'connected':
-      case 'conectado':
-        return 'text-green-600 bg-green-100';
-      case 'disconnected':
-      case 'desconectado':
-        return 'text-red-600 bg-red-100';
-      case 'connecting':
-      case 'conectando':
-        return 'text-yellow-600 bg-yellow-100';
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'open':
+        return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">Conectado</Badge>;
+      case 'close':
+        return <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Desconectado</Badge>;
       default:
-        return 'text-gray-600 bg-gray-100';
-    }
-  };
-
-  const translateStatus = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'connected':
-        return 'Conectado';
-      case 'disconnected':
-        return 'Desconectado';
-      case 'connecting':
-        return 'Conectando';
-      default:
-        return status;
+        return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">Aguardando</Badge>;
     }
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Settings className="w-5 h-5" />
-              <span>Gerenciamento de Instâncias</span>
+    <div className="space-y-8 p-8 bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50">
+      {/* Header da Seção */}
+      <div className="text-center pb-6 border-b border-white/10">
+        <div className="flex items-center justify-center space-x-3 mb-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl flex items-center justify-center">
+            <Smartphone className="w-6 h-6 text-white" />
+          </div>
+          <h3 className="text-2xl font-bold text-white">Gerenciamento de Instâncias</h3>
+        </div>
+        <p className="text-gray-400 text-lg">
+          Configure e monitore suas instâncias do WhatsApp
+        </p>
+      </div>
+
+      {/* Criar Nova Instância */}
+      <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700/50">
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+            <Plus className="w-5 h-5 text-blue-400" />
+          </div>
+          <div>
+            <Label className="font-semibold text-white text-lg">Nova Instância</Label>
+            <p className="text-sm text-gray-400 mt-1">
+              Crie uma nova instância do WhatsApp
+            </p>
+          </div>
+        </div>
+        
+        <div className="flex gap-4">
+          <Input
+            value={newInstanceName}
+            onChange={(e) => setNewInstanceName(e.target.value)}
+            placeholder="Nome da instância"
+            className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-400"
+          />
+          <Button
+            onClick={createInstance}
+            disabled={isLoading || !newInstanceName.trim()}
+            className="bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white font-semibold px-6"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Criar
+          </Button>
+        </div>
+      </div>
+
+      {/* Lista de Instâncias */}
+      <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700/50">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+              <Settings className="w-5 h-5 text-emerald-400" />
             </div>
-            <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-              <DialogTrigger asChild>
-                <Button className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Criar Instância
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Criar Nova Instância WhatsApp</DialogTitle>
-                  <DialogDescription>
-                    Crie uma nova instância WhatsApp para envio de mensagens
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Nome da Instância</Label>
-                    <Input
-                      value={newInstanceName}
-                      onChange={(e) => setNewInstanceName(e.target.value)}
-                      placeholder="Digite o nome da instância"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Telefone para Notificação (opcional)</Label>
-                    <Input
-                      value={notificationPhone}
-                      onChange={(e) => setNotificationPhone(e.target.value)}
-                      placeholder="+5511999999999"
-                    />
-                  </div>
-                  <Button
-                    onClick={createInstance}
-                    disabled={isLoading}
-                    className="w-full"
-                  >
-                    {isLoading ? 'Criando...' : 'Criar Instância'}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </CardTitle>
-          <CardDescription>
-            Gerencie suas instâncias WhatsApp para envio de mensagens
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {instances.length === 0 ? (
-            <div className="text-center py-8">
-              <Settings className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">Nenhuma instância encontrada. Crie sua primeira instância para começar.</p>
+            <div>
+              <Label className="font-semibold text-white text-lg">Instâncias Ativas</Label>
+              <p className="text-sm text-gray-400 mt-1">
+                {instances.length} instâncias configuradas
+              </p>
             </div>
-          ) : (
+          </div>
+          <Button
+            onClick={loadInstances}
+            disabled={isLoading}
+            variant="outline"
+            size="sm"
+            className="bg-gray-700/50 border-gray-600 text-gray-200 hover:bg-gray-600/50"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            {isLoading ? 'Carregando...' : 'Atualizar'}
+          </Button>
+        </div>
+
+        {instances.length === 0 ? (
+          <div className="text-center py-12">
+            <Smartphone className="w-16 h-16 mx-auto text-gray-500 mb-4" />
+            <p className="text-gray-400 text-lg">
+              {isLoading ? 'Carregando instâncias...' : 'Nenhuma instância encontrada'}
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Nome da Instância</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Criado em</TableHead>
-                  <TableHead>Ações</TableHead>
+                <TableRow className="border-gray-700/50">
+                  <TableHead className="text-gray-300">Nome</TableHead>
+                  <TableHead className="text-gray-300">Status</TableHead>
+                  <TableHead className="text-gray-300">Telefone</TableHead>
+                  <TableHead className="text-gray-300 text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {instances.map((instance) => (
-                  <TableRow key={instance.id}>
-                    <TableCell className="font-medium">{instance.name}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(instance.status)}`}>
-                        {translateStatus(instance.status)}
-                      </span>
+                  <TableRow key={instance.id} className="border-gray-700/50 hover:bg-gray-700/30">
+                    <TableCell className="font-medium text-gray-200">
+                      {instance.name}
                     </TableCell>
-                    <TableCell>{new Date(instance.creationDate).toLocaleDateString('pt-BR')}</TableCell>
                     <TableCell>
-                      <div className="flex items-center space-x-2">
+                      {getStatusBadge(instance.status)}
+                    </TableCell>
+                    <TableCell className="text-gray-300">
+                      {instance.phoneNumber || '-'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end space-x-2">
                         <Button
                           size="sm"
-                          variant="outline"
-                          onClick={() => generateQrCode(instance.id)}
-                          disabled={isLoading}
-                          title="Gerar QR Code"
-                        >
-                          <QrCode className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => deleteInstance(instance.id, instance.name)}
-                          disabled={isLoading}
-                          title="Excluir Instância"
+                          variant="ghost"
+                          className="text-red-400 hover:text-red-300 hover:bg-red-500/20"
+                          onClick={() => deleteInstance(instance.id)}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -310,46 +217,9 @@ const InstanceManagement = () => {
                 ))}
               </TableBody>
             </Table>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Dialog do QR Code */}
-      <Dialog open={showQrDialog} onOpenChange={setShowQrDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Conectar Instância WhatsApp</DialogTitle>
-            <DialogDescription>
-              Escaneie este código QR com seu WhatsApp para conectar a instância
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            {qrCode && (
-              <div className="flex justify-center p-4 bg-white border rounded-lg">
-                <img src={qrCode} alt="Código QR" className="w-64 h-64" />
-              </div>
-            )}
-            <div className="flex space-x-2">
-              <Button
-                onClick={() => generateQrCode(selectedInstance)}
-                variant="outline"
-                className="flex-1"
-                disabled={isLoading}
-              >
-                <RefreshCcw className="w-4 h-4 mr-2" />
-                Atualizar QR
-              </Button>
-              <Button
-                onClick={connectInstance}
-                className="flex-1"
-                disabled={isLoading}
-              >
-                {isLoading ? 'Conectando...' : 'Conectar'}
-              </Button>
-            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        )}
+      </div>
     </div>
   );
 };
