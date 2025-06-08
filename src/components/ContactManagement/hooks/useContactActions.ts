@@ -21,6 +21,7 @@ export const useContactActions = ({ contacts, contactType, selectedInstance }: U
       return;
     }
 
+    // Padronizar cabeçalho: Nome, Telefone
     const csvHeaders = contactType === 'groups' 
       ? "Nome,Telefone,Grupo,Tipo"
       : "Nome,Telefone";
@@ -32,6 +33,7 @@ export const useContactActions = ({ contacts, contactType, selectedInstance }: U
           const memberTypeText = contact.isAdmin ? 'Admin' : 'Membro';
           return `"${contact.name}","${contact.phoneNumber}","${contact.groupName || ''}","${memberTypeText}"`;
         }
+        // Ordem: Nome, Telefone
         return `"${contact.name}","${contact.phoneNumber}"`;
       })
     ].join('\n');

@@ -35,7 +35,6 @@ const MassMessaging = () => {
 
   useEffect(() => {
     loadInstances();
-    // Verificar se há contatos salvos no localStorage
     checkForSavedContacts();
   }, []);
 
@@ -52,7 +51,6 @@ const MassMessaging = () => {
       console.log('Importando contatos:', savedContacts);
       setRecipients(savedContacts);
       
-      // Limpar o localStorage após usar
       localStorage.removeItem('massMessagingContacts');
       
       if (savedInstance) {
@@ -154,13 +152,13 @@ const MassMessaging = () => {
             }
             
             if (columns.length >= 2) {
-              // Primeira coluna: Telefone, Segunda coluna: Nome
-              let phone = columns[0].trim();
-              let name = columns[1].trim();
+              // NOVO PADRÃO: Primeira coluna: Nome, Segunda coluna: Telefone
+              let name = columns[0].trim();
+              let phone = columns[1].trim();
               
               // Remover aspas se existirem
-              phone = phone.replace(/^["']|["']$/g, '');
               name = name.replace(/^["']|["']$/g, '');
+              phone = phone.replace(/^["']|["']$/g, '');
               
               // Verificar se parece com um número de telefone
               if (phone && (phone.includes('+') || phone.match(/^\d+$/))) {
@@ -216,7 +214,7 @@ const MassMessaging = () => {
         } else {
           toast({
             title: "Nenhum contato encontrado",
-            description: "Verifique se a planilha possui telefone na 1ª coluna e nome na 2ª coluna",
+            description: "Verifique se a planilha possui nome na 1ª coluna e telefone na 2ª coluna",
             variant: "destructive",
           });
         }
@@ -224,7 +222,7 @@ const MassMessaging = () => {
         console.error('Erro ao processar planilha:', error);
         toast({
           title: "Erro ao processar planilha",
-          description: "Verifique se o arquivo está no formato correto (CSV) com 2 colunas",
+          description: "Verifique se o arquivo está no formato correto (CSV) com 2 colunas: Nome, Telefone",
           variant: "destructive",
         });
       } finally {
@@ -234,7 +232,8 @@ const MassMessaging = () => {
   };
 
   const downloadTemplate = () => {
-    const csvContent = "Telefone,Nome\n+5511999999999,João Silva\n+5511888888888,Maria Santos";
+    // Modelo padronizado: Nome, Telefone
+    const csvContent = "Nome,Telefone\nJoão Silva,+5511999999999\nMaria Santos,+5511888888888";
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -468,10 +467,10 @@ const MassMessaging = () => {
                     className="w-full"
                   >
                     <Download className="w-4 h-4 mr-2" />
-                    Baixar Modelo (2 colunas)
+                    Baixar Modelo (Nome, Telefone)
                   </Button>
                   <p className="text-xs text-gray-500">
-                    Formato: Telefone, Nome (uma linha por contato)
+                    Formato padrão: Nome, Telefone (uma linha por contato)
                   </p>
                 </div>
               </div>
