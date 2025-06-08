@@ -348,10 +348,10 @@ const IntelligentNotifications = () => {
                             }}
                             className="input-form"
                           />
-                          <Upload className="w-4 h-4 text-purple-accent" />
+                          <Upload className="w-4 h-4 text-gray-200" />
                         </div>
                         {message.fileUrl && (
-                          <p className="text-sm text-purple-accent mt-1">✓ Arquivo enviado</p>
+                          <p className="text-sm text-gray-200 mt-1">✓ Arquivo enviado</p>
                         )}
                       </div>
                     )}
