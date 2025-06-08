@@ -19,24 +19,24 @@ export const RecipientManager: React.FC<RecipientManagerProps> = ({
   const { uploadedFile, isLoading, handleSpreadsheetUpload, downloadTemplate } = useSpreadsheetProcessor();
 
   return (
-    <div className="space-y-4">
-      <Label>Destinatários</Label>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label className="text-sm">Entrada Manual</Label>
+    <div className="form-card space-y-6">
+      <Label className="label-form-highlight">Destinatários</Label>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-3">
+          <Label className="label-form">Entrada Manual</Label>
           <Textarea
             value={recipients}
             onChange={(e) => onRecipientsChange(e.target.value)}
             placeholder="Digite os contatos (um por linha)&#10;+5511999999999 - João Silva&#10;+5511888888888 - Maria Santos"
             className="min-h-[120px]"
           />
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-form-info text-sm">
             {recipients.split('\n').filter(r => r.trim()).length} contatos
           </p>
         </div>
-        <div>
-          <Label className="text-sm">Enviar Planilha (CSV)</Label>
-          <div className="space-y-2">
+        <div className="space-y-3">
+          <Label className="label-form">Enviar Planilha (CSV)</Label>
+          <div className="space-y-3">
             <Input
               type="file"
               accept=".xlsx,.csv"
@@ -44,7 +44,7 @@ export const RecipientManager: React.FC<RecipientManagerProps> = ({
               disabled={isLoading}
             />
             {uploadedFile && (
-              <p className="text-sm text-green-600">
+              <p className="text-form-success text-sm">
                 📄 {uploadedFile.name} processado
               </p>
             )}
@@ -53,12 +53,12 @@ export const RecipientManager: React.FC<RecipientManagerProps> = ({
               variant="outline"
               size="sm"
               onClick={downloadTemplate}
-              className="w-full"
+              className="btn-form-info w-full"
             >
               <Download className="w-4 h-4 mr-2" />
               Baixar Modelo (Nome, Telefone)
             </Button>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               Formato padrão: Nome, Telefone (uma linha por contato)
             </p>
           </div>

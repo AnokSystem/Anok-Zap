@@ -15,15 +15,15 @@ export const InstanceSelector: React.FC<InstanceSelectorProps> = ({
   onInstanceChange,
 }) => {
   return (
-    <div className="space-y-2">
-      <Label htmlFor="instance">Instância WhatsApp</Label>
+    <div className="form-card space-y-3">
+      <Label htmlFor="instance" className="label-form-highlight">Instância WhatsApp</Label>
       <Select value={selectedInstance} onValueChange={onInstanceChange}>
-        <SelectTrigger>
+        <SelectTrigger className="select-form">
           <SelectValue placeholder="Selecione uma instância" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="bg-gray-800 border-gray-700">
           {instances.map((instance) => (
-            <SelectItem key={instance.id} value={instance.id}>
+            <SelectItem key={instance.id} value={instance.id} className="text-foreground hover:bg-gray-700">
               {instance.name} ({instance.status})
             </SelectItem>
           ))}
