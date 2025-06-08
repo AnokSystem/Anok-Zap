@@ -46,7 +46,7 @@ export const NotificationForm: React.FC<NotificationFormProps> = ({
       </div>
 
       <div className="space-y-6">
-        {/* Configurações básicas - Primeira linha */}
+        {/* Primeira linha - Instância, Tipo de Evento e Você é */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="space-y-2">
             <Label className="text-gray-200 font-medium text-sm">Instância WhatsApp *</Label>
