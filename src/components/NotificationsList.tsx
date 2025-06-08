@@ -14,8 +14,10 @@ interface Notification {
   'ID da Instância': string;
   'Perfil Hotmart': string;
   'URL do Webhook': string;
-  'Criado em': string;
+  'CreatedAt': string;
   'Dados Completos (JSON)': string;
+  'Plataforma'?: string;
+  'Papel do Usuário'?: string;
 }
 
 const NotificationsList = () => {
@@ -27,10 +29,12 @@ const NotificationsList = () => {
   const [syncStatus, setSyncStatus] = useState<'success' | 'error' | 'loading' | null>(null);
 
   useEffect(() => {
+    console.log('🚀 NotificationsList montado, carregando notificações...');
     loadNotifications();
 
     // Escutar evento de refresh
     const handleRefresh = () => {
+      console.log('🔄 Evento de refresh recebido');
       loadNotifications();
     };
 
@@ -43,10 +47,21 @@ const NotificationsList = () => {
     setSyncStatus('loading');
     
     try {
-      console.log('Carregando notificações do NocoDB...');
+      console.log('📡 Carregando notificações do NocoDB...');
+      
+      // Primeiro testar a conexão
+      const connectionTest = await nocodbService.testConnection();
+      console.log('🔌 Teste de conexão:', connectionTest);
+      
+      if (!connectionTest.success) {
+        throw new Error(connectionTest.error || 'Falha na conexão');
+      }
+      
       const data = await nocodbService.getHotmartNotifications();
       
-      console.log('Dados recebidos:', data);
+      console.log('📋 Dados recebidos:', data);
+      console.log(`📊 Total de notificações: ${data.length}`);
+      
       setNotifications(data);
       setLastSync(new Date());
       setSyncStatus('success');
@@ -56,11 +71,11 @@ const NotificationsList = () => {
         description: `${data.length} notificações carregadas do NocoDB`,
       });
     } catch (error) {
-      console.error('Erro ao carregar notificações:', error);
+      console.error('❌ Erro ao carregar notificações:', error);
       setSyncStatus('error');
       toast({
         title: "Erro",
-        description: "Falha ao carregar notificações do NocoDB",
+        description: `Falha ao carregar notificações: ${error.message}`,
         variant: "destructive",
       });
     } finally {
@@ -186,6 +201,17 @@ const NotificationsList = () => {
               <p className="text-gray-500">
                 {isLoading ? 'Carregando notificações...' : 'Nenhuma notificação encontrada'}
               </p>
+              {!isLoading && (
+                <Button
+                  onClick={loadNotifications}
+                  variant="outline"
+                  size="sm"
+                  className="mt-4 bg-purple-accent/20 border-purple-accent text-purple-accent hover:bg-purple-accent/30"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Tentar Novamente
+                </Button>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -193,6 +219,7 @@ const NotificationsList = () => {
                 <TableHeader>
                   <TableRow className="border-gray-600/50">
                     <TableHead className="text-gray-300">Tipo de Evento</TableHead>
+                    <TableHead className="text-gray-300">Plataforma</TableHead>
                     <TableHead className="text-gray-300">Perfil</TableHead>
                     <TableHead className="text-gray-300">Instância</TableHead>
                     <TableHead className="text-gray-300">Mensagem</TableHead>
@@ -209,6 +236,9 @@ const NotificationsList = () => {
                         </Badge>
                       </TableCell>
                       <TableCell className="font-medium text-gray-200">
+                        {notification['Plataforma'] || '-'}
+                      </TableCell>
+                      <TableCell className="font-medium text-gray-200">
                         {notification['Perfil Hotmart'] || '-'}
                       </TableCell>
                       <TableCell className="font-mono text-sm text-gray-300">
@@ -218,7 +248,7 @@ const NotificationsList = () => {
                         {getMessagePreview(notification['Dados Completos (JSON)'])}
                       </TableCell>
                       <TableCell className="text-sm text-gray-400">
-                        {formatDate(notification['Criado em'])}
+                        {formatDate(notification['CreatedAt'])}
                       </TableCell>
                       <TableCell>
                         <Button
