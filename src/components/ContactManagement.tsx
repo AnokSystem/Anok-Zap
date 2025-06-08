@@ -204,13 +204,8 @@ const ContactManagement = () => {
       return;
     }
 
-    console.log('Iniciando disparo em massa com:', contacts.length, 'contatos');
-    console.log('Tipo de contato:', contactType);
-    console.log('Instância selecionada:', selectedInstance);
-
-    // Preparar os contatos formatados - apenas número limpo
+    // Preparar os contatos formatados
     const formattedContacts = contacts.map(contact => {
-      // Remover tudo exceto números
       const cleanPhone = contact.phoneNumber.replace(/[^\d]/g, '');
       
       if (contact.name && contact.name !== contact.phoneNumber && contact.name !== cleanPhone) {
@@ -219,22 +214,14 @@ const ContactManagement = () => {
       return cleanPhone;
     });
 
-    console.log('Contatos formatados:', formattedContacts);
-
-    // Salvar os contatos no localStorage para serem recuperados na página de disparo
+    // Salvar dados no localStorage
     localStorage.setItem('massMessagingContacts', formattedContacts.join('\n'));
     localStorage.setItem('massMessagingInstance', selectedInstance);
     
-    console.log('Dados salvos no localStorage');
-    console.log('Navegando para disparo em massa...');
-
-    // Usar window.location para garantir a navegação
-    window.location.href = '/?tab=mass-messaging';
-    
-    toast({
-      title: "Redirecionando",
-      description: `${contacts.length} contatos exportados para disparo em massa`,
-    });
+    // Navegação imediata e otimizada
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', 'mass-messaging');
+    window.location.replace(url.toString());
   };
 
   const getSelectedInstanceName = () => {
