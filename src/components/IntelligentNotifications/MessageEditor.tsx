@@ -59,14 +59,14 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+              <div className="md:col-span-2">
                 <Label className="text-gray-200 font-medium text-sm">Tipo</Label>
                 <Select
                   value={message.type}
                   onValueChange={(value: any) => onUpdateMessage(message.id, { type: value })}
                 >
-                  <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-accent">
+                  <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-accent h-10">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-gray-800 border-gray-700">
@@ -82,7 +82,7 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
               <div>
                 <Label className="text-gray-200 font-medium text-sm flex items-center gap-1">
                   <Clock className="w-3 h-3" />
-                  Delay (minutos)
+                  Delay (seg)
                 </Label>
                 <Input
                   type="number"
@@ -90,7 +90,7 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
                   value={message.delay}
                   onChange={(e) => onUpdateMessage(message.id, { delay: parseInt(e.target.value) || 0 })}
                   placeholder="0"
-                  className="input-form"
+                  className="input-form h-10 w-20"
                 />
               </div>
 
@@ -108,7 +108,7 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
                         const file = e.target.files?.[0];
                         if (file) onFileUpload(message.id, file);
                       }}
-                      className="input-form"
+                      className="input-form h-10"
                     />
                     <Upload className="w-4 h-4 text-gray-200" />
                   </div>

@@ -54,7 +54,7 @@ export const NotificationForm: React.FC<NotificationFormProps> = ({
               value={newRule.instanceId}
               onValueChange={(value) => setNewRule(prev => ({ ...prev, instanceId: value }))}
             >
-              <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-accent">
+              <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-accent h-10">
                 <SelectValue placeholder="Selecione a instância" />
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-700">
@@ -73,7 +73,7 @@ export const NotificationForm: React.FC<NotificationFormProps> = ({
               value={newRule.eventType}
               onValueChange={(value) => setNewRule(prev => ({ ...prev, eventType: value }))}
             >
-              <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-accent">
+              <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-accent h-10">
                 <SelectValue placeholder="Selecione o evento" />
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-700">
@@ -90,7 +90,7 @@ export const NotificationForm: React.FC<NotificationFormProps> = ({
               value={newRule.userRole}
               onValueChange={(value) => setNewRule(prev => ({ ...prev, userRole: value }))}
             >
-              <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-accent">
+              <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-accent h-10">
                 <SelectValue placeholder="Selecione seu papel" />
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-700">
@@ -101,15 +101,15 @@ export const NotificationForm: React.FC<NotificationFormProps> = ({
           </div>
         </div>
 
-        {/* Segunda linha - Plataforma e Nome do Perfil com espaçamento igual */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Segunda linha - Plataforma e Nome do Perfil */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <Label className="text-gray-200 font-medium text-sm">Plataforma *</Label>
             <Select
               value={newRule.platform}
               onValueChange={(value) => setNewRule(prev => ({ ...prev, platform: value }))}
             >
-              <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-accent">
+              <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200 focus:border-purple-accent h-10">
                 <SelectValue placeholder="Selecione a plataforma" />
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-700">
@@ -127,12 +127,9 @@ export const NotificationForm: React.FC<NotificationFormProps> = ({
               value={newRule.profileName || ''}
               onChange={(e) => setNewRule(prev => ({ ...prev, profileName: e.target.value }))}
               placeholder="Nome cadastrado na plataforma"
-              className="input-form"
+              className="input-form h-10"
             />
           </div>
-
-          {/* Espaço vazio para manter o alinhamento */}
-          <div></div>
         </div>
 
         {/* Editor de Mensagens */}
