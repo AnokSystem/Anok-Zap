@@ -22,6 +22,7 @@ export const useContactManagement = () => {
     selectedGroup,
     setSelectedGroup,
     getSelectedGroupName,
+    isLoadingGroups,
   } = useGroups({ selectedInstance, contactType });
 
   const {
@@ -53,5 +54,6 @@ export const useContactManagement = () => {
     startMassMessaging,
     getSelectedInstanceName,
     getSelectedGroupName,
+    isLoadingGroups,
   };
 };

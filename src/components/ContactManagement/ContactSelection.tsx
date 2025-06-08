@@ -2,7 +2,7 @@
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { User, Users2, Users, Crown, UserCheck } from 'lucide-react';
+import { User, Users2, Users, Crown, UserCheck, Loader2 } from 'lucide-react';
 import { ContactType, MemberType, Group } from './types';
 
 interface ContactSelectionProps {
@@ -16,6 +16,7 @@ interface ContactSelectionProps {
   setSelectedGroup: (value: string) => void;
   memberType: MemberType;
   setMemberType: (value: MemberType) => void;
+  isLoadingGroups?: boolean;
 }
 
 const ContactSelection: React.FC<ContactSelectionProps> = ({
@@ -29,6 +30,7 @@ const ContactSelection: React.FC<ContactSelectionProps> = ({
   setSelectedGroup,
   memberType,
   setMemberType,
+  isLoadingGroups = false,
 }) => {
   return (
     <div className="space-y-6">
@@ -74,18 +76,25 @@ const ContactSelection: React.FC<ContactSelectionProps> = ({
       {contactType === 'groups' && (
         <div className="space-y-2">
           <label className="text-sm font-medium">Grupo WhatsApp</label>
-          <Select value={selectedGroup} onValueChange={setSelectedGroup}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione um grupo" />
-            </SelectTrigger>
-            <SelectContent>
-              {groups.map((group) => (
-                <SelectItem key={group.id} value={group.id}>
-                  {group.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {isLoadingGroups ? (
+            <div className="flex items-center justify-center p-3 border rounded-md bg-muted">
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              <span className="text-sm text-muted-foreground">Buscando grupos...</span>
+            </div>
+          ) : (
+            <Select value={selectedGroup} onValueChange={setSelectedGroup}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um grupo" />
+              </SelectTrigger>
+              <SelectContent>
+                {groups.map((group) => (
+                  <SelectItem key={group.id} value={group.id}>
+                    {group.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       )}
 

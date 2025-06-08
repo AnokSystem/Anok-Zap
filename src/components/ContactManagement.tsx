@@ -26,6 +26,7 @@ const ContactManagement = () => {
     startMassMessaging,
     getSelectedInstanceName,
     getSelectedGroupName,
+    isLoadingGroups,
   } = useContactManagement();
 
   return (
@@ -52,6 +53,7 @@ const ContactManagement = () => {
             setSelectedGroup={setSelectedGroup}
             memberType={memberType}
             setMemberType={setMemberType}
+            isLoadingGroups={isLoadingGroups}
           />
 
           <ContactActions

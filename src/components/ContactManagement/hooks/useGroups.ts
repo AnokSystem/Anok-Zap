@@ -13,16 +13,21 @@ export const useGroups = ({ selectedInstance, contactType }: UseGroupsProps) => 
   const { toast } = useToast();
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroup, setSelectedGroup] = useState('');
+  const [isLoadingGroups, setIsLoadingGroups] = useState(false);
 
   useEffect(() => {
     if (selectedInstance && contactType === 'groups') {
       loadGroups();
+    } else {
+      setGroups([]);
+      setSelectedGroup('');
     }
   }, [selectedInstance, contactType]);
 
   const loadGroups = async () => {
     if (!selectedInstance) return;
     
+    setIsLoadingGroups(true);
     try {
       console.log('Carregando grupos para instância:', selectedInstance);
       const groupsData = await evolutionApiService.getGroups(selectedInstance);
@@ -40,6 +45,8 @@ export const useGroups = ({ selectedInstance, contactType }: UseGroupsProps) => 
         description: "Falha ao carregar grupos",
         variant: "destructive",
       });
+    } finally {
+      setIsLoadingGroups(false);
     }
   };
 
@@ -53,5 +60,6 @@ export const useGroups = ({ selectedInstance, contactType }: UseGroupsProps) => 
     selectedGroup,
     setSelectedGroup,
     getSelectedGroupName,
+    isLoadingGroups,
   };
 };
