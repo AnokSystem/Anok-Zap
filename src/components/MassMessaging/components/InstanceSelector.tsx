@@ -19,7 +19,7 @@ export const InstanceSelector: React.FC<InstanceSelectorProps> = ({
       <Label htmlFor="instance" className="text-gray-200 font-medium text-sm">Instância WhatsApp</Label>
       <Select value={selectedInstance} onValueChange={onInstanceChange}>
         <SelectTrigger className="bg-gray-700 border-gray-600 text-gray-200 focus:border-purple-400">
-          <SelectValue placeholder="Selecione uma instância" className="text-gray-400" />
+          <SelectValue placeholder="Selecione uma instância" className="text-gray-200" />
         </SelectTrigger>
         <SelectContent className="bg-gray-800 border-gray-700">
           {instances.map((instance) => (
