@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { evolutionApiService } from '@/services/evolutionApi';
@@ -91,8 +90,10 @@ export const useContactManagement = () => {
       return;
     }
 
-    console.log('🔄 Iniciando busca de contatos - setando isLoading para true');
+    console.log('🔄 INICIANDO BUSCA - isLoading atual:', isLoading);
+    console.log('🔄 Setando isLoading para TRUE');
     setIsLoading(true);
+    console.log('🔄 isLoading setado para TRUE');
     setContacts([]);
     
     try {
@@ -130,17 +131,23 @@ export const useContactManagement = () => {
       }
 
       console.log('📊 Total de contatos filtrados:', contactsData.length);
+      console.log('📊 Setando contatos no estado...');
       setContacts(contactsData);
+      console.log('📊 Contatos setados no estado');
       
       if (contactsData.length > 0) {
         console.log('💾 Iniciando salvamento no NocoDB...');
-        try {
-          await nocodbService.saveContacts(contactsData, selectedInstance);
-          console.log('✅ Contatos salvos no NocoDB com sucesso');
-        } catch (saveError) {
-          console.error('❌ Erro ao salvar no NocoDB:', saveError);
-        }
-        console.log('💾 Salvamento no NocoDB finalizado');
+        
+        // Salvar no NocoDB de forma assíncrona sem bloquear a UI
+        nocodbService.saveContacts(contactsData, selectedInstance)
+          .then(() => {
+            console.log('✅ Contatos salvos no NocoDB com sucesso');
+          })
+          .catch((saveError) => {
+            console.error('❌ Erro ao salvar no NocoDB:', saveError);
+          });
+        
+        console.log('💾 Processo de salvamento iniciado (assíncrono)');
         
         toast({
           title: "Sucesso",
@@ -166,8 +173,16 @@ export const useContactManagement = () => {
       
       setContacts([]);
     } finally {
-      console.log('🏁 Finalizando busca de contatos - setando isLoading para false');
+      console.log('🏁 FINALLY EXECUTADO - Setando isLoading para FALSE');
       setIsLoading(false);
+      console.log('🏁 isLoading setado para FALSE');
+      
+      // Forçar re-render para garantir que o estado seja atualizado
+      setTimeout(() => {
+        console.log('🏁 TIMEOUT - Verificando isLoading:', isLoading);
+        console.log('🏁 TIMEOUT - Forçando setIsLoading(false) novamente');
+        setIsLoading(false);
+      }, 100);
     }
   };
 
