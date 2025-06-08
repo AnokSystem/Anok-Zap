@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { evolutionApiService } from '@/services/evolutionApi';
@@ -90,6 +91,7 @@ export const useContactManagement = () => {
       return;
     }
 
+    console.log('🔄 Iniciando busca de contatos - setando isLoading para true');
     setIsLoading(true);
     setContacts([]);
     
@@ -131,13 +133,14 @@ export const useContactManagement = () => {
       setContacts(contactsData);
       
       if (contactsData.length > 0) {
-        console.log('💾 Salvando contatos no NocoDB...');
+        console.log('💾 Iniciando salvamento no NocoDB...');
         try {
           await nocodbService.saveContacts(contactsData, selectedInstance);
           console.log('✅ Contatos salvos no NocoDB com sucesso');
         } catch (saveError) {
           console.error('❌ Erro ao salvar no NocoDB:', saveError);
         }
+        console.log('💾 Salvamento no NocoDB finalizado');
         
         toast({
           title: "Sucesso",
@@ -163,7 +166,7 @@ export const useContactManagement = () => {
       
       setContacts([]);
     } finally {
-      console.log('🏁 Finalizando busca de contatos');
+      console.log('🏁 Finalizando busca de contatos - setando isLoading para false');
       setIsLoading(false);
     }
   };
