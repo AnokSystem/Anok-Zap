@@ -25,10 +25,53 @@ const InstanceManagement = () => {
   const [showQrModal, setShowQrModal] = useState(false);
   const [currentQrCode, setCurrentQrCode] = useState('');
   const [connectingInstance, setConnectingInstance] = useState<string | null>(null);
+  const [monitoringInstanceId, setMonitoringInstanceId] = useState<string | null>(null);
 
   useEffect(() => {
     loadInstances();
   }, []);
+
+  // Monitor status da instância quando QR code está sendo exibido
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (monitoringInstanceId && showQrModal) {
+      console.log('🔄 Iniciando monitoramento da instância:', monitoringInstanceId);
+      
+      interval = setInterval(async () => {
+        try {
+          const instances = await evolutionApiService.getInstances();
+          const instance = instances.find(inst => inst.id === monitoringInstanceId);
+          
+          if (instance && (instance.status === 'conectado' || instance.status === 'open')) {
+            console.log('✅ Instância conectada! Fechando QR code...');
+            
+            // Fechar modal e limpar estados
+            setShowQrModal(false);
+            setCurrentQrCode('');
+            setMonitoringInstanceId(null);
+            setConnectingInstance(null);
+            
+            // Atualizar lista de instâncias
+            await loadInstances();
+            
+            toast({
+              title: "Sucesso",
+              description: "Instância conectada com sucesso!",
+            });
+          }
+        } catch (error) {
+          console.error('❌ Erro ao monitorar instância:', error);
+        }
+      }, 3000); // Verificar a cada 3 segundos
+    }
+    
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [monitoringInstanceId, showQrModal, toast]);
 
   const loadInstances = async () => {
     setIsLoading(true);
@@ -126,6 +169,7 @@ const InstanceManagement = () => {
         const qrCode = await evolutionApiService.generateQrCode(instanceId);
         setCurrentQrCode(qrCode);
         setShowQrModal(true);
+        setMonitoringInstanceId(instanceId); // Iniciar monitoramento
         
         toast({
           title: "QR Code Gerado",
@@ -206,6 +250,8 @@ const InstanceManagement = () => {
   const closeQrModal = () => {
     setShowQrModal(false);
     setCurrentQrCode('');
+    setMonitoringInstanceId(null); // Parar monitoramento
+    setConnectingInstance(null);
   };
 
   return (
@@ -377,9 +423,15 @@ const InstanceManagement = () => {
                 className="w-64 h-64"
               />
             </div>
-            <p className="text-gray-400 text-center text-sm">
-              Escaneie este QR code com o WhatsApp no seu celular para conectar a instância
-            </p>
+            <div className="text-center space-y-2">
+              <p className="text-gray-400 text-sm">
+                Escaneie este QR code com o WhatsApp no seu celular para conectar a instância
+              </p>
+              <div className="flex items-center justify-center gap-2 text-yellow-400">
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                <span className="text-sm">Aguardando conexão...</span>
+              </div>
+            </div>
             <Button 
               onClick={closeQrModal}
               className="w-full"
