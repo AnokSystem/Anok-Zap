@@ -80,67 +80,132 @@ class EvolutionApiService {
 
   async getAllContacts(instanceId: string) {
     try {
-      console.log('🔍 Buscando contatos pessoais para instância:', instanceId);
+      console.log('🔍 Iniciando busca de contatos pessoais para instância:', instanceId);
+      
+      // Adicionar timeout para evitar travamento
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+        console.log('⏰ Timeout na busca de contatos - cancelando requisição');
+      }, 30000); // 30 segundos
       
       const response = await fetch(`${API_BASE_URL}/chat/findContacts/${instanceId}`, {
         method: 'POST',
         headers: this.headers,
-        body: JSON.stringify({})
+        body: JSON.stringify({}),
+        signal: controller.signal
       });
       
+      clearTimeout(timeoutId);
       console.log(`📊 Status findContacts: ${response.status}`);
       
-      if (response.ok) {
-        const data = await response.json();
-        console.log('📦 Resposta findContacts:', data);
-        
-        const contacts = Array.isArray(data) ? data : [];
-        console.log(`📋 Total de contatos na resposta: ${contacts.length}`);
-        
-        if (contacts.length === 0) {
-          console.log('❌ Nenhum contato encontrado na resposta da API');
-          return [];
-        }
-        
-        const personalContacts = contacts
-          .filter((contact: any) => {
-            const contactId = contact.remoteJid;
-            if (!contactId) return false;
-            
-            // Filtrar apenas contatos pessoais
-            const isPersonal = contactId.endsWith('@s.whatsapp.net');
-            const isNotGroup = !contactId.endsWith('@g.us');
-            const isNotBroadcast = !contactId.includes('status@broadcast') && !contactId.includes('broadcast');
-            
-            return isPersonal && isNotGroup && isNotBroadcast;
-          })
-          .map((contact: any) => {
-            const contactId = contact.remoteJid;
-            const contactName = 
-              contact.pushName || 
-              contact.name || 
-              contact.notify || 
-              this.extractNameFromId(contactId) ||
-              'Contato sem nome';
-            
-            return {
-              id: contactId,
-              name: contactName,
-              phoneNumber: this.formatPhoneNumber(contactId),
-            };
-          });
-        
-        console.log(`✅ Contatos pessoais filtrados: ${personalContacts.length}`);
-        return personalContacts;
-      } else {
+      if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ Erro na resposta da API:', response.status, errorText);
+        throw new Error(`Erro ${response.status}: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log('📦 Resposta findContacts (primeiros 3 itens):', data.slice ? data.slice(0, 3) : data);
+      console.log('📦 Tipo da resposta:', typeof data, 'É array:', Array.isArray(data));
+      
+      // Tentar diferentes formatos de resposta
+      let contacts = [];
+      if (Array.isArray(data)) {
+        contacts = data;
+      } else if (data.contacts && Array.isArray(data.contacts)) {
+        contacts = data.contacts;
+      } else if (data.data && Array.isArray(data.data)) {
+        contacts = data.data;
+      } else if (data.list && Array.isArray(data.list)) {
+        contacts = data.list;
+      } else {
+        console.log('❌ Formato de resposta não reconhecido:', data);
         return [];
       }
       
+      console.log(`📋 Total de contatos brutos encontrados: ${contacts.length}`);
+      
+      if (contacts.length === 0) {
+        console.log('❌ Nenhum contato encontrado na resposta da API');
+        return [];
+      }
+      
+      // Log dos primeiros contatos para debug
+      console.log('🔍 Primeiros 3 contatos brutos:', contacts.slice(0, 3));
+      
+      const personalContacts = contacts
+        .filter((contact: any, index: number) => {
+          const contactId = contact.remoteJid || contact.id || contact.jid;
+          
+          if (!contactId) {
+            if (index < 5) console.log(`❌ Contato sem ID no índice ${index}:`, contact);
+            return false;
+          }
+          
+          // Filtrar apenas contatos pessoais (mais flexível)
+          const isPersonal = contactId.includes('@s.whatsapp.net') || contactId.includes('@c.us');
+          const isNotGroup = !contactId.includes('@g.us');
+          const isNotBroadcast = !contactId.includes('status@broadcast') && !contactId.includes('broadcast');
+          
+          const isValid = isPersonal && isNotGroup && isNotBroadcast;
+          
+          if (index < 5) {
+            console.log(`🔍 Contato ${index}:`, {
+              contactId,
+              isPersonal,
+              isNotGroup,
+              isNotBroadcast,
+              isValid
+            });
+          }
+          
+          return isValid;
+        })
+        .map((contact: any, index: number) => {
+          const contactId = contact.remoteJid || contact.id || contact.jid;
+          
+          // Tentar extrair nome de várias propriedades possíveis
+          const contactName = 
+            contact.pushName || 
+            contact.name || 
+            contact.notify || 
+            contact.displayName ||
+            contact.verifiedName ||
+            this.extractNameFromId(contactId) ||
+            'Contato sem nome';
+          
+          const formattedContact = {
+            id: contactId,
+            name: contactName,
+            phoneNumber: this.formatPhoneNumber(contactId),
+          };
+          
+          if (index < 5) {
+            console.log(`📞 Contato formatado ${index}:`, formattedContact);
+          }
+          
+          return formattedContact;
+        });
+      
+      console.log(`✅ Total de contatos pessoais filtrados: ${personalContacts.length}`);
+      
+      // Remover duplicatas baseado no número de telefone
+      const uniqueContacts = personalContacts.filter((contact, index, self) => 
+        index === self.findIndex(c => c.phoneNumber === contact.phoneNumber)
+      );
+      
+      console.log(`✅ Contatos únicos após remoção de duplicatas: ${uniqueContacts.length}`);
+      
+      return uniqueContacts;
+      
     } catch (error) {
+      if (error.name === 'AbortError') {
+        console.error('⏰ Busca de contatos cancelada por timeout');
+        throw new Error('Timeout na busca de contatos. Tente novamente.');
+      }
       console.error('💥 Erro na busca de contatos:', error);
-      return [];
+      throw error;
     }
   }
 

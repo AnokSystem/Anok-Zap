@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { evolutionApiService } from '@/services/evolutionApi';
@@ -102,8 +101,15 @@ export const useContactManagement = () => {
 
       if (contactType === 'personal') {
         console.log('📞 Buscando contatos pessoais...');
+        
+        toast({
+          title: "Buscando contatos",
+          description: "Aguarde, isso pode levar alguns segundos...",
+        });
+        
         contactsData = await evolutionApiService.getAllContacts(selectedInstance);
         console.log('✅ Contatos pessoais encontrados:', contactsData.length);
+        
       } else if (contactType === 'groups' && selectedGroup) {
         console.log('👥 Buscando contatos do grupo:', selectedGroup);
         const groupContacts = await evolutionApiService.getGroupContacts(selectedInstance, selectedGroup);
@@ -132,20 +138,29 @@ export const useContactManagement = () => {
         } catch (saveError) {
           console.error('❌ Erro ao salvar no NocoDB:', saveError);
         }
+        
+        toast({
+          title: "Sucesso",
+          description: `${contactsData.length} contatos carregados com sucesso`,
+        });
+      } else {
+        toast({
+          title: "Atenção",
+          description: "Nenhum contato encontrado com os filtros selecionados",
+        });
       }
-      
-      toast({
-        title: "Sucesso",
-        description: `${contactsData.length} contatos carregados com sucesso`,
-      });
       
     } catch (error) {
       console.error('💥 Erro ao buscar contatos:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      
       toast({
-        title: "Erro",
-        description: `Falha ao buscar contatos: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+        title: "Erro na busca",
+        description: `${errorMessage}. Verifique se a instância está conectada.`,
         variant: "destructive",
       });
+      
       setContacts([]);
     } finally {
       console.log('🏁 Finalizando busca de contatos');
