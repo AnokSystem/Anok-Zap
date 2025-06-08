@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Settings, Trash2, Eye, ExternalLink } from 'lucide-react';
+import { Settings, Trash2, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface ActiveNotificationsListProps {
@@ -39,6 +39,32 @@ export const ActiveNotificationsList: React.FC<ActiveNotificationsListProps> = (
     return role === 'producer' ? 'Produtor' : 'Afiliado';
   };
 
+  // Função para extrair dados do JSON se necessário
+  const parseNotificationData = (notification: any) => {
+    if (notification['Dados Completos (JSON)']) {
+      try {
+        const jsonData = JSON.parse(notification['Dados Completos (JSON)']);
+        return {
+          eventType: jsonData.eventType || notification['Tipo de Evento'],
+          platform: jsonData.platform || notification['Plataforma'],
+          profileName: jsonData.profileName || notification['Perfil Hotmart'],
+          userRole: jsonData.userRole || notification['Função do Usuário'],
+          instanceId: jsonData.instance || notification['ID da Instância']
+        };
+      } catch (e) {
+        console.error('Erro ao fazer parse do JSON:', e);
+      }
+    }
+    
+    return {
+      eventType: notification['Tipo de Evento'],
+      platform: notification['Plataforma'],
+      profileName: notification['Perfil Hotmart'],
+      userRole: notification['Função do Usuário'],
+      instanceId: notification['ID da Instância']
+    };
+  };
+
   return (
     <div className="card-glass p-6">
       <div className="flex items-center justify-between mb-6">
@@ -64,16 +90,6 @@ export const ActiveNotificationsList: React.FC<ActiveNotificationsListProps> = (
             <ExternalLink className="w-4 h-4 mr-2" />
             Página Completa
           </Button>
-          
-          <Button
-            onClick={() => navigate('/notifications')}
-            variant="outline"
-            size="sm"
-            className="bg-gray-700/50 border-gray-600 text-gray-200 hover:bg-gray-600/50"
-          >
-            <Eye className="w-4 h-4 mr-2" />
-            Ver Todas
-          </Button>
         </div>
       </div>
 
@@ -87,37 +103,42 @@ export const ActiveNotificationsList: React.FC<ActiveNotificationsListProps> = (
             size="sm"
             className="bg-purple-accent/20 border-purple-accent text-purple-accent hover:bg-purple-accent/30"
           >
-            <Eye className="w-4 h-4 mr-2" />
+            <ExternalLink className="w-4 h-4 mr-2" />
             Ver Página de Notificações
           </Button>
         </div>
       ) : (
         <div className="space-y-4">
-          {rules.slice(0, 3).map((rule) => (
-            <div key={rule.id} className="p-4 bg-gray-700/30 rounded-lg border border-gray-600/50 flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <Badge className="bg-purple-accent/20 text-purple-accent border-purple-accent/30">
-                  {getEventTypeLabel(rule.eventType)}
-                </Badge>
-                <span className="text-gray-200">{getPlatformLabel(rule.platform || '')}</span>
-                <span className="text-sm text-gray-400">
-                  {rule.profileName || 'Perfil não definido'}
-                </span>
-                <span className="text-sm text-gray-400">
-                  {getRoleLabel(rule.userRole || '')}
-                </span>
-                <span className="text-sm text-gray-400">Instância: {rule.instanceId}</span>
+          {rules.slice(0, 3).map((rule) => {
+            const data = parseNotificationData(rule);
+            return (
+              <div key={rule.ID || rule.id} className="p-4 bg-gray-700/30 rounded-lg border border-gray-600/50 flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <Badge className="bg-purple-accent/20 text-purple-accent border-purple-accent/30">
+                    {getEventTypeLabel(data.eventType)}
+                  </Badge>
+                  <span className="text-gray-200">{getPlatformLabel(data.platform || '')}</span>
+                  <span className="text-sm text-gray-400">
+                    {data.profileName || 'Perfil não definido'}
+                  </span>
+                  <span className="text-sm text-gray-400">
+                    {getRoleLabel(data.userRole || '')}
+                  </span>
+                  <span className="text-sm text-gray-400">
+                    Instância: {data.instanceId?.slice(0, 8) || 'N/A'}...
+                  </span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onDeleteRule(rule.ID || rule.id)}
+                  className="text-red-400 hover:text-red-300 hover:bg-red-500/20"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onDeleteRule(rule.id)}
-                className="text-red-400 hover:text-red-300 hover:bg-red-500/20"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
-          ))}
+            );
+          })}
           
           {rules.length > 3 && (
             <div className="text-center pt-4">
