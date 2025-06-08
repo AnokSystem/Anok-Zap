@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Bell } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
@@ -24,6 +23,7 @@ const IntelligentNotifications = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [instances, setInstances] = useState<any[]>([]);
   const [createdWebhookUrl, setCreatedWebhookUrl] = useState<string>('');
+  const [editingRule, setEditingRule] = useState<any>(null);
 
   useEffect(() => {
     loadInstances();
@@ -53,6 +53,52 @@ const IntelligentNotifications = () => {
     } catch (error) {
       console.error('Erro ao carregar regras:', error);
     }
+  };
+
+  const handleEditRule = (rule: any) => {
+    try {
+      console.log('Editando regra:', rule);
+      
+      // Parse dos dados JSON para preencher o formulário
+      const data = rule['Dados Completos (JSON)'] 
+        ? JSON.parse(rule['Dados Completos (JSON)'])
+        : {};
+      
+      setNewRule({
+        eventType: data.eventType || rule['Tipo de Evento'] || '',
+        userRole: data.userRole || rule['Função do Usuário'] || '',
+        platform: data.platform || rule['Plataforma'] || '',
+        profileName: data.profileName || rule['Perfil Hotmart'] || '',
+        instanceId: data.instance || rule['ID da Instância'] || '',
+        messages: data.messages || [{ id: '1', type: 'text', content: '', delay: 0 }],
+      });
+      
+      setEditingRule(rule);
+      
+      toast({
+        title: "Modo de Edição",
+        description: "Regra carregada para edição. Modifique os campos e salve as alterações.",
+      });
+    } catch (error) {
+      console.error('Erro ao editar regra:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os dados da regra para edição",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingRule(null);
+    setNewRule({
+      eventType: '',
+      userRole: '',
+      platform: '',
+      profileName: '',
+      instanceId: '',
+      messages: [{ id: '1', type: 'text', content: '', delay: 0 }],
+    });
   };
 
   const addMessage = () => {
@@ -141,7 +187,7 @@ const IntelligentNotifications = () => {
         timestamp: new Date().toISOString()
       };
 
-      console.log('Criando notificação:', notificationData);
+      console.log(editingRule ? 'Atualizando notificação:' : 'Criando notificação:', notificationData);
 
       // Salvar no NocoDB
       await nocodbService.saveHotmartNotification(notificationData);
@@ -159,16 +205,17 @@ const IntelligentNotifications = () => {
         messages: [{ id: '1', type: 'text', content: '', delay: 0 }],
       });
 
+      setEditingRule(null);
       await loadRules();
 
       toast({
         title: "Sucesso",
-        description: "Notificação criada com sucesso!",
+        description: editingRule ? "Notificação atualizada com sucesso!" : "Notificação criada com sucesso!",
       });
     } catch (error) {
       toast({
         title: "Erro",
-        description: "Falha ao criar notificação",
+        description: editingRule ? "Falha ao atualizar notificação" : "Falha ao criar notificação",
         variant: "destructive",
       });
     } finally {
@@ -204,10 +251,15 @@ const IntelligentNotifications = () => {
           <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center shadow-purple">
             <Bell className="w-6 h-6 text-white" />
           </div>
-          <h3 className="text-2xl font-bold text-primary-contrast">Notificações Inteligentes</h3>
+          <h3 className="text-2xl font-bold text-primary-contrast">
+            {editingRule ? 'Editar Notificação' : 'Notificações Inteligentes'}
+          </h3>
         </div>
         <p className="text-gray-400 text-lg">
-          Configure notificações automáticas baseadas em eventos das plataformas de venda
+          {editingRule 
+            ? 'Modifique os campos desejados e salve as alterações'
+            : 'Configure notificações automáticas baseadas em eventos das plataformas de venda'
+          }
         </p>
       </div>
 
@@ -230,12 +282,15 @@ const IntelligentNotifications = () => {
         onRemoveMessage={removeMessage}
         onUpdateMessage={updateMessage}
         onFileUpload={handleFileUpload}
+        isEditing={!!editingRule}
+        onCancelEdit={cancelEdit}
       />
 
       {/* Lista de Regras Existentes */}
       <ActiveNotificationsList
         rules={rules}
         onDeleteRule={deleteRule}
+        onEditRule={handleEditRule}
       />
     </div>
   );

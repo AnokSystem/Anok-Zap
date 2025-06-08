@@ -1,16 +1,24 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Zap } from 'lucide-react';
+import { Plus, Zap, X, RefreshCw, Save } from 'lucide-react';
 import { Message } from './types';
 import { MessageEditor } from './MessageEditor';
 
+interface NotificationRule {
+  instanceId: string;
+  eventType: string;
+  userRole: string;
+  platform: string;
+  profileName: string;
+  messages: Message[];
+}
+
 interface NotificationFormProps {
-  newRule: any;
-  setNewRule: (rule: any) => void;
+  newRule: Partial<NotificationRule>;
+  setNewRule: (rule: Partial<NotificationRule>) => void;
   instances: any[];
   isLoading: boolean;
   onSave: () => void;
@@ -18,31 +26,52 @@ interface NotificationFormProps {
   onRemoveMessage: (messageId: string) => void;
   onUpdateMessage: (messageId: string, updates: Partial<Message>) => void;
   onFileUpload: (messageId: string, file: File) => void;
+  isEditing?: boolean;
+  onCancelEdit?: () => void;
 }
 
-export const NotificationForm: React.FC<NotificationFormProps> = ({
-  newRule,
-  setNewRule,
-  instances,
-  isLoading,
-  onSave,
-  onAddMessage,
-  onRemoveMessage,
-  onUpdateMessage,
-  onFileUpload
-}) => {
+export const NotificationForm = ({ 
+  newRule, 
+  setNewRule, 
+  instances, 
+  isLoading, 
+  onSave, 
+  onAddMessage, 
+  onRemoveMessage, 
+  onUpdateMessage, 
+  onFileUpload,
+  isEditing = false,
+  onCancelEdit
+}: NotificationFormProps) => {
   return (
     <div className="card-glass p-6">
-      <div className="flex items-center space-x-3 mb-6">
-        <div className="w-10 h-10 bg-purple-accent/20 rounded-lg flex items-center justify-center">
-          <Plus className="w-5 h-5 text-purple-accent" />
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-purple-accent/20 rounded-lg flex items-center justify-center">
+            <Plus className="w-5 h-5 text-purple-accent" />
+          </div>
+          <div>
+            <h4 className="font-semibold text-primary-contrast text-lg">
+              {isEditing ? 'Editar Notificação' : 'Nova Notificação'}
+            </h4>
+            <p className="text-sm text-gray-400 mt-1">
+              {isEditing ? 'Modifique os campos e salve as alterações' : 'Configure uma nova notificação automática'}
+            </p>
+          </div>
         </div>
-        <div>
-          <h4 className="font-semibold text-primary-contrast text-lg">Nova Notificação</h4>
-          <p className="text-sm text-gray-400 mt-1">
-            Configure uma nova regra de notificação automática
-          </p>
-        </div>
+        
+        {isEditing && onCancelEdit && (
+          <Button
+            onClick={onCancelEdit}
+            variant="outline"
+            size="sm"
+            className="bg-gray-700/50 border-gray-600 text-gray-200 hover:bg-gray-600/50"
+          >
+            <X className="w-4 h-4 mr-2" />
+            Cancelar Edição
+          </Button>
+        )}
       </div>
 
       <div className="space-y-6">
@@ -141,18 +170,45 @@ export const NotificationForm: React.FC<NotificationFormProps> = ({
           onFileUpload={onFileUpload}
         />
 
-        {/* Botão Salvar */}
-        <div className="pt-4">
-          <Button
-            onClick={onSave}
-            disabled={isLoading}
-            className="w-full btn-primary h-12"
-          >
-            <div className="flex items-center justify-center space-x-2">
-              <Zap className="w-5 h-5" />
-              <span>{isLoading ? 'Criando...' : 'Criar Notificação'}</span>
-            </div>
-          </Button>
+        {/* Botões de Ação */}
+        <div className="flex justify-between items-center pt-6 border-t border-gray-600/30">
+          <div className="flex items-center space-x-3">
+            {isEditing && (
+              <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30">
+                Modo de Edição
+              </Badge>
+            )}
+          </div>
+          
+          <div className="flex items-center space-x-3">
+            {isEditing && onCancelEdit && (
+              <Button
+                onClick={onCancelEdit}
+                variant="ghost"
+                disabled={isLoading}
+                className="text-gray-400 hover:text-gray-200"
+              >
+                Cancelar
+              </Button>
+            )}
+            <Button 
+              onClick={onSave}
+              disabled={isLoading || !newRule.eventType || !newRule.instanceId || !newRule.userRole || !newRule.platform || !newRule.profileName}
+              className="bg-purple-accent hover:bg-purple-accent/90 text-white px-6"
+            >
+              {isLoading ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  {isEditing ? 'Atualizando...' : 'Salvando...'}
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  {isEditing ? 'Atualizar Notificação' : 'Salvar Notificação'}
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
