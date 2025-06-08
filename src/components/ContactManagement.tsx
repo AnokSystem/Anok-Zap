@@ -1,259 +1,32 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users, Download, MessageSquare, Upload, User, Users2, Crown, UserCheck } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from 'react-router-dom';
-import { evolutionApiService } from '@/services/evolutionApi';
-import { nocodbService } from '@/services/nocodb';
-
-interface Contact {
-  id: string;
-  name: string;
-  phoneNumber: string;
-  groupName?: string;
-  isAdmin?: boolean;
-}
-
-interface Group {
-  id: string;
-  name: string;
-}
+import { Users } from 'lucide-react';
+import { useContactManagement } from './ContactManagement/useContactManagement';
+import ContactSelection from './ContactManagement/ContactSelection';
+import ContactActions from './ContactManagement/ContactActions';
+import ContactTable from './ContactManagement/ContactTable';
 
 const ContactManagement = () => {
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const [instances, setInstances] = useState<any[]>([]);
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [selectedInstance, setSelectedInstance] = useState('');
-  const [contactType, setContactType] = useState<'personal' | 'groups'>('personal');
-  const [selectedGroup, setSelectedGroup] = useState('');
-  const [memberType, setMemberType] = useState<'all' | 'admin' | 'members'>('all');
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    loadInstances();
-  }, []);
-
-  useEffect(() => {
-    if (selectedInstance && contactType === 'groups') {
-      loadGroups();
-    }
-  }, [selectedInstance, contactType]);
-
-  const loadInstances = async () => {
-    try {
-      console.log('Carregando instâncias...');
-      const instancesData = await evolutionApiService.getInstances();
-      console.log('Instâncias carregadas:', instancesData);
-      setInstances(instancesData);
-      
-      if (instancesData.length > 0) {
-        toast({
-          title: "Sucesso",
-          description: `${instancesData.length} instâncias encontradas`,
-        });
-      }
-    } catch (error) {
-      console.error('Erro ao carregar instâncias:', error);
-      toast({
-        title: "Erro",
-        description: "Falha ao carregar instâncias da Evolution API",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const loadGroups = async () => {
-    if (!selectedInstance) return;
-    
-    try {
-      console.log('Carregando grupos para instância:', selectedInstance);
-      const groupsData = await evolutionApiService.getGroups(selectedInstance);
-      console.log('Grupos carregados:', groupsData);
-      setGroups(groupsData);
-      
-      toast({
-        title: "Sucesso",
-        description: `${groupsData.length} grupos encontrados`,
-      });
-    } catch (error) {
-      console.error('Erro ao carregar grupos:', error);
-      toast({
-        title: "Erro",
-        description: "Falha ao carregar grupos",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const fetchContacts = async () => {
-    if (!selectedInstance) {
-      toast({
-        title: "Erro",
-        description: "Por favor, selecione uma instância primeiro",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (contactType === 'groups' && !selectedGroup) {
-      toast({
-        title: "Erro",
-        description: "Por favor, selecione um grupo",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    setContacts([]); // Limpar contatos anteriores
-    
-    try {
-      console.log('🔍 Iniciando busca de contatos...');
-      console.log('Tipo:', contactType, 'Instância:', selectedInstance, 'Grupo:', selectedGroup);
-      
-      let contactsData: Contact[] = [];
-
-      if (contactType === 'personal') {
-        console.log('📞 Buscando contatos pessoais...');
-        contactsData = await evolutionApiService.getAllContacts(selectedInstance);
-        console.log('✅ Contatos pessoais encontrados:', contactsData.length);
-      } else if (contactType === 'groups' && selectedGroup) {
-        console.log('👥 Buscando contatos do grupo:', selectedGroup);
-        const groupContacts = await evolutionApiService.getGroupContacts(selectedInstance, selectedGroup);
-        console.log('📋 Total de participantes do grupo:', groupContacts.length);
-        
-        // Filtrar por tipo de membro se especificado
-        if (memberType === 'admin') {
-          contactsData = groupContacts.filter(contact => contact.isAdmin);
-          console.log('👑 Apenas administradores:', contactsData.length);
-        } else if (memberType === 'members') {
-          contactsData = groupContacts.filter(contact => !contact.isAdmin);
-          console.log('👤 Apenas membros:', contactsData.length);
-        } else {
-          contactsData = groupContacts;
-          console.log('👥 Todos os participantes:', contactsData.length);
-        }
-      }
-
-      console.log('📊 Total de contatos filtrados:', contactsData.length);
-      setContacts(contactsData);
-      
-      // Salvar no NocoDB apenas se houver contatos
-      if (contactsData.length > 0) {
-        console.log('💾 Salvando contatos no NocoDB...');
-        try {
-          await nocodbService.saveContacts(contactsData, selectedInstance);
-          console.log('✅ Contatos salvos no NocoDB com sucesso');
-        } catch (saveError) {
-          console.error('❌ Erro ao salvar no NocoDB:', saveError);
-          // Não bloquear a UI se falhar o salvamento
-        }
-      }
-      
-      toast({
-        title: "Sucesso",
-        description: `${contactsData.length} contatos carregados com sucesso`,
-      });
-      
-    } catch (error) {
-      console.error('💥 Erro ao buscar contatos:', error);
-      toast({
-        title: "Erro",
-        description: `Falha ao buscar contatos: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
-        variant: "destructive",
-      });
-      setContacts([]); // Garantir que a lista seja limpa em caso de erro
-    } finally {
-      console.log('🏁 Finalizando busca de contatos');
-      setIsLoading(false);
-    }
-  };
-
-  const exportContacts = () => {
-    if (contacts.length === 0) {
-      toast({
-        title: "Erro",
-        description: "Nenhum contato para exportar",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const csvHeaders = contactType === 'groups' 
-      ? "Nome,Telefone,Grupo,Tipo"
-      : "Nome,Telefone";
-
-    const csvContent = [
-      csvHeaders,
-      ...contacts.map(contact => {
-        if (contactType === 'groups') {
-          const memberTypeText = contact.isAdmin ? 'Admin' : 'Membro';
-          return `"${contact.name}","${contact.phoneNumber}","${contact.groupName || ''}","${memberTypeText}"`;
-        }
-        return `"${contact.name}","${contact.phoneNumber}"`;
-      })
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `contatos_${contactType}_${selectedInstance}_${Date.now()}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-
-    toast({
-      title: "Sucesso",
-      description: "Contatos exportados com sucesso",
-    });
-  };
-
-  const startMassMessaging = () => {
-    if (contacts.length === 0) {
-      toast({
-        title: "Erro",
-        description: "Nenhum contato selecionado",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Preparar os contatos formatados
-    const formattedContacts = contacts.map(contact => {
-      const cleanPhone = contact.phoneNumber.replace(/[^\d]/g, '');
-      
-      if (contact.name && contact.name !== contact.phoneNumber && contact.name !== cleanPhone) {
-        return `${cleanPhone} - ${contact.name}`;
-      }
-      return cleanPhone;
-    });
-
-    // Salvar dados no localStorage
-    localStorage.setItem('massMessagingContacts', formattedContacts.join('\n'));
-    localStorage.setItem('massMessagingInstance', selectedInstance);
-    
-    // Navegação imediata e otimizada
-    const url = new URL(window.location.href);
-    url.searchParams.set('tab', 'mass-messaging');
-    window.location.replace(url.toString());
-  };
-
-  const getSelectedInstanceName = () => {
-    const instance = instances.find(inst => inst.id === selectedInstance);
-    return instance ? instance.name : '';
-  };
-
-  const getSelectedGroupName = () => {
-    const group = groups.find(grp => grp.id === selectedGroup);
-    return group ? group.name : '';
-  };
+  const {
+    instances,
+    groups,
+    selectedInstance,
+    setSelectedInstance,
+    contactType,
+    setContactType,
+    selectedGroup,
+    setSelectedGroup,
+    memberType,
+    setMemberType,
+    contacts,
+    isLoading,
+    fetchContacts,
+    exportContacts,
+    startMassMessaging,
+    getSelectedInstanceName,
+    getSelectedGroupName,
+  } = useContactManagement();
 
   return (
     <div className="space-y-6">
@@ -268,122 +41,29 @@ const ContactManagement = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Seleção de Instância */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Instância WhatsApp</label>
-            <Select value={selectedInstance} onValueChange={setSelectedInstance}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione uma instância" />
-              </SelectTrigger>
-              <SelectContent>
-                {instances.map((instance) => (
-                  <SelectItem key={instance.id} value={instance.id}>
-                    {instance.name} ({instance.status})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <ContactSelection
+            instances={instances}
+            groups={groups}
+            selectedInstance={selectedInstance}
+            setSelectedInstance={setSelectedInstance}
+            contactType={contactType}
+            setContactType={setContactType}
+            selectedGroup={selectedGroup}
+            setSelectedGroup={setSelectedGroup}
+            memberType={memberType}
+            setMemberType={setMemberType}
+          />
 
-          {/* Tipo de Contatos */}
-          <div className="space-y-3">
-            <label className="text-sm font-medium">Tipo de Contatos</label>
-            <RadioGroup value={contactType} onValueChange={(value: 'personal' | 'groups') => setContactType(value)}>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="personal" id="personal" />
-                <label htmlFor="personal" className="flex items-center space-x-2 cursor-pointer">
-                  <User className="w-4 h-4" />
-                  <span>Contatos Pessoais</span>
-                </label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="groups" id="groups" />
-                <label htmlFor="groups" className="flex items-center space-x-2 cursor-pointer">
-                  <Users2 className="w-4 h-4" />
-                  <span>Contatos de Grupos</span>
-                </label>
-              </div>
-            </RadioGroup>
-          </div>
-
-          {/* Seleção de Grupo (apenas se tipo for 'groups') */}
-          {contactType === 'groups' && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Grupo WhatsApp</label>
-              <Select value={selectedGroup} onValueChange={setSelectedGroup}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um grupo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {groups.map((group) => (
-                    <SelectItem key={group.id} value={group.id}>
-                      {group.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* Tipo de Membros (apenas se tipo for 'groups') */}
-          {contactType === 'groups' && selectedGroup && (
-            <div className="space-y-3">
-              <label className="text-sm font-medium">Tipo de Membros</label>
-              <RadioGroup value={memberType} onValueChange={(value: 'all' | 'admin' | 'members') => setMemberType(value)}>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="all" id="all" />
-                  <label htmlFor="all" className="flex items-center space-x-2 cursor-pointer">
-                    <Users className="w-4 h-4" />
-                    <span>Todos os Membros</span>
-                  </label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="admin" id="admin" />
-                  <label htmlFor="admin" className="flex items-center space-x-2 cursor-pointer">
-                    <Crown className="w-4 h-4" />
-                    <span>Apenas Administradores</span>
-                  </label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="members" id="members" />
-                  <label htmlFor="members" className="flex items-center space-x-2 cursor-pointer">
-                    <UserCheck className="w-4 h-4" />
-                    <span>Apenas Membros</span>
-                  </label>
-                </div>
-              </RadioGroup>
-            </div>
-          )}
-
-          {/* Botões de Ação */}
-          <div className="flex flex-wrap gap-3">
-            <Button
-              onClick={fetchContacts}
-              disabled={isLoading || !selectedInstance || (contactType === 'groups' && !selectedGroup)}
-              className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700"
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              {isLoading ? 'Buscando...' : 'Buscar Contatos'}
-            </Button>
-
-            <Button
-              onClick={exportContacts}
-              disabled={contacts.length === 0}
-              variant="outline"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Exportar CSV
-            </Button>
-
-            <Button
-              onClick={startMassMessaging}
-              disabled={contacts.length === 0}
-              variant="outline"
-            >
-              <MessageSquare className="w-4 h-4 mr-2" />
-              Usar para Disparo
-            </Button>
-          </div>
+          <ContactActions
+            isLoading={isLoading}
+            selectedInstance={selectedInstance}
+            contactType={contactType}
+            selectedGroup={selectedGroup}
+            contactsCount={contacts.length}
+            onFetchContacts={fetchContacts}
+            onExportContacts={exportContacts}
+            onStartMassMessaging={startMassMessaging}
+          />
 
           {/* Informações da Seleção */}
           {selectedInstance && (
@@ -407,58 +87,7 @@ const ContactManagement = () => {
             </Card>
           )}
 
-          {/* Tabela de Contatos */}
-          {contacts.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">
-                  Contatos Encontrados ({contacts.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="max-h-96 overflow-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nome</TableHead>
-                        <TableHead>Telefone</TableHead>
-                        {contactType === 'groups' && <TableHead>Grupo</TableHead>}
-                        {contactType === 'groups' && <TableHead>Tipo</TableHead>}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {contacts.map((contact) => (
-                        <TableRow key={contact.id}>
-                          <TableCell className="font-medium">{contact.name}</TableCell>
-                          <TableCell>{contact.phoneNumber}</TableCell>
-                          {contactType === 'groups' && (
-                            <TableCell>{contact.groupName || 'N/A'}</TableCell>
-                          )}
-                          {contactType === 'groups' && (
-                            <TableCell>
-                              <div className="flex items-center space-x-1">
-                                {contact.isAdmin ? (
-                                  <>
-                                    <Crown className="w-4 h-4 text-yellow-500" />
-                                    <span>Admin</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <UserCheck className="w-4 h-4 text-blue-500" />
-                                    <span>Membro</span>
-                                  </>
-                                )}
-                              </div>
-                            </TableCell>
-                          )}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <ContactTable contacts={contacts} contactType={contactType} />
         </CardContent>
       </Card>
     </div>
