@@ -101,8 +101,8 @@ export const NotificationForm: React.FC<NotificationFormProps> = ({
           </div>
         </div>
 
-        {/* Segunda linha - Plataforma, Nome do Perfil e Delay */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Segunda linha - Plataforma e Nome do Perfil */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <Label className="text-gray-200 font-medium text-sm">Plataforma *</Label>
             <Select
@@ -127,18 +127,6 @@ export const NotificationForm: React.FC<NotificationFormProps> = ({
               value={newRule.profileName || ''}
               onChange={(e) => setNewRule(prev => ({ ...prev, profileName: e.target.value }))}
               placeholder="Nome cadastrado na plataforma"
-              className="input-form"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-gray-200 font-medium text-sm">Delay (minutos)</Label>
-            <Input
-              type="number"
-              min="0"
-              value={newRule.delay || 0}
-              onChange={(e) => setNewRule(prev => ({ ...prev, delay: parseInt(e.target.value) || 0 }))}
-              placeholder="0"
               className="input-form"
             />
           </div>
