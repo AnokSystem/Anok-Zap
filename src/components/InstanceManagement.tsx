@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, Plus, Trash2, Power, Settings, Smartphone, Wifi, WifiOff, Clock } from 'lucide-react';
+import { RefreshCw, Plus, Trash2, Power, Smartphone, Wifi, WifiOff, Clock } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { evolutionApiService } from '@/services/evolutionApi';
 
@@ -100,6 +100,40 @@ const InstanceManagement = () => {
     }
   };
 
+  const toggleInstanceConnection = async (instanceId: string, currentStatus: string) => {
+    setIsLoading(true);
+    try {
+      const isConnected = currentStatus === 'open' || currentStatus === 'conectado';
+      
+      if (isConnected) {
+        console.log('🔄 Desconectando instância:', instanceId);
+        await evolutionApiService.disconnectInstance(instanceId);
+        toast({
+          title: "Sucesso",
+          description: "Instância desconectada",
+        });
+      } else {
+        console.log('🔄 Conectando instância:', instanceId);
+        await evolutionApiService.connectInstance(instanceId);
+        toast({
+          title: "Sucesso",
+          description: "Instância conectada",
+        });
+      }
+      
+      await loadInstances();
+    } catch (error) {
+      console.error('❌ Erro ao alterar conexão da instância:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao alterar conexão da instância",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'open':
@@ -150,6 +184,10 @@ const InstanceManagement = () => {
       default:
         return <Clock className="w-5 h-5 text-purple-accent" />;
     }
+  };
+
+  const isConnected = (status: string) => {
+    return status === 'open' || status === 'conectado';
   };
 
   return (
@@ -204,7 +242,7 @@ const InstanceManagement = () => {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-purple-accent/20 rounded-lg flex items-center justify-center">
-              <Settings className="w-5 h-5 text-purple-accent" />
+              <Smartphone className="w-5 h-5 text-purple-accent" />
             </div>
             <div>
               <Label className="font-semibold text-primary-contrast text-lg">Instâncias Ativas</Label>
@@ -276,23 +314,16 @@ const InstanceManagement = () => {
                     )}
                     
                     <div className="pt-2 border-t border-gray-700/50">
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1 bg-gray-700/50 border-gray-600 text-gray-200 hover:bg-gray-600/50"
-                        >
-                          <Power className="w-3 h-3 mr-2" />
-                          Conectar
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="bg-gray-700/50 border-gray-600 text-gray-200 hover:bg-gray-600/50 h-8 w-8 p-0"
-                        >
-                          <Settings className="w-3 h-3" />
-                        </Button>
-                      </div>
+                      <Button
+                        size="sm"
+                        variant={isConnected(instance.status) ? "destructive" : "default"}
+                        className="w-full"
+                        onClick={() => toggleInstanceConnection(instance.id, instance.status)}
+                        disabled={isLoading}
+                      >
+                        <Power className="w-3 h-3 mr-2" />
+                        {isConnected(instance.status) ? 'Desconectar' : 'Conectar'}
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
