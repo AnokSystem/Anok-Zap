@@ -88,7 +88,7 @@
   body {
     @apply antialiased;
     background: rgb(var(--gray-950));
-    color: rgb(var(--foreground));
+    color: rgb(var(--foreground)) !important;
     font-family: 'Inter', system-ui, sans-serif;
     font-size: 16px;
     line-height: 1.5;
@@ -120,19 +120,48 @@
     color: rgb(var(--foreground)) !important; /* Garantindo que parágrafos sejam brancos */
   }
 
-  /* Regra global para garantir que textos não sejam amarelos */
-  span, div, label, button, input, textarea, select {
-    color: inherit;
+  /* Regras globais para eliminar TODAS as cores amarelas */
+  *, *::before, *::after {
+    /* Remover qualquer cor amarela específica */
   }
   
-  /* Sobrescrever qualquer cor amarela que possa existir */
+  /* Forçar todos os textos básicos para branco */
+  span, div, label, button, input, textarea, select, a, li, td, th {
+    color: inherit !important;
+  }
+  
+  /* Sobrescrever TODAS as possíveis variações de amarelo */
   *[style*="color: #ffff00"],
   *[style*="color: #ff0"],
   *[style*="color: yellow"],
+  *[style*="color: #f0f0"],
+  *[style*="color: #ffff"],
+  *[style*="color: #ffd700"],
+  *[style*="color: #fff700"],
+  *[style*="color: #fffa00"],
+  *[style*="color: gold"],
+  .text-yellow-50,
+  .text-yellow-100,
+  .text-yellow-200,
+  .text-yellow-300,
   .text-yellow-400,
   .text-yellow-500,
-  .text-yellow-600 {
+  .text-yellow-600,
+  .text-yellow-700,
+  .text-yellow-800,
+  .text-yellow-900,
+  .text-amber-400,
+  .text-amber-500,
+  .text-gold {
     color: #ffffff !important;
+  }
+
+  /* Sobrescrever qualquer background amarelo em textos */
+  *[style*="background-color: #ffff00"],
+  *[style*="background-color: yellow"],
+  .bg-yellow-400,
+  .bg-yellow-500 {
+    background-color: transparent !important;
   }
 }
 

@@ -1,8 +1,15 @@
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
+  color: #ffffff !important; /* Forçar cor branca */
+}
+
+/* Garantir que todos os elementos dentro do root sejam brancos */
+#root * {
+  color: inherit !important;
 }
 
 .logo {
@@ -11,9 +18,11 @@
   will-change: filter;
   transition: filter 300ms;
 }
+
 .logo:hover {
   filter: drop-shadow(0 0 2em #646cffaa);
 }
+
 .logo.react:hover {
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
@@ -35,8 +44,25 @@
 
 .card {
   padding: 2em;
+  color: #ffffff !important; /* Forçar cor branca */
 }
 
 .read-the-docs {
-  color: #888;
+  color: #cccccc !important; /* Cinza claro em vez de amarelo */
+}
+
+/* Regra global para eliminar QUALQUER amarelo */
+* {
+  /* Se algum elemento ainda tiver amarelo, forçar para branco */
+}
+
+*[style*="color: yellow"],
+*[style*="color: #ffff00"],
+*[style*="color: #ff0"],
+.text-yellow-400,
+.text-yellow-500,
+.text-yellow-600,
+.text-amber-400,
+.text-amber-500 {
+  color: #ffffff !important;
 }

@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -53,7 +52,7 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
-				// Paleta de Cores Roxas
+				// Paleta de Cores Roxas (SEM AMARELO)
 				purple: {
 					50: '#faf5ff',
 					100: '#f3e8ff',
@@ -71,16 +70,14 @@ export default {
 					light: 'rgb(var(--purple-light))',
 					dark: 'rgb(var(--purple-dark))'
 				},
-				// Cores Neutras
+				// Cores Neutras (SEM AMARELO)
 				gray: {
 					dark: 'rgb(var(--gray-dark))',
 					medium: 'rgb(var(--gray-medium))',
 					light: 'rgb(var(--gray-light))'
 				},
-				// Cor de Destaque
-				yellow: {
-					accent: 'rgb(var(--yellow-accent))'
-				}
+				// REMOVENDO COMPLETAMENTE CORES AMARELAS
+				// yellow: REMOVIDO PARA EVITAR QUALQUER USO ACIDENTAL
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
