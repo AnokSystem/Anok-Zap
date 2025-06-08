@@ -40,15 +40,23 @@ const MassMessaging = () => {
   }, []);
 
   const checkForSavedContacts = () => {
+    console.log('Verificando contatos salvos no localStorage...');
+    
     const savedContacts = localStorage.getItem('massMessagingContacts');
     const savedInstance = localStorage.getItem('massMessagingInstance');
     
+    console.log('Contatos salvos encontrados:', !!savedContacts);
+    console.log('Instância salva encontrada:', !!savedInstance);
+    
     if (savedContacts) {
+      console.log('Importando contatos:', savedContacts);
       setRecipients(savedContacts);
+      
       // Limpar o localStorage após usar
       localStorage.removeItem('massMessagingContacts');
       
       if (savedInstance) {
+        console.log('Definindo instância:', savedInstance);
         setSelectedInstance(savedInstance);
         localStorage.removeItem('massMessagingInstance');
       }
@@ -57,6 +65,8 @@ const MassMessaging = () => {
         title: "Contatos Importados",
         description: "Contatos foram importados da página de gerenciamento de contatos",
       });
+    } else {
+      console.log('Nenhum contato salvo encontrado');
     }
   };
 
