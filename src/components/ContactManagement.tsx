@@ -228,8 +228,8 @@ const ContactManagement = () => {
     console.log('Dados salvos no localStorage');
     console.log('Navegando para disparo em massa...');
 
-    // Navegar para a página de disparo em massa (tab específica)
-    navigate('/?tab=mass-messaging');
+    // Usar window.location para garantir a navegação
+    window.location.href = '/?tab=mass-messaging';
     
     toast({
       title: "Redirecionando",
