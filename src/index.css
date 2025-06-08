@@ -54,12 +54,19 @@
     --gray-200: 226 232 240; /* #e2e8f0 */
     --white: 255 255 255;
     
+    /* Cores de Destaque para Formulários */
+    --form-success: 34 197 94; /* #22c55e - Verde suave */
+    --form-warning: 249 115 22; /* #f97316 - Laranja suave */
+    --form-info: 59 130 246; /* #3b82f6 - Azul suave */
+    --form-highlight: 168 85 247; /* #a855f7 - Roxo claro para destaques */
+    
     /* Gradientes Modernos */
     --gradient-primary: linear-gradient(135deg, rgb(123, 44, 191) 0%, rgb(157, 78, 221) 100%);
     --gradient-secondary: linear-gradient(135deg, rgb(157, 78, 221) 0%, rgb(192, 132, 252) 100%);
     --gradient-subtle: linear-gradient(135deg, rgba(123, 44, 191, 0.08) 0%, rgba(157, 78, 221, 0.04) 100%);
     --gradient-header: linear-gradient(135deg, rgb(123, 44, 191) 0%, rgb(139, 92, 246) 100%);
     --gradient-card: linear-gradient(135deg, rgba(123, 44, 191, 0.06) 0%, rgba(30, 30, 36, 0.8) 100%);
+    --gradient-form: linear-gradient(135deg, rgba(157, 78, 221, 0.05) 0%, rgba(30, 30, 36, 0.9) 100%);
     
     /* Sombras Modernas */
     --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -69,6 +76,7 @@
     --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.04);
     --shadow-purple: 0 4px 14px rgba(123, 44, 191, 0.15);
     --shadow-purple-lg: 0 8px 25px rgba(123, 44, 191, 0.2);
+    --shadow-form: 0 2px 8px rgba(157, 78, 221, 0.1);
   }
 }
 
@@ -134,6 +142,10 @@
     background: var(--gradient-card);
   }
 
+  .gradient-form {
+    background: var(--gradient-form);
+  }
+
   /* Cards Modernos */
   .card-modern {
     background: rgb(var(--card));
@@ -160,6 +172,19 @@
     @apply card-modern p-8;
     background: var(--gradient-card);
     backdrop-filter: blur(20px);
+  }
+
+  /* Formulários Modernos */
+  .form-card {
+    @apply card-modern p-6;
+    background: var(--gradient-form);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(157, 78, 221, 0.1);
+  }
+
+  .form-card:hover {
+    border-color: rgba(157, 78, 221, 0.2);
+    box-shadow: var(--shadow-form);
   }
 
   /* Botões Modernos */
@@ -197,6 +222,49 @@
   .btn-ghost {
     @apply bg-transparent text-gray-400 hover:text-white hover:bg-gray-800/50 rounded-lg px-4 py-2 font-medium transition-all duration-200;
     font-family: 'Poppins', system-ui, sans-serif;
+  }
+
+  /* Botões de Formulário */
+  .btn-form-success {
+    @apply relative overflow-hidden rounded-lg px-5 py-2.5 font-medium text-white transition-all duration-300;
+    background: linear-gradient(135deg, rgb(34, 197, 94) 0%, rgb(22, 163, 74) 100%);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+    font-family: 'Poppins', system-ui, sans-serif;
+    font-weight: 500;
+  }
+
+  .btn-form-success:hover {
+    background: linear-gradient(135deg, rgb(22, 163, 74) 0%, rgb(21, 128, 61) 100%);
+    box-shadow: 0 6px 16px rgba(34, 197, 94, 0.3);
+    transform: translateY(-1px);
+  }
+
+  .btn-form-warning {
+    @apply relative overflow-hidden rounded-lg px-5 py-2.5 font-medium text-white transition-all duration-300;
+    background: linear-gradient(135deg, rgb(249, 115, 22) 0%, rgb(234, 88, 12) 100%);
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.2);
+    font-family: 'Poppins', system-ui, sans-serif;
+    font-weight: 500;
+  }
+
+  .btn-form-warning:hover {
+    background: linear-gradient(135deg, rgb(234, 88, 12) 0%, rgb(194, 65, 12) 100%);
+    box-shadow: 0 6px 16px rgba(249, 115, 22, 0.3);
+    transform: translateY(-1px);
+  }
+
+  .btn-form-info {
+    @apply relative overflow-hidden rounded-lg px-5 py-2.5 font-medium text-white transition-all duration-300;
+    background: linear-gradient(135deg, rgb(59, 130, 246) 0%, rgb(37, 99, 235) 100%);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    font-family: 'Poppins', system-ui, sans-serif;
+    font-weight: 500;
+  }
+
+  .btn-form-info:hover {
+    background: linear-gradient(135deg, rgb(37, 99, 235) 0%, rgb(29, 78, 216) 100%);
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
+    transform: translateY(-1px);
   }
 
   /* Navigation Cards */
@@ -283,6 +351,26 @@
     font-weight: 700;
   }
 
+  .text-form-success {
+    color: rgb(var(--form-success));
+    font-weight: 500;
+  }
+
+  .text-form-warning {
+    color: rgb(var(--form-warning));
+    font-weight: 500;
+  }
+
+  .text-form-info {
+    color: rgb(var(--form-info));
+    font-weight: 500;
+  }
+
+  .text-form-highlight {
+    color: rgb(var(--form-highlight));
+    font-weight: 500;
+  }
+
   /* Header */
   .header-modern {
     background: rgba(16, 16, 20, 0.95);
@@ -290,14 +378,111 @@
     border-bottom: 1px solid rgba(123, 44, 191, 0.1);
   }
 
-  /* Inputs */
+  /* Inputs Modernos */
   .input-modern {
     @apply bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-foreground placeholder:text-gray-400 focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all duration-200;
     box-shadow: var(--shadow-sm);
   }
 
   .input-modern:focus {
-    box-shadow: var(--shadow-md), 0 0 0 3px rgba(123, 44, 191, 0.1);
+    box-shadow: var(--shadow-md), 0 0 0 3px rgba(157, 78, 221, 0.1);
+    border-color: rgb(var(--accent));
+  }
+
+  .input-form {
+    @apply bg-gray-800/80 border border-gray-700/50 rounded-lg px-4 py-3 text-foreground placeholder:text-gray-400 transition-all duration-300;
+    backdrop-filter: blur(8px);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .input-form:focus {
+    @apply border-purple-light ring-2 ring-purple-light/20;
+    box-shadow: var(--shadow-form), 0 0 0 3px rgba(192, 132, 252, 0.1);
+    background: rgba(30, 30, 36, 0.95);
+  }
+
+  .input-form:hover {
+    border-color: rgba(157, 78, 221, 0.3);
+  }
+
+  /* Textarea Moderno */
+  .textarea-form {
+    @apply bg-gray-800/80 border border-gray-700/50 rounded-lg px-4 py-3 text-foreground placeholder:text-gray-400 transition-all duration-300 min-h-[100px] resize-y;
+    backdrop-filter: blur(8px);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .textarea-form:focus {
+    @apply border-purple-light ring-2 ring-purple-light/20;
+    box-shadow: var(--shadow-form), 0 0 0 3px rgba(192, 132, 252, 0.1);
+    background: rgba(30, 30, 36, 0.95);
+  }
+
+  .textarea-form:hover {
+    border-color: rgba(157, 78, 221, 0.3);
+  }
+
+  /* Labels Modernos */
+  .label-form {
+    @apply font-medium text-sm text-foreground mb-2 block;
+    font-family: 'Poppins', system-ui, sans-serif;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  .label-form-highlight {
+    @apply font-medium text-sm mb-2 block;
+    color: rgb(var(--form-highlight));
+    font-family: 'Poppins', system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  /* Select Moderno */
+  .select-form {
+    @apply bg-gray-800/80 border border-gray-700/50 rounded-lg px-4 py-3 text-foreground transition-all duration-300;
+    backdrop-filter: blur(8px);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .select-form:focus {
+    @apply border-purple-light ring-2 ring-purple-light/20;
+    box-shadow: var(--shadow-form), 0 0 0 3px rgba(192, 132, 252, 0.1);
+    background: rgba(30, 30, 36, 0.95);
+  }
+
+  .select-form:hover {
+    border-color: rgba(157, 78, 221, 0.3);
+  }
+
+  /* Checkbox e Radio Modernos */
+  .checkbox-form {
+    @apply w-5 h-5 rounded border-2 border-gray-600 bg-gray-800/80 transition-all duration-200;
+  }
+
+  .checkbox-form:checked {
+    @apply border-purple-light bg-purple-light;
+    box-shadow: 0 0 0 3px rgba(192, 132, 252, 0.2);
+  }
+
+  .checkbox-form:hover {
+    border-color: rgba(157, 78, 221, 0.5);
+  }
+
+  /* Estados de Validação */
+  .form-success {
+    border-color: rgb(var(--form-success));
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+  }
+
+  .form-error {
+    border-color: rgb(var(--destructive));
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+  }
+
+  .form-warning {
+    border-color: rgb(var(--form-warning));
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
   }
 
   /* Animações */
@@ -321,6 +506,11 @@
   .grid-responsive {
     @apply grid gap-8;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+
+  .grid-form {
+    @apply grid gap-6;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   }
 
   /* Utilities Extras */
