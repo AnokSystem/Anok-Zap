@@ -11,7 +11,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <textarea
         className={cn(
-          "textarea-form",
+          "w-full textarea-form",
           className
         )}
         ref={ref}

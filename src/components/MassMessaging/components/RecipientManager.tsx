@@ -28,7 +28,7 @@ export const RecipientManager: React.FC<RecipientManagerProps> = ({
             value={recipients}
             onChange={(e) => onRecipientsChange(e.target.value)}
             placeholder="Digite os contatos (um por linha)&#10;+5511999999999 - João Silva&#10;+5511888888888 - Maria Santos"
-            className="min-h-[120px] bg-gray-700 border-gray-600 text-gray-200 focus:border-purple-400"
+            className="min-h-[120px]"
           />
           <p className="text-sm text-gray-400">
             {recipients.split('\n').filter(r => r.trim()).length} contatos
@@ -42,7 +42,6 @@ export const RecipientManager: React.FC<RecipientManagerProps> = ({
               accept=".xlsx,.csv"
               onChange={(e) => handleSpreadsheetUpload(e, recipients, onRecipientsChange)}
               disabled={isLoading}
-              className="bg-gray-700 border-gray-600 text-gray-200 focus:border-purple-400"
             />
             {uploadedFile && (
               <p className="text-sm text-purple-400">

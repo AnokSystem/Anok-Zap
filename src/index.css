@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
@@ -423,9 +424,9 @@
     border-bottom: 1px solid rgba(123, 44, 191, 0.1);
   }
 
-  /* Inputs Modernos */
+  /* Inputs Modernos - PADRONIZADOS PARA LARGURA TOTAL */
   .input-modern {
-    @apply bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-foreground placeholder:text-gray-400 focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all duration-200;
+    @apply w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-foreground placeholder:text-gray-400 focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all duration-200;
     box-shadow: var(--shadow-sm);
   }
 
@@ -435,7 +436,7 @@
   }
 
   .input-form {
-    @apply bg-gray-800/80 border border-gray-700/50 rounded-lg px-4 py-3 text-foreground placeholder:text-gray-400 transition-all duration-300;
+    @apply w-full bg-gray-800/80 border border-gray-700/50 rounded-lg px-4 py-3 text-foreground placeholder:text-gray-400 transition-all duration-300;
     backdrop-filter: blur(8px);
     box-shadow: var(--shadow-sm);
   }
@@ -450,9 +451,9 @@
     border-color: rgba(157, 78, 221, 0.3);
   }
 
-  /* Textarea Moderno */
+  /* Textarea Moderno - PADRONIZADO PARA LARGURA TOTAL */
   .textarea-form {
-    @apply bg-gray-800/80 border border-gray-700/50 rounded-lg px-4 py-3 text-foreground placeholder:text-gray-400 transition-all duration-300 min-h-[100px] resize-y;
+    @apply w-full bg-gray-800/80 border border-gray-700/50 rounded-lg px-4 py-3 text-foreground placeholder:text-gray-400 transition-all duration-300 min-h-[100px] resize-y;
     backdrop-filter: blur(8px);
     box-shadow: var(--shadow-sm);
   }
@@ -483,9 +484,9 @@
     letter-spacing: -0.01em;
   }
 
-  /* Select Moderno */
+  /* Select Moderno - PADRONIZADO PARA LARGURA TOTAL */
   .select-form {
-    @apply bg-gray-800/80 border border-gray-700/50 rounded-lg px-4 py-3 text-foreground transition-all duration-300;
+    @apply w-full bg-gray-800/80 border border-gray-700/50 rounded-lg px-4 py-3 text-foreground transition-all duration-300;
     backdrop-filter: blur(8px);
     box-shadow: var(--shadow-sm);
   }
