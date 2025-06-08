@@ -24,72 +24,52 @@ const Index = () => {
   const tabs = [
     {
       id: 'mass-messaging',
-      label: 'Disparo em Massa',
-      shortLabel: 'Disparo',
+      label: 'Disparo',
       icon: MessageSquare,
-      description: 'Envie mensagens para múltiplos contatos',
-      highlightColor: 'text-highlight-cyan'
+      description: 'Envie mensagens para múltiplos contatos'
     },
     {
       id: 'contacts',
       label: 'Contatos',
-      shortLabel: 'Contatos',
       icon: Users,
-      description: 'Gerencie seus contatos e grupos',
-      highlightColor: 'text-highlight-emerald'
+      description: 'Gerencie seus contatos e grupos'
     },
     {
       id: 'notifications',
       label: 'Notificações',
-      shortLabel: 'Notif.',
       icon: Bell,
-      description: 'Configure alertas inteligentes',
-      highlightColor: 'text-highlight-amber'
+      description: 'Configure alertas inteligentes'
     },
     {
       id: 'instances',
-      label: 'Instâncias',
-      shortLabel: 'Config',
+      label: 'Config',
       icon: Settings,
-      description: 'Configurações do WhatsApp',
-      highlightColor: 'text-highlight-rose'
+      description: 'Configurações do WhatsApp'
     },
     {
       id: 'status',
       label: 'Status',
-      shortLabel: 'Status',
       icon: Activity,
-      description: 'Status das integrações',
-      highlightColor: 'text-purple-400'
+      description: 'Status das integrações'
     }
   ];
 
   const activeTabInfo = tabs.find(tab => tab.id === activeTab);
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-0 w-full h-full">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/5 rounded-full blur-3xl animate-float"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-600/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '4s' }}></div>
-          <div className="absolute top-3/4 left-1/2 w-64 h-64 bg-emerald-600/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }}></div>
-        </div>
-      </div>
-
-      {/* Header Futurístico */}
-      <header className="relative z-50 border-b border-white/5 backdrop-blur-xl bg-background/80">
+    <div className="min-h-screen bg-gray-dark relative">
+      {/* Header Minimalista */}
+      <header className="header-gradient border-b border-purple-primary/20">
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="relative group">
-                <div className="w-14 h-14 gradient-primary rounded-2xl flex items-center justify-center shadow-lg animate-pulse-glow">
+                <div className="w-14 h-14 gradient-primary rounded-2xl flex items-center justify-center shadow-purple">
                   <Zap className="w-8 h-8 text-white" />
                 </div>
-                <div className="absolute inset-0 w-14 h-14 gradient-primary rounded-2xl blur-lg opacity-20 group-hover:opacity-30 transition-opacity"></div>
               </div>
               <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-purple-500 to-purple-600 bg-clip-text text-transparent">
+                <h1 className="text-4xl font-montserrat font-bold text-primary-contrast">
                   Anok Zap
                 </h1>
                 <p className="text-sm text-muted-foreground font-medium">
@@ -99,7 +79,7 @@ const Index = () => {
             </div>
             
             <div className="flex items-center space-x-4">
-              <div className="px-4 py-2 rounded-full gradient-primary text-white text-sm font-semibold shadow-md border border-white/15">
+              <div className="px-4 py-2 rounded-full gradient-primary text-white text-sm font-semibold shadow-purple">
                 Pro
               </div>
             </div>
@@ -107,9 +87,9 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Navigation Cards */}
+      {/* Navigation Cards com Grid Simétrico */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+        <div className="grid-nav spacing-section">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -118,42 +98,22 @@ const Index = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`
-                  group relative p-6 rounded-2xl transition-all duration-300 transform hover:scale-102
-                  ${isActive 
-                    ? 'card-futuristic border-purple-500/30 shadow-lg' 
-                    : 'glass-morphism hover:border-purple-500/20'
-                  }
-                `}
+                className={`nav-card ${isActive ? 'active' : ''} animate-scale-in`}
               >
                 <div className="flex flex-col items-center space-y-3">
-                  <div className={`
-                    w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300
-                    ${isActive 
-                      ? 'gradient-primary shadow-md' 
-                      : 'bg-muted/50 group-hover:bg-purple-600/15'
-                    }
-                  `}>
-                    <Icon className={`w-6 h-6 ${isActive ? 'text-white' : 'text-muted-foreground group-hover:text-purple-400'}`} />
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 bg-purple-primary/10">
+                    <Icon className="nav-icon" />
                   </div>
                   
                   <div className="text-center">
-                    <h3 className={`
-                      font-semibold text-sm mb-1 transition-colors
-                      ${isActive ? `${tab.highlightColor} font-bold` : 'text-foreground group-hover:text-purple-400'}
-                    `}>
-                      <span className="hidden sm:inline">{tab.label}</span>
-                      <span className="sm:hidden">{tab.shortLabel}</span>
+                    <h3 className="nav-label mb-1">
+                      {tab.label}
                     </h3>
                     <p className="text-xs text-muted-foreground hidden md:block leading-tight">
                       {tab.description}
                     </p>
                   </div>
                 </div>
-
-                {isActive && (
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-600/10 to-purple-800/10 animate-pulse-glow"></div>
-                )}
               </button>
             );
           })}
@@ -161,45 +121,45 @@ const Index = () => {
 
         {/* Active Section Header */}
         {activeTabInfo && (
-          <div className="mb-8 animate-slide-in">
+          <div className="spacing-section animate-fade-in-up">
             <div className="flex items-center space-x-3 mb-2">
-              <activeTabInfo.icon className={`w-6 h-6 ${activeTabInfo.highlightColor}`} />
-              <h2 className="text-2xl font-bold text-foreground">{activeTabInfo.label}</h2>
+              <activeTabInfo.icon className="w-6 h-6 text-purple" />
+              <h2 className="text-2xl font-montserrat font-bold text-primary-contrast">{activeTabInfo.label}</h2>
               <ChevronRight className="w-5 h-5 text-muted-foreground" />
             </div>
-            <p className="text-muted-foreground">{activeTabInfo.description}</p>
+            <p className="text-muted-foreground text-lg">{activeTabInfo.description}</p>
           </div>
         )}
 
         {/* Content Area */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <div className="animate-slide-in">
+          <div className="animate-fade-in-up">
             <TabsContent value="mass-messaging" className="mt-0">
-              <div className="card-futuristic p-1">
+              <div className="card-section">
                 <MassMessaging />
               </div>
             </TabsContent>
 
             <TabsContent value="contacts" className="mt-0">
-              <div className="card-futuristic p-1">
+              <div className="card-section">
                 <ContactManagement />
               </div>
             </TabsContent>
 
             <TabsContent value="notifications" className="mt-0">
-              <div className="card-futuristic p-1">
+              <div className="card-section">
                 <IntelligentNotifications />
               </div>
             </TabsContent>
 
             <TabsContent value="instances" className="mt-0">
-              <div className="card-futuristic p-1">
+              <div className="card-section">
                 <InstanceManagement />
               </div>
             </TabsContent>
 
             <TabsContent value="status" className="mt-0">
-              <div className="card-futuristic p-1">
+              <div className="card-section">
                 <IntegrationStatus />
               </div>
             </TabsContent>

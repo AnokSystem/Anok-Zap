@@ -30,16 +30,16 @@ const ContactManagement = () => {
   } = useContactManagement();
 
   return (
-    <div className="space-y-6 p-6">
-      <Card className="card-futuristic border-white/5">
+    <div className="space-y-6">
+      <Card className="card-minimal border-purple-primary/30">
         <CardHeader className="pb-4">
-          <CardTitle className="flex items-center space-x-3 text-highlight-cyan">
-            <div className="w-8 h-8 bg-cyan-600/20 rounded-lg flex items-center justify-center">
-              <Users className="w-5 h-5" />
+          <CardTitle className="flex items-center space-x-3 text-accent">
+            <div className="w-8 h-8 bg-purple-primary/20 rounded-lg flex items-center justify-center">
+              <Users className="w-5 h-5 text-purple-primary" />
             </div>
-            <span>Gerenciamento de Contatos</span>
+            <span className="font-montserrat">Gerenciamento de Contatos</span>
           </CardTitle>
-          <CardDescription className="text-muted-foreground">
+          <CardDescription className="text-muted-foreground text-base">
             Recupere e gerencie contatos do WhatsApp das suas instâncias Evolution API
           </CardDescription>
         </CardHeader>
@@ -71,15 +71,15 @@ const ContactManagement = () => {
 
           {/* Informações da Seleção */}
           {selectedInstance && (
-            <Card className="glass-morphism border-cyan-500/20">
+            <Card className="card-minimal border-purple-primary/20 gradient-card">
               <CardContent className="pt-4">
                 <div className="text-sm space-y-1">
-                  <p className="text-foreground"><strong>Instância:</strong> {getSelectedInstanceName()}</p>
-                  <p className="text-foreground"><strong>Tipo:</strong> {contactType === 'personal' ? 'Contatos Pessoais' : 'Contatos de Grupos'}</p>
+                  <p className="text-primary-contrast"><strong>Instância:</strong> {getSelectedInstanceName()}</p>
+                  <p className="text-primary-contrast"><strong>Tipo:</strong> {contactType === 'personal' ? 'Contatos Pessoais' : 'Contatos de Grupos'}</p>
                   {contactType === 'groups' && selectedGroup && (
                     <>
-                      <p className="text-foreground"><strong>Grupo:</strong> {getSelectedGroupName()}</p>
-                      <p className="text-foreground"><strong>Membros:</strong> {
+                      <p className="text-primary-contrast"><strong>Grupo:</strong> {getSelectedGroupName()}</p>
+                      <p className="text-primary-contrast"><strong>Membros:</strong> {
                         memberType === 'all' ? 'Todos' :
                         memberType === 'admin' ? 'Apenas Administradores' :
                         'Apenas Membros'
