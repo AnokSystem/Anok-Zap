@@ -1,4 +1,3 @@
-
 import { NocodbConfig, ConnectionTestResult } from './types';
 import { NocodbTableManager } from './tableManager';
 import { NotificationService } from './notificationService';
@@ -21,6 +20,52 @@ class NocodbService {
     this.notificationService = new NotificationService(this.config);
     this.dataService = new DataService(this.config);
     this.fallbackService = new FallbackService();
+  }
+
+  // Expor config e headers para o serviço de auth
+  get config() {
+    return this.config;
+  }
+
+  get headers() {
+    return {
+      'Content-Type': 'application/json',
+      'xc-token': this.config.apiToken,
+    };
+  }
+
+  getTargetBaseId(): string | null {
+    return this.tableManager.getTargetBaseId();
+  }
+
+  async ensureTableExists(tableName: string): Promise<boolean> {
+    return await this.tableManager.ensureTableExists(tableName);
+  }
+
+  async getTableId(baseId: string, tableName: string): Promise<string | null> {
+    try {
+      const response = await fetch(`${this.config.baseUrl}/api/v1/db/meta/projects/${baseId}/tables`, {
+        headers: this.headers,
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const tables = data.list || [];
+        
+        const table = tables.find((t: any) => 
+          t.table_name === tableName || 
+          t.title === tableName ||
+          (tableName === 'Usuarios' && t.title === 'Usuários')
+        );
+        
+        return table?.id || null;
+      }
+      
+      return null;
+    } catch (error) {
+      console.log('❌ Erro ao obter ID da tabela:', error);
+      return null;
+    }
   }
 
   async getHotmartNotifications(): Promise<any[]> {
