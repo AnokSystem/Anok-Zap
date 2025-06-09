@@ -26,8 +26,8 @@ export const notificationSaveService = {
     };
 
     // Se estamos editando, incluir o ID da notificação
-    if (editingRule && (editingRule.ID || editingRule.id || editingRule.ruleId)) {
-      const recordId = editingRule.ID || editingRule.id || editingRule.ruleId || rule.ruleId;
+    if (editingRule && (editingRule.ID || editingRule.id)) {
+      const recordId = editingRule.ID || editingRule.id;
       notificationData.ruleId = recordId;
       console.log('📝 Atualizando notificação existente com ID:', recordId);
     } else {
@@ -44,7 +44,7 @@ export const notificationSaveService = {
         throw new Error('Falha ao salvar no banco de dados');
       }
 
-      const isEditing = editingRule && (editingRule.ID || editingRule.id || editingRule.ruleId || rule.ruleId);
+      const isEditing = editingRule && (editingRule.ID || editingRule.id);
       console.log(isEditing ? '✅ Notificação atualizada com sucesso' : '✅ Notificação criada com sucesso');
       
       return { success: true, webhookUrl };
