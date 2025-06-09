@@ -45,11 +45,18 @@ export const useNotificationEditing = (
       console.log('💾 SALVAMENTO - Notificação original:', editingNotification);
       console.log('💾 SALVAMENTO - ID da notificação:', editingNotification.ID);
       
-      // Validar dados essenciais
+      // CORREÇÃO: Validar dados essenciais de forma mais robusta
       if (!updatedNotificationData.eventType || !updatedNotificationData.instanceId || 
           !updatedNotificationData.userRole || !updatedNotificationData.platform || 
           !updatedNotificationData.profileName) {
         console.error('❌ SALVAMENTO - Dados obrigatórios faltando');
+        console.error('❌ SALVAMENTO - Dados recebidos:', {
+          eventType: updatedNotificationData.eventType,
+          instanceId: updatedNotificationData.instanceId,
+          userRole: updatedNotificationData.userRole,
+          platform: updatedNotificationData.platform,
+          profileName: updatedNotificationData.profileName
+        });
         
         toast({
           title: "❌ Erro de Validação",
@@ -74,10 +81,10 @@ export const useNotificationEditing = (
         return false;
       }
 
-      // CORREÇÃO: Preparar dados corretamente para o serviço
+      // CORREÇÃO: Garantir que instanceId seja mapeado corretamente para instance
       const ruleData = {
         eventType: updatedNotificationData.eventType,
-        instanceId: updatedNotificationData.instanceId, // Será convertido para 'instance' no serviço
+        instanceId: updatedNotificationData.instanceId, // Será convertido no serviço
         userRole: updatedNotificationData.userRole,
         platform: updatedNotificationData.platform,
         profileName: updatedNotificationData.profileName,
@@ -85,15 +92,16 @@ export const useNotificationEditing = (
       };
 
       console.log('💾 SALVAMENTO - Dados formatados para serviço:', ruleData);
+      console.log('💾 SALVAMENTO - Mensagens válidas:', validMessages.length);
 
       // CORREÇÃO: Usar ID correto da notificação
       const editingRule = {
         ID: editingNotification.ID,
-        id: editingNotification.ID
+        id: editingNotification.ID // Garantir ambos os formatos
       };
 
       console.log('💾 SALVAMENTO - Enviando para notificationSaveService...');
-      console.log('💾 SALVAMENTO - editingRule:', editingRule);
+      console.log('💾 SALVAMENTO - editingRule ID:', editingRule.ID);
 
       // Chamar o serviço de salvamento
       const result = await notificationSaveService.saveNotification(
@@ -104,14 +112,14 @@ export const useNotificationEditing = (
       console.log('💾 SALVAMENTO - Resultado do serviço:', result);
 
       if (result.success) {
-        console.log('✅ SALVAMENTO - Sucesso!');
+        console.log('✅ SALVAMENTO - Sucesso! Notificação atualizada no NocoDB');
         
         toast({
           title: "✅ Sucesso",
-          description: "Notificação atualizada com sucesso!",
+          description: "Notificação atualizada com sucesso no banco de dados!",
         });
         
-        // Recarregar notificações
+        // Recarregar notificações para mostrar as mudanças
         console.log('🔄 SALVAMENTO - Recarregando notificações...');
         await loadNotifications();
         
@@ -131,9 +139,10 @@ export const useNotificationEditing = (
       
     } catch (error) {
       console.error('❌ SALVAMENTO - Erro crítico:', error);
+      console.error('❌ SALVAMENTO - Stack trace:', error.stack);
       toast({
         title: "❌ Erro",
-        description: "Erro inesperado ao salvar",
+        description: "Erro inesperado ao salvar alterações",
         variant: "destructive",
       });
       return false;

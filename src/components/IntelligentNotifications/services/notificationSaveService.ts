@@ -14,7 +14,7 @@ export const notificationSaveService = {
     
     const webhookUrl = webhookService.getWebhookUrl(rule.eventType!);
     
-    // CORREÇÃO: Preparar dados corretamente
+    // CORREÇÃO: Preparar dados garantindo mapeamento correto
     const notificationData: any = {
       eventType: rule.eventType!,
       instance: rule.instanceId!, // IMPORTANTE: Converter instanceId para instance
@@ -26,7 +26,7 @@ export const notificationSaveService = {
       timestamp: new Date().toISOString(),
     };
 
-    // Se estamos editando, incluir o ID
+    // Se estamos editando, incluir o ID correto
     if (editingRule && (editingRule.ID || editingRule.id)) {
       const recordId = editingRule.ID || editingRule.id;
       notificationData.ruleId = recordId;
@@ -51,11 +51,12 @@ export const notificationSaveService = {
       }
 
       const isEditing = editingRule && (editingRule.ID || editingRule.id);
-      console.log(isEditing ? '✅ SERVIÇO - Notificação atualizada' : '✅ SERVIÇO - Notificação criada');
+      console.log(isEditing ? '✅ SERVIÇO - Notificação atualizada com sucesso' : '✅ SERVIÇO - Notificação criada com sucesso');
       
       return { success: true, webhookUrl };
     } catch (error) {
       console.error('❌ SERVIÇO - Erro crítico:', error);
+      console.error('❌ SERVIÇO - Stack trace:', error.stack);
       throw error;
     }
   }

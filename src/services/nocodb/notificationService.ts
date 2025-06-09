@@ -1,3 +1,4 @@
+
 import { BaseNocodbService } from './baseService';
 import { NocodbConfig } from './types';
 import { DataFormatter } from './dataFormatter';
@@ -128,9 +129,9 @@ export class NotificationService extends BaseNocodbService {
       console.log('📝 NOCODB - ATUALIZAÇÃO - Iniciando');
       console.log('🔑 NOCODB - ATUALIZAÇÃO - ID do registro:', recordId);
       console.log('👤 NOCODB - ATUALIZAÇÃO - Verificando usuário:', userId);
-      console.log('📦 NOCODB - ATUALIZAÇÃO - Dados:', data);
+      console.log('📦 NOCODB - ATUALIZAÇÃO - Dados para envio:', data);
       
-      // Verificar se o registro existe e pertence ao usuário
+      // CORREÇÃO: Verificar se o registro existe primeiro
       const existingRecord = await this.apiOperations.getRecordById(baseId, tableId, recordId);
       console.log('📄 NOCODB - ATUALIZAÇÃO - Registro existente:', existingRecord);
       
@@ -139,15 +140,21 @@ export class NotificationService extends BaseNocodbService {
         return false;
       }
       
-      if (existingRecord['ID do Usuário'] !== userId) {
+      // CORREÇÃO: Verificar propriedade do usuário de forma mais robusta
+      const recordUserId = this.extractUserIdFromRecord(existingRecord);
+      console.log('🔍 NOCODB - ATUALIZAÇÃO - UserId do registro:', recordUserId);
+      console.log('🔍 NOCODB - ATUALIZAÇÃO - UserId atual:', userId);
+      
+      if (recordUserId !== userId) {
         console.error('❌ NOCODB - ATUALIZAÇÃO - Acesso negado');
-        console.error('❌ NOCODB - ATUALIZAÇÃO - Usuário do registro:', existingRecord['ID do Usuário']);
+        console.error('❌ NOCODB - ATUALIZAÇÃO - Usuário do registro:', recordUserId);
         console.error('❌ NOCODB - ATUALIZAÇÃO - Usuário atual:', userId);
         return false;
       }
       
-      console.log('✅ NOCODB - ATUALIZAÇÃO - Verificação passou');
+      console.log('✅ NOCODB - ATUALIZAÇÃO - Verificação de propriedade passou');
       
+      // CORREÇÃO: Fazer a atualização com dados corretos
       const result = await this.apiOperations.updateRecord(baseId, tableId, recordId, data);
       console.log('📊 NOCODB - ATUALIZAÇÃO - Resultado da API:', result);
       
@@ -162,6 +169,46 @@ export class NotificationService extends BaseNocodbService {
       console.error('❌ NOCODB - ATUALIZAÇÃO - ERRO:', error);
       return false;
     }
+  }
+
+  // NOVA FUNÇÃO: Extrair userId de forma mais robusta
+  private extractUserIdFromRecord(record: any): string | null {
+    // Tentar diferentes campos possíveis
+    const possibleFields = [
+      record['ID do Usuário'],
+      record['ID_do_Usuario'],
+      record['IDdoUsuario'],
+      record['UserId'],
+      record['user_id'],
+      record['UserID']
+    ];
+
+    for (const field of possibleFields) {
+      if (field) {
+        // Se for um objeto com _type e value (como nos logs), extrair o value
+        if (typeof field === 'object' && field.value !== undefined) {
+          return String(field.value);
+        }
+        // Se for string diretamente
+        if (typeof field === 'string' || typeof field === 'number') {
+          return String(field);
+        }
+      }
+    }
+
+    // Se não encontrou nos campos diretos, tentar no JSON
+    if (record['Dados Completos (JSON)']) {
+      try {
+        const jsonData = JSON.parse(record['Dados Completos (JSON)']);
+        if (jsonData.userId) {
+          return String(jsonData.userId);
+        }
+      } catch (e) {
+        console.log('⚠️ Erro ao fazer parse do JSON para extrair userId');
+      }
+    }
+
+    return null;
   }
 
   private async createNotification(baseId: string, tableId: string, data: any): Promise<boolean> {
@@ -204,7 +251,9 @@ export class NotificationService extends BaseNocodbService {
 
       // Verificar se a notificação pertence ao usuário antes de excluir
       const existingRecord = await this.apiOperations.getRecordById(baseId, tableId, recordId);
-      if (!existingRecord || existingRecord['ID do Usuário'] !== userId) {
+      const recordUserId = this.extractUserIdFromRecord(existingRecord);
+      
+      if (!existingRecord || recordUserId !== userId) {
         console.error('❌ Acesso negado: notificação não pertence ao usuário');
         return false;
       }
