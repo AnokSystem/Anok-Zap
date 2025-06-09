@@ -8,16 +8,16 @@ export const notificationSaveService = {
     rule: Partial<NotificationRule>,
     editingRule?: any
   ): Promise<{ success: boolean; webhookUrl: string }> => {
-    console.log('🔄 Serviço de salvamento iniciado');
-    console.log('📋 Dados da regra recebidos:', rule);
-    console.log('📋 Regra sendo editada:', editingRule);
+    console.log('🔄 SERVIÇO - Salvamento iniciado');
+    console.log('📋 SERVIÇO - Dados da regra recebidos:', rule);
+    console.log('📋 SERVIÇO - Regra sendo editada:', editingRule);
     
     const webhookUrl = webhookService.getWebhookUrl(rule.eventType!);
     
-    // CORRIGIDO: Base notification data - garantir mapeamento correto instanceId -> instance
+    // CORREÇÃO: Preparar dados corretamente
     const notificationData: any = {
       eventType: rule.eventType!,
-      instance: rule.instanceId!, // IMPORTANTE: O banco espera 'instance', não 'instanceId'
+      instance: rule.instanceId!, // IMPORTANTE: Converter instanceId para instance
       userRole: rule.userRole!,
       platform: rule.platform!,
       profileName: rule.profileName!,
@@ -26,35 +26,36 @@ export const notificationSaveService = {
       timestamp: new Date().toISOString(),
     };
 
-    // CORRIGIDO: Se estamos editando, incluir o ID da notificação
+    // Se estamos editando, incluir o ID
     if (editingRule && (editingRule.ID || editingRule.id)) {
       const recordId = editingRule.ID || editingRule.id;
       notificationData.ruleId = recordId;
-      console.log('📝 Atualizando notificação existente com ID:', recordId);
-      console.log('📤 Dados preparados para atualização (CORRIGIDO):', notificationData);
+      console.log('📝 SERVIÇO - Modo ATUALIZAÇÃO com ID:', recordId);
+      console.log('📤 SERVIÇO - Dados para atualização:', notificationData);
     } else {
-      console.log('➕ Criando nova notificação');
-      console.log('📤 Dados preparados para criação (CORRIGIDO):', notificationData);
+      console.log('➕ SERVIÇO - Modo CRIAÇÃO');
+      console.log('📤 SERVIÇO - Dados para criação:', notificationData);
     }
 
     try {
-      console.log('🚀 Chamando nocodbService.saveHotmartNotification...');
-      // Salvar no NocoDB - o serviço já trata criação/atualização
+      console.log('🚀 SERVIÇO - Chamando nocodbService.saveHotmartNotification...');
+      
+      // Salvar no NocoDB
       const success = await nocodbService.saveHotmartNotification(notificationData);
       
-      console.log('📊 Resultado do salvamento no NocoDB:', success);
+      console.log('📊 SERVIÇO - Resultado do NocoDB:', success);
       
       if (!success) {
-        console.error('❌ Falha retornada pelo nocodbService');
+        console.error('❌ SERVIÇO - Falha retornada pelo nocodbService');
         throw new Error('Falha ao salvar no banco de dados');
       }
 
       const isEditing = editingRule && (editingRule.ID || editingRule.id);
-      console.log(isEditing ? '✅ Notificação atualizada com sucesso' : '✅ Notificação criada com sucesso');
+      console.log(isEditing ? '✅ SERVIÇO - Notificação atualizada' : '✅ SERVIÇO - Notificação criada');
       
       return { success: true, webhookUrl };
     } catch (error) {
-      console.error('❌ Erro no serviço de salvamento:', error);
+      console.error('❌ SERVIÇO - Erro crítico:', error);
       throw error;
     }
   }

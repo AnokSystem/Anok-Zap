@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Notification } from './types';
@@ -39,13 +38,13 @@ export const EditNotificationForm = ({
 
   const handleSave = async () => {
     try {
-      console.log('💾 Iniciando salvamento da edição...');
-      console.log('📋 Dados do formulário a serem salvos:', formData);
-      console.log('🔍 Validação do formulário:', { isFormValid });
+      console.log('💾 FORMULÁRIO - Iniciando salvamento');
+      console.log('📋 FORMULÁRIO - Dados atuais:', formData);
+      console.log('🔍 FORMULÁRIO - Validação:', { isFormValid });
       
       if (!isFormValid) {
         const errors = getValidationErrors();
-        console.error('❌ Formulário inválido:', errors);
+        console.error('❌ FORMULÁRIO - Inválido:', errors);
         toast({
           title: "❌ Formulário Inválido",
           description: errors.join(', '),
@@ -56,12 +55,12 @@ export const EditNotificationForm = ({
 
       setIsFormLoading(true);
       
-      // Preparar dados no formato correto para o serviço de salvamento
+      // CORREÇÃO: Preparar dados corretamente
       const dataToSave = {
         eventType: formData.eventType,
         platform: formData.platform,
         profileName: formData.profileName,
-        instanceId: formData.instanceId, // Manter como instanceId - será convertido para instance no serviço
+        instanceId: formData.instanceId, // Manter como instanceId
         userRole: formData.userRole,
         messages: formData.messages
           .filter(msg => (msg.content && msg.content.trim() !== '') || msg.fileUrl)
@@ -75,28 +74,19 @@ export const EditNotificationForm = ({
           }))
       };
 
-      console.log('📤 Dados formatados para salvamento:', dataToSave);
-      console.log('🔑 ID da notificação sendo editada:', notification.ID);
-      console.log('📊 Número de mensagens válidas:', dataToSave.messages.length);
+      console.log('📤 FORMULÁRIO - Dados finais para salvamento:', dataToSave);
+      console.log('🔑 FORMULÁRIO - ID da notificação:', notification.ID);
+      console.log('📊 FORMULÁRIO - Mensagens válidas:', dataToSave.messages.length);
       
       const success = await onSave(dataToSave);
       
       if (success) {
-        console.log('✅ Edição salva com sucesso pelo formulário');
-        toast({
-          title: "✅ Sucesso",
-          description: "Notificação atualizada com sucesso!",
-        });
+        console.log('✅ FORMULÁRIO - Salvamento bem-sucedido');
       } else {
-        console.error('❌ Falha ao salvar edição pelo formulário');
-        toast({
-          title: "❌ Erro",
-          description: "Falha ao salvar as alterações",
-          variant: "destructive",
-        });
+        console.error('❌ FORMULÁRIO - Falha no salvamento');
       }
     } catch (error) {
-      console.error('❌ Erro ao salvar edição:', error);
+      console.error('❌ FORMULÁRIO - Erro crítico:', error);
       toast({
         title: "❌ Erro",
         description: "Erro inesperado ao salvar",

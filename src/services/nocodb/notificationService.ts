@@ -1,4 +1,3 @@
-
 import { BaseNocodbService } from './baseService';
 import { NocodbConfig } from './types';
 import { DataFormatter } from './dataFormatter';
@@ -67,40 +66,44 @@ export class NotificationService extends BaseNocodbService {
     try {
       const userId = this.getCurrentUserId();
       if (!userId) {
-        ErrorHandler.logOperationFailure('obter ID do usuário autenticado');
+        console.error('❌ NOCODB - Usuário não autenticado');
         return false;
       }
 
-      console.log('🚀 INÍCIO - Salvando/Atualizando notificação Hotmart no NocoDB');
-      console.log('📋 Dados recebidos pelo notificationService:', notificationData);
-      console.log('👤 ID do usuário atual:', userId);
+      console.log('🚀 NOCODB - INÍCIO do salvamento');
+      console.log('📋 NOCODB - Dados recebidos:', notificationData);
+      console.log('👤 NOCODB - ID do usuário:', userId);
       
       const data = DataFormatter.formatNotificationForNocoDB({
         ...notificationData,
-        userId // Adicionar ID do usuário aos dados
+        userId
       });
       
-      console.log('📦 Dados formatados pelo DataFormatter:', data);
+      console.log('📦 NOCODB - Dados formatados:', data);
       
       const tableId = await this.findTableId(baseId);
       if (!tableId) {
-        ErrorHandler.logOperationFailure('encontrar tabela de notificações');
+        console.error('❌ NOCODB - Tabela não encontrada');
         return false;
       }
 
-      console.log('✅ Tabela encontrada para operação:', tableId);
+      console.log('✅ NOCODB - Tabela encontrada:', tableId);
 
       if (notificationData.ruleId) {
-        console.log('📝 Modo ATUALIZAÇÃO - ID da regra:', notificationData.ruleId);
-        return await this.updateNotification(baseId, tableId, notificationData.ruleId, data, userId);
+        console.log('📝 NOCODB - Modo ATUALIZAÇÃO - ID:', notificationData.ruleId);
+        const updateResult = await this.updateNotification(baseId, tableId, notificationData.ruleId, data, userId);
+        console.log('📊 NOCODB - Resultado da atualização:', updateResult);
+        return updateResult;
       } else {
-        console.log('➕ Modo CRIAÇÃO - Nova notificação');
-        return await this.createNotification(baseId, tableId, data);
+        console.log('➕ NOCODB - Modo CRIAÇÃO');
+        const createResult = await this.createNotification(baseId, tableId, data);
+        console.log('📊 NOCODB - Resultado da criação:', createResult);
+        return createResult;
       }
       
     } catch (error) {
-      console.error('❌ ERRO CRÍTICO no notificationService:', error);
-      return ErrorHandler.handleApiError(error, 'ao salvar/atualizar notificação Hotmart', notificationData);
+      console.error('❌ NOCODB - ERRO CRÍTICO:', error);
+      return false;
     }
   }
 
@@ -122,58 +125,62 @@ export class NotificationService extends BaseNocodbService {
 
   private async updateNotification(baseId: string, tableId: string, recordId: string, data: any, userId: string): Promise<boolean> {
     try {
-      console.log('📝 INÍCIO - Atualizando notificação existente');
-      console.log('🔑 ID do registro:', recordId);
-      console.log('👤 Verificando propriedade para usuário:', userId);
-      console.log('📦 Dados para atualização:', data);
+      console.log('📝 NOCODB - ATUALIZAÇÃO - Iniciando');
+      console.log('🔑 NOCODB - ATUALIZAÇÃO - ID do registro:', recordId);
+      console.log('👤 NOCODB - ATUALIZAÇÃO - Verificando usuário:', userId);
+      console.log('📦 NOCODB - ATUALIZAÇÃO - Dados:', data);
       
-      // Verificar se a notificação pertence ao usuário antes de atualizar
+      // Verificar se o registro existe e pertence ao usuário
       const existingRecord = await this.apiOperations.getRecordById(baseId, tableId, recordId);
-      console.log('📄 Registro existente encontrado:', existingRecord);
+      console.log('📄 NOCODB - ATUALIZAÇÃO - Registro existente:', existingRecord);
       
       if (!existingRecord) {
-        console.error('❌ Registro não encontrado com ID:', recordId);
+        console.error('❌ NOCODB - ATUALIZAÇÃO - Registro não encontrado:', recordId);
         return false;
       }
       
       if (existingRecord['ID do Usuário'] !== userId) {
-        console.error('❌ Acesso negado: notificação não pertence ao usuário');
-        console.error('❌ Usuário do registro:', existingRecord['ID do Usuário']);
-        console.error('❌ Usuário atual:', userId);
+        console.error('❌ NOCODB - ATUALIZAÇÃO - Acesso negado');
+        console.error('❌ NOCODB - ATUALIZAÇÃO - Usuário do registro:', existingRecord['ID do Usuário']);
+        console.error('❌ NOCODB - ATUALIZAÇÃO - Usuário atual:', userId);
         return false;
       }
       
-      console.log('✅ Verificação de propriedade passou - prosseguindo com atualização');
+      console.log('✅ NOCODB - ATUALIZAÇÃO - Verificação passou');
       
       const result = await this.apiOperations.updateRecord(baseId, tableId, recordId, data);
-      console.log('📊 Resultado da atualização:', result);
+      console.log('📊 NOCODB - ATUALIZAÇÃO - Resultado da API:', result);
       
-      DataFormatter.logUpdatedFields(data);
-      ErrorHandler.logOperationSuccess('Notificação atualizada');
-      console.log('✅ FIM - Notificação atualizada com sucesso');
-      return true;
+      if (result) {
+        console.log('✅ NOCODB - ATUALIZAÇÃO - SUCESSO');
+        return true;
+      } else {
+        console.error('❌ NOCODB - ATUALIZAÇÃO - FALHA na API');
+        return false;
+      }
     } catch (error) {
-      console.error('❌ ERRO na atualização:', error);
-      ErrorHandler.logOperationFailure('atualizar notificação');
+      console.error('❌ NOCODB - ATUALIZAÇÃO - ERRO:', error);
       return false;
     }
   }
 
   private async createNotification(baseId: string, tableId: string, data: any): Promise<boolean> {
     try {
-      console.log('➕ INÍCIO - Criando nova notificação');
-      console.log('📦 Dados para criação:', data);
+      console.log('➕ NOCODB - CRIAÇÃO - Iniciando');
+      console.log('📦 NOCODB - CRIAÇÃO - Dados:', data);
       
       const result = await this.apiOperations.createRecord(baseId, tableId, data);
-      console.log('📊 Resultado da criação:', result);
+      console.log('📊 NOCODB - CRIAÇÃO - Resultado:', result);
       
-      DataFormatter.logSavedFields(result, data);
-      ErrorHandler.logOperationSuccess('Nova notificação criada');
-      console.log('✅ FIM - Nova notificação criada com sucesso');
-      return true;
+      if (result) {
+        console.log('✅ NOCODB - CRIAÇÃO - SUCESSO');
+        return true;
+      } else {
+        console.error('❌ NOCODB - CRIAÇÃO - FALHA');
+        return false;
+      }
     } catch (error) {
-      console.error('❌ ERRO na criação:', error);
-      ErrorHandler.logOperationFailure('criar nova notificação');
+      console.error('❌ NOCODB - CRIAÇÃO - ERRO:', error);
       return false;
     }
   }
