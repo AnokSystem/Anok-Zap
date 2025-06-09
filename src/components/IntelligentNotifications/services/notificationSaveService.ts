@@ -14,7 +14,8 @@ export const notificationSaveService = {
     
     const webhookUrl = webhookService.getWebhookUrl(rule.eventType!);
     
-    const notificationData = {
+    // Base notification data
+    const notificationData: any = {
       eventType: rule.eventType!,
       instance: rule.instanceId!,
       userRole: rule.userRole!,
