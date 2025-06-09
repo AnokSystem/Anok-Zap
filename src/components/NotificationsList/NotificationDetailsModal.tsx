@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Copy } from 'lucide-react';
+import { Copy, X } from 'lucide-react';
 import { Notification } from './types';
 import { useToast } from "@/hooks/use-toast";
 
@@ -63,32 +63,64 @@ const NotificationDetailsModal = ({ notification, onClose }: NotificationDetails
     }
   };
 
-  const handleClose = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log('🔄 Fechando modal de detalhes');
+  const handleClose = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    console.log('🔄 Fechando modal de detalhes da notificação');
     onClose();
   };
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
+      console.log('🖱️ Clique no backdrop detectado, fechando modal');
       handleClose(e);
     }
   };
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      console.log('⌨️ Tecla Escape pressionada, fechando modal');
+      handleClose();
+    }
+  };
+
+  // Adicionar listener para a tecla Escape
+  React.useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   return (
     <div 
       className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6"
       onClick={handleBackdropClick}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
     >
       <Card 
-        className="w-full max-w-4xl max-h-[90vh] overflow-auto bg-gray-800 border-gray-600"
+        className="w-full max-w-4xl max-h-[90vh] overflow-auto bg-gray-800 border-gray-600 relative"
         onClick={(e) => e.stopPropagation()}
       >
-        <CardHeader>
-          <CardTitle className="text-primary-contrast">
-            Detalhes da Notificação
-          </CardTitle>
+        <CardHeader className="relative">
+          <div className="flex items-center justify-between">
+            <CardTitle id="modal-title" className="text-primary-contrast">
+              Detalhes da Notificação
+            </CardTitle>
+            <Button
+              onClick={() => handleClose()}
+              variant="ghost"
+              size="sm"
+              className="absolute top-4 right-4 text-gray-400 hover:text-white hover:bg-gray-700/50 p-2"
+              aria-label="Fechar modal"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -165,7 +197,7 @@ const NotificationDetailsModal = ({ notification, onClose }: NotificationDetails
           
           <div className="flex justify-end pt-4 border-t border-gray-600/50">
             <Button
-              onClick={handleClose}
+              onClick={() => handleClose()}
               variant="outline"
               className="bg-gray-700/50 border-gray-600 text-gray-200 hover:bg-gray-600/50"
             >

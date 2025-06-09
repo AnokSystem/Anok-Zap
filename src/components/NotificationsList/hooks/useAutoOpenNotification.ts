@@ -5,24 +5,38 @@ import { Notification } from '../types';
 export const useAutoOpenNotification = (
   autoOpenNotification: any,
   notifications: Notification[],
-  setSelectedNotification: (notification: Notification) => void
+  viewNotificationDetails: (notification: Notification) => void
 ) => {
   useEffect(() => {
     if (autoOpenNotification && notifications.length > 0) {
-      console.log('🔍 Procurando notificação para abrir automaticamente:', autoOpenNotification);
+      console.log('🎯 Tentando abrir notificação automaticamente:', autoOpenNotification);
       
-      // Tentar encontrar a notificação correspondente pelo ID
-      const matchingNotification = notifications.find(n => 
-        n.ID === autoOpenNotification.ID || 
-        n.ID === autoOpenNotification.id
-      );
+      // Procurar a notificação correspondente na lista
+      let targetNotification = notifications.find(n => n.ID === autoOpenNotification.ID);
       
-      if (matchingNotification) {
-        console.log('✅ Notificação encontrada, abrindo automaticamente:', matchingNotification);
-        setSelectedNotification(matchingNotification);
+      // Se não encontrou por ID, tentar encontrar por outros critérios
+      if (!targetNotification && autoOpenNotification['Perfil Hotmart']) {
+        targetNotification = notifications.find(n => 
+          n['Perfil Hotmart'] === autoOpenNotification['Perfil Hotmart'] &&
+          n['Tipo de Evento'] === autoOpenNotification['Tipo de Evento']
+        );
+      }
+      
+      // Se ainda não encontrou, usar a própria notificação recebida
+      if (!targetNotification) {
+        console.log('📋 Usando notificação fornecida diretamente');
+        targetNotification = autoOpenNotification as Notification;
+      }
+      
+      if (targetNotification) {
+        console.log('✅ Abrindo notificação encontrada:', targetNotification.ID);
+        // Pequeno delay para garantir que o componente foi montado
+        setTimeout(() => {
+          viewNotificationDetails(targetNotification!);
+        }, 100);
       } else {
-        console.log('⚠️ Notificação não encontrada na lista atual');
+        console.log('❌ Notificação não encontrada para abertura automática');
       }
     }
-  }, [autoOpenNotification, notifications, setSelectedNotification]);
+  }, [autoOpenNotification, notifications, viewNotificationDetails]);
 };
