@@ -1,15 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Edit, Save, X, RefreshCw } from 'lucide-react';
 import { MessageEditor } from '../IntelligentNotifications/MessageEditor';
 import { Notification } from './types';
 import { Message } from '../IntelligentNotifications/types';
+import { FormHeader } from './EditNotificationForm/FormHeader';
+import { BasicFieldsSection } from './EditNotificationForm/BasicFieldsSection';
+import { UserRoleSection } from './EditNotificationForm/UserRoleSection';
+import { FormActions } from './EditNotificationForm/FormActions';
+import { useEditFormValidation } from './EditNotificationForm/useEditFormValidation';
 
 interface EditNotificationFormProps {
   notification: Notification;
@@ -33,6 +33,8 @@ export const EditNotificationForm = ({
     messages: [] as Message[]
   });
   const [isFormLoading, setIsFormLoading] = useState(false);
+
+  const { isFormValid } = useEditFormValidation(formData);
 
   // Initialize messages with default structure if empty
   const initializeMessages = (messages: any[]): Message[] => {
@@ -77,13 +79,20 @@ export const EditNotificationForm = ({
     setFormData(initialFormData);
   }, [notification]);
 
+  const handleFieldUpdate = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleUserRoleUpdate = (value: string) => {
+    setFormData(prev => ({ ...prev, userRole: value }));
+  };
+
   const handleSave = async () => {
     try {
       console.log('💾 Iniciando salvamento da edição...');
       console.log('📋 Dados do formulário a serem salvos:', formData);
       
-      // Validar campos obrigatórios
-      if (!formData.eventType || !formData.platform || !formData.profileName || !formData.instanceId) {
+      if (!isFormValid) {
         console.error('❌ Campos obrigatórios não preenchidos');
         return;
       }
@@ -182,106 +191,17 @@ export const EditNotificationForm = ({
 
   return (
     <Card className="border-blue-500/50 bg-blue-500/10">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between text-primary-contrast">
-          <div className="flex items-center space-x-2">
-            <Edit className="w-5 h-5 text-blue-400" />
-            <span>Editando Notificação</span>
-            <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-              ID: {notification.ID}
-            </Badge>
-          </div>
-          <Button
-            onClick={onCancel}
-            variant="ghost"
-            size="sm"
-            className="text-gray-400 hover:text-white"
-          >
-            <X className="w-4 h-4" />
-          </Button>
-        </CardTitle>
-        <CardDescription className="text-gray-400">
-          Modifique os campos abaixo e clique em salvar para atualizar a notificação
-        </CardDescription>
-      </CardHeader>
+      <FormHeader notification={notification} onCancel={onCancel} />
       <CardContent className="space-y-6">
-        {/* Primeira linha - Tipo de Evento e Plataforma */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label className="text-gray-200 font-medium text-sm">Tipo de Evento</Label>
-            <Select
-              value={formData.eventType}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, eventType: value }))}
-            >
-              <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200">
-                <SelectValue placeholder="Selecione o evento" />
-              </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-700">
-                <SelectItem value="purchase-approved">Compra Aprovada</SelectItem>
-                <SelectItem value="awaiting-payment">Aguardando Pagamento</SelectItem>
-                <SelectItem value="cart-abandoned">Carrinho Abandonado</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <BasicFieldsSection 
+          formData={formData}
+          onUpdate={handleFieldUpdate}
+        />
 
-          <div className="space-y-2">
-            <Label className="text-gray-200 font-medium text-sm">Plataforma</Label>
-            <Select
-              value={formData.platform}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, platform: value }))}
-            >
-              <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200">
-                <SelectValue placeholder="Selecione a plataforma" />
-              </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-700">
-                <SelectItem value="hotmart">Hotmart</SelectItem>
-                <SelectItem value="braip">Braip</SelectItem>
-                <SelectItem value="kiwfy">Kiwfy</SelectItem>
-                <SelectItem value="monetize">Monetize</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* Segunda linha - Perfil e Instância */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label className="text-gray-200 font-medium text-sm">Nome do Perfil</Label>
-            <Input
-              value={formData.profileName}
-              onChange={(e) => setFormData(prev => ({ ...prev, profileName: e.target.value }))}
-              placeholder="Nome cadastrado na plataforma"
-              className="bg-gray-700/50 border-gray-600 text-gray-200"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-gray-200 font-medium text-sm">ID da Instância</Label>
-            <Input
-              value={formData.instanceId}
-              onChange={(e) => setFormData(prev => ({ ...prev, instanceId: e.target.value }))}
-              placeholder="ID da instância WhatsApp"
-              className="bg-gray-700/50 border-gray-600 text-gray-200"
-            />
-          </div>
-        </div>
-
-        {/* Função do Usuário */}
-        <div className="space-y-2">
-          <Label className="text-gray-200 font-medium text-sm">Você é</Label>
-          <Select
-            value={formData.userRole}
-            onValueChange={(value) => setFormData(prev => ({ ...prev, userRole: value }))}
-          >
-            <SelectTrigger className="bg-gray-700/50 border-gray-600 text-gray-200">
-              <SelectValue placeholder="Selecione seu papel" />
-            </SelectTrigger>
-            <SelectContent className="bg-gray-800 border-gray-700">
-              <SelectItem value="producer">Produtor</SelectItem>
-              <SelectItem value="affiliate">Afiliado</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <UserRoleSection 
+          userRole={formData.userRole}
+          onUpdate={handleUserRoleUpdate}
+        />
 
         {/* Editor de Mensagens */}
         <div className="space-y-4">
@@ -295,34 +215,12 @@ export const EditNotificationForm = ({
           />
         </div>
 
-        {/* Botões de Ação */}
-        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-600/30">
-          <Button
-            onClick={onCancel}
-            variant="ghost"
-            disabled={currentIsLoading}
-            className="text-gray-400 hover:text-gray-200"
-          >
-            Cancelar
-          </Button>
-          <Button 
-            onClick={handleSave}
-            disabled={currentIsLoading || !formData.eventType || !formData.platform || !formData.profileName}
-            className="bg-blue-500 hover:bg-blue-600 text-white"
-          >
-            {currentIsLoading ? (
-              <>
-                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                Salvando...
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4 mr-2" />
-                Salvar Alterações
-              </>
-            )}
-          </Button>
-        </div>
+        <FormActions
+          onSave={handleSave}
+          onCancel={onCancel}
+          isLoading={currentIsLoading}
+          isFormValid={isFormValid}
+        />
       </CardContent>
     </Card>
   );
