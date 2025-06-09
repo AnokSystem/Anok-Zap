@@ -7,9 +7,36 @@ class EvolutionApiService {
     'apikey': API_KEY,
   };
 
+  private getUserId(): string | null {
+    try {
+      const savedUser = localStorage.getItem('currentUser');
+      if (savedUser) {
+        const user = JSON.parse(savedUser);
+        return user.ID;
+      }
+    } catch (error) {
+      console.error('Erro ao obter ID do usuário:', error);
+    }
+    return null;
+  }
+
+  private formatInstanceName(name: string, userId: string): string {
+    return `${name}-user-${userId}`.toLowerCase().replace(/\s+/g, '-');
+  }
+
+  private isUserInstance(instanceName: string, userId: string): boolean {
+    return instanceName.includes(`user-${userId}`);
+  }
+
   async getInstances() {
     try {
       console.log('Buscando instâncias da Evolution API...');
+      
+      const userId = this.getUserId();
+      if (!userId) {
+        console.log('Usuário não autenticado');
+        return [];
+      }
       
       const response = await fetch(`${API_BASE_URL}/instance/fetchInstances`, {
         headers: this.headers,
@@ -19,11 +46,19 @@ class EvolutionApiService {
       
       if (response.ok) {
         const data = await response.json();
-        console.log('Instâncias encontradas:', data);
+        console.log('Todas as instâncias encontradas:', data);
         
         const instances = Array.isArray(data) ? data : [];
         
-        return instances.map((instance: any) => ({
+        // Filtrar apenas instâncias do usuário atual
+        const userInstances = instances.filter(instance => {
+          const instanceName = instance.name || instance.instanceName || instance.id;
+          return this.isUserInstance(instanceName, userId);
+        });
+        
+        console.log(`Instâncias do usuário ${userId}:`, userInstances);
+        
+        return userInstances.map((instance: any) => ({
           id: instance.name || instance.instanceName || instance.id,
           name: instance.name || instance.instanceName || 'Instância',
           status: this.translateStatus(instance.connectionStatus || 'disconnected'),
@@ -34,9 +69,8 @@ class EvolutionApiService {
       throw new Error('Falha ao buscar instâncias');
     } catch (error) {
       console.error('Erro ao buscar instâncias:', error);
-      return [
-        { id: 'bot', name: 'Bot Principal', status: 'conectado', creationDate: new Date().toISOString() },
-      ];
+      // Retornar array vazio em caso de erro para usuários autenticados
+      return [];
     }
   }
 
@@ -51,6 +85,12 @@ class EvolutionApiService {
 
   async getGroups(instanceId: string) {
     try {
+      const userId = this.getUserId();
+      if (!userId || !this.isUserInstance(instanceId, userId)) {
+        console.log('Acesso negado à instância:', instanceId);
+        return [];
+      }
+
       console.log('Buscando grupos para instância:', instanceId);
       
       const response = await fetch(`${API_BASE_URL}/group/fetchAllGroups/${instanceId}?getParticipants=false`, {
@@ -80,6 +120,12 @@ class EvolutionApiService {
 
   async getAllContacts(instanceId: string) {
     try {
+      const userId = this.getUserId();
+      if (!userId || !this.isUserInstance(instanceId, userId)) {
+        console.log('Acesso negado à instância:', instanceId);
+        return [];
+      }
+
       console.log('🔍 Iniciando busca de contatos pessoais para instância:', instanceId);
       
       // Adicionar timeout para evitar travamento
@@ -224,6 +270,12 @@ class EvolutionApiService {
 
   async getGroupContacts(instanceId: string, groupId: string) {
     try {
+      const userId = this.getUserId();
+      if (!userId || !this.isUserInstance(instanceId, userId)) {
+        console.log('Acesso negado à instância:', instanceId);
+        return [];
+      }
+
       console.log('Buscando participantes do grupo:', groupId);
       
       const response = await fetch(`${API_BASE_URL}/group/participants/${instanceId}?groupJid=${groupId}`, {
@@ -279,10 +331,16 @@ class EvolutionApiService {
 
   async createInstance(name: string) {
     try {
-      console.log('Criando instância:', name);
+      const userId = this.getUserId();
+      if (!userId) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      const instanceName = this.formatInstanceName(name, userId);
+      console.log('Criando instância:', instanceName);
       
       const body = {
-        instanceName: name.toLowerCase().replace(/\s+/g, '-'),
+        instanceName: instanceName,
         integration: 'WHATSAPP-BAILEYS',
         webhookUrl: 'https://webhook.novahagencia.com.br/webhook/bb39433b-a53b-484c-8721-f9a66d54f821'
       };
@@ -298,8 +356,8 @@ class EvolutionApiService {
         console.log('Instância criada com sucesso:', data);
         
         return {
-          id: data.instanceName || body.instanceName,
-          name: data.instanceName || name,
+          id: data.instanceName || instanceName,
+          name: name, // Nome original para exibição
           status: 'desconectado',
           creationDate: new Date().toISOString(),
         };
@@ -310,19 +368,17 @@ class EvolutionApiService {
       }
     } catch (error) {
       console.error('Erro ao criar instância:', error);
-      const mockInstance = {
-        id: name.toLowerCase().replace(/\s+/g, '-'),
-        name,
-        status: 'desconectado',
-        creationDate: new Date().toISOString(),
-      };
-      console.log('Instância simulada criada:', mockInstance);
-      return mockInstance;
+      throw error;
     }
   }
 
   async deleteInstance(instanceId: string) {
     try {
+      const userId = this.getUserId();
+      if (!userId || !this.isUserInstance(instanceId, userId)) {
+        throw new Error('Acesso negado à instância');
+      }
+
       console.log('Excluindo instância:', instanceId);
       const response = await fetch(`${API_BASE_URL}/instance/delete/${instanceId}`, {
         method: 'DELETE',
@@ -338,12 +394,17 @@ class EvolutionApiService {
       return true;
     } catch (error) {
       console.error('Erro ao excluir instância:', error);
-      return true;
+      throw error;
     }
   }
 
   async disconnectInstance(instanceId: string) {
     try {
+      const userId = this.getUserId();
+      if (!userId || !this.isUserInstance(instanceId, userId)) {
+        throw new Error('Acesso negado à instância');
+      }
+
       console.log('🔄 Desconectando instância:', instanceId);
       
       const response = await fetch(`${API_BASE_URL}/instance/logout/${instanceId}`, {
@@ -369,6 +430,11 @@ class EvolutionApiService {
 
   async connectInstance(instanceId: string) {
     try {
+      const userId = this.getUserId();
+      if (!userId || !this.isUserInstance(instanceId, userId)) {
+        throw new Error('Acesso negado à instância');
+      }
+
       console.log('🔄 Conectando instância:', instanceId);
       
       const response = await fetch(`${API_BASE_URL}/instance/connect/${instanceId}`, {
@@ -394,6 +460,11 @@ class EvolutionApiService {
 
   async generateQrCode(instanceId: string) {
     try {
+      const userId = this.getUserId();
+      if (!userId || !this.isUserInstance(instanceId, userId)) {
+        throw new Error('Acesso negado à instância');
+      }
+
       console.log('Gerando QR code para instância:', instanceId);
       
       const response = await fetch(`${API_BASE_URL}/instance/connect/${instanceId}`, {
@@ -440,6 +511,11 @@ class EvolutionApiService {
 
   async sendMessage(instanceId: string, phoneNumber: string, message: string) {
     try {
+      const userId = this.getUserId();
+      if (!userId || !this.isUserInstance(instanceId, userId)) {
+        throw new Error('Acesso negado à instância');
+      }
+
       console.log('Enviando mensagem:', { instanceId, phoneNumber, message });
       const response = await fetch(`${API_BASE_URL}/message/sendText/${instanceId}`, {
         method: 'POST',
@@ -459,7 +535,7 @@ class EvolutionApiService {
       return true;
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
-      return true;
+      throw error;
     }
   }
 }

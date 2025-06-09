@@ -7,7 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RefreshCw, Plus, Trash2, Power, Smartphone, Wifi, WifiOff, Clock, QrCode } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from '@/hooks/useAuth';
 import { evolutionApiService } from '@/services/evolutionApi';
+import UserAuthWarning from './UserAuthWarning';
 
 interface Instance {
   id: string;
@@ -19,6 +21,7 @@ interface Instance {
 
 const InstanceManagement = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [instances, setInstances] = useState<Instance[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [newInstanceName, setNewInstanceName] = useState('');
@@ -28,8 +31,10 @@ const InstanceManagement = () => {
   const [monitoringInstanceId, setMonitoringInstanceId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadInstances();
-  }, []);
+    if (user) {
+      loadInstances();
+    }
+  }, [user]);
 
   // Monitor status da instância quando QR code está sendo exibido
   useEffect(() => {
@@ -74,9 +79,14 @@ const InstanceManagement = () => {
   }, [monitoringInstanceId, showQrModal, toast]);
 
   const loadInstances = async () => {
+    if (!user) {
+      setInstances([]);
+      return;
+    }
+
     setIsLoading(true);
     try {
-      console.log('🔄 Carregando instâncias...');
+      console.log('🔄 Carregando instâncias do usuário:', user.Nome);
       const data = await evolutionApiService.getInstances();
       console.log('✅ Instâncias carregadas:', data);
       setInstances(data);
@@ -100,17 +110,17 @@ const InstanceManagement = () => {
   };
 
   const createInstance = async () => {
-    if (!newInstanceName.trim()) return;
+    if (!newInstanceName.trim() || !user) return;
     
     setIsLoading(true);
     try {
-      console.log('🔄 Criando instância:', newInstanceName);
+      console.log('🔄 Criando instância para usuário:', user.Nome, 'Nome:', newInstanceName);
       await evolutionApiService.createInstance(newInstanceName);
       setNewInstanceName('');
       await loadInstances();
       toast({
         title: "Sucesso",
-        description: "Instância criada com sucesso",
+        description: `Instância "${newInstanceName}" criada com sucesso`,
       });
     } catch (error) {
       console.error('❌ Erro ao criar instância:', error);
@@ -254,6 +264,27 @@ const InstanceManagement = () => {
     setConnectingInstance(null);
   };
 
+  if (!user) {
+    return (
+      <div className="space-y-8">
+        {/* Header da Seção */}
+        <div className="text-center pb-6 border-b border-white/10">
+          <div className="flex items-center justify-center space-x-3 mb-4">
+            <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center shadow-purple">
+              <Smartphone className="w-6 h-6 text-white" />
+            </div>
+            <h3 className="text-2xl font-bold text-primary-contrast">Gerenciamento de Instâncias</h3>
+          </div>
+          <p className="text-gray-400 text-lg">
+            Configure e monitore suas instâncias do WhatsApp
+          </p>
+        </div>
+
+        <UserAuthWarning />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       {/* Header da Seção */}
@@ -265,7 +296,7 @@ const InstanceManagement = () => {
           <h3 className="text-2xl font-bold text-primary-contrast">Gerenciamento de Instâncias</h3>
         </div>
         <p className="text-gray-400 text-lg">
-          Configure e monitore suas instâncias do WhatsApp
+          Configure e monitore suas instâncias do WhatsApp - {user.Nome}
         </p>
       </div>
 
@@ -278,7 +309,7 @@ const InstanceManagement = () => {
           <div>
             <Label className="font-semibold text-primary-contrast text-lg">Nova Instância</Label>
             <p className="text-sm text-gray-400 mt-1">
-              Crie uma nova instância do WhatsApp
+              Crie uma nova instância do WhatsApp pessoal
             </p>
           </div>
         </div>
@@ -309,7 +340,7 @@ const InstanceManagement = () => {
               <Smartphone className="w-5 h-5 text-purple-accent" />
             </div>
             <div>
-              <Label className="font-semibold text-primary-contrast text-lg">Instâncias Ativas</Label>
+              <Label className="font-semibold text-primary-contrast text-lg">Suas Instâncias</Label>
               <p className="text-sm text-gray-400 mt-1">
                 {instances.length} instâncias configuradas
               </p>
@@ -331,7 +362,7 @@ const InstanceManagement = () => {
           <div className="text-center py-12">
             <Smartphone className="w-16 h-16 mx-auto text-gray-500 mb-4" />
             <p className="text-gray-400 text-lg">
-              {isLoading ? 'Carregando instâncias...' : 'Nenhuma instância encontrada'}
+              {isLoading ? 'Carregando suas instâncias...' : 'Você ainda não possui instâncias'}
             </p>
           </div>
         ) : (
