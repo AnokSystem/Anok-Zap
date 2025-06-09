@@ -1,32 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Settings, Users, Bell, MessageSquare, Zap, Server, LogOut, User } from 'lucide-react';
+import { Settings, Users, Bell, MessageSquare, Zap, Server, LogOut, User, Activity } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/hooks/useAuth';
-import ContactManagement from '@/components/ContactManagement';
-import MassMessaging from '@/components/MassMessaging';
-import IntelligentNotifications from '@/components/IntelligentNotifications';
-import InstanceManagement from '@/components/InstanceManagement';
-import IntegrationStatus from '@/components/IntegrationStatus';
 
 const Index = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState('contact-management');
-
-  useEffect(() => {
-    // Check if there's a tab in the URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const tabFromUrl = urlParams.get('tab');
-
-    // If there's a tab in the URL and it's different from the active tab, update the active tab
-    if (tabFromUrl && tabFromUrl !== activeTab) {
-      setActiveTab(tabFromUrl);
-    }
-  }, [activeTab]);
 
   const handleLogout = () => {
     logout();
@@ -37,22 +20,50 @@ const Index = () => {
     navigate('/login');
   };
 
-  const getTabIcon = (tab: string) => {
-    switch (tab) {
-      case 'contact-management':
-        return <Users className="w-4 h-4" />;
-      case 'mass-messaging':
-        return <MessageSquare className="w-4 h-4" />;
-      case 'intelligent-notifications':
-        return <Bell className="w-4 h-4" />;
-      case 'instance-management':
-        return <Server className="w-4 h-4" />;
-      case 'integration-status':
-        return <Settings className="w-4 h-4" />;
-      default:
-        return <Users className="w-4 h-4" />;
-    }
+  const handleCardClick = (tab: string) => {
+    const urlParams = new URLSearchParams();
+    urlParams.set('tab', tab);
+    navigate(`/?${urlParams.toString()}`);
   };
+
+  const navigationCards = [
+    {
+      id: 'mass-messaging',
+      title: 'Disparo',
+      subtitle: 'Envie mensagens para múltiplos contatos',
+      icon: MessageSquare,
+      gradient: 'gradient-primary',
+      active: true
+    },
+    {
+      id: 'contact-management',
+      title: 'Contatos',
+      subtitle: 'Gerencie seus contatos e grupos',
+      icon: Users,
+      gradient: 'gradient-secondary'
+    },
+    {
+      id: 'intelligent-notifications',
+      title: 'Notificações',
+      subtitle: 'Configure alertas inteligentes',
+      icon: Bell,
+      gradient: 'gradient-subtle'
+    },
+    {
+      id: 'instance-management',
+      title: 'Config',
+      subtitle: 'Configurações do WhatsApp',
+      icon: Settings,
+      gradient: 'gradient-card'
+    },
+    {
+      id: 'integration-status',
+      title: 'Status',
+      subtitle: 'Status das integrações',
+      icon: Activity,
+      gradient: 'gradient-form'
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-gray-950 relative">
@@ -99,65 +110,32 @@ const Index = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="animate-fade-in-up">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5 mb-8 bg-gray-800/50 border border-gray-700/50 p-1">
-              <TabsTrigger 
-                value="contact-management" 
-                className="flex items-center space-x-2 data-[state=active]:bg-purple-accent data-[state=active]:text-white"
-              >
-                {getTabIcon('contact-management')}
-                <span className="hidden sm:inline">Contatos</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="mass-messaging" 
-                className="flex items-center space-x-2 data-[state=active]:bg-purple-accent data-[state=active]:text-white"
-              >
-                {getTabIcon('mass-messaging')}
-                <span className="hidden sm:inline">Disparos</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="intelligent-notifications" 
-                className="flex items-center space-x-2 data-[state=active]:bg-purple-accent data-[state=active]:text-white"
-              >
-                {getTabIcon('intelligent-notifications')}
-                <span className="hidden sm:inline">Notificações</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="instance-management" 
-                className="flex items-center space-x-2 data-[state=active]:bg-purple-accent data-[state=active]:text-white"
-              >
-                {getTabIcon('instance-management')}
-                <span className="hidden sm:inline">Instâncias</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="integration-status" 
-                className="flex items-center space-x-2 data-[state=active]:bg-purple-accent data-[state=active]:text-white"
-              >
-                {getTabIcon('integration-status')}
-                <span className="hidden sm:inline">Integrações</span>
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="contact-management" className="mt-6">
-              <ContactManagement />
-            </TabsContent>
-            
-            <TabsContent value="mass-messaging" className="mt-6">
-              <MassMessaging />
-            </TabsContent>
-            
-            <TabsContent value="intelligent-notifications" className="mt-6">
-              <IntelligentNotifications />
-            </TabsContent>
-            
-            <TabsContent value="instance-management" className="mt-6">
-              <InstanceManagement />
-            </TabsContent>
-            
-            <TabsContent value="integration-status" className="mt-6">
-              <IntegrationStatus />
-            </TabsContent>
-          </Tabs>
+          {/* Navigation Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
+            {navigationCards.map((card) => {
+              const IconComponent = card.icon;
+              return (
+                <div
+                  key={card.id}
+                  onClick={() => handleCardClick(card.id)}
+                  className={`nav-card ${card.active ? 'active' : ''}`}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className="flex flex-col items-center text-center space-y-4">
+                    <div className={`w-16 h-16 ${card.gradient} rounded-2xl flex items-center justify-center shadow-purple`}>
+                      <IconComponent className="w-8 h-8 text-white" />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="nav-label text-lg font-bold">{card.title}</h3>
+                      <p className="text-sm text-gray-400 leading-relaxed">
+                        {card.subtitle}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
           {/* Quick Actions */}
           <div className="mt-12 flex justify-center">
@@ -175,23 +153,6 @@ const Index = () => {
       </div>
     </div>
   );
-};
-
-const getTabIcon = (tab: string) => {
-  switch (tab) {
-    case 'contact-management':
-      return <Users className="w-4 h-4" />;
-    case 'mass-messaging':
-      return <MessageSquare className="w-4 h-4" />;
-    case 'intelligent-notifications':
-      return <Bell className="w-4 h-4" />;
-    case 'instance-management':
-      return <Server className="w-4 h-4" />;
-    case 'integration-status':
-      return <Settings className="w-4 h-4" />;
-    default:
-      return <Users className="w-4 h-4" />;
-  }
 };
 
 export default Index;
