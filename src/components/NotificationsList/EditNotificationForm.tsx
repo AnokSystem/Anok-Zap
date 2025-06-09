@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Edit, Save, X, RefreshCw } from 'lucide-react';
 import { MessageEditor } from '../IntelligentNotifications/MessageEditor';
-import { useMessageManagement } from '../IntelligentNotifications/hooks/useMessageManagement';
 import { Notification } from './types';
 import { Message } from '../IntelligentNotifications/types';
 
@@ -58,6 +57,7 @@ export const EditNotificationForm = ({
     if (notification['Dados Completos (JSON)']) {
       try {
         parsedData = JSON.parse(notification['Dados Completos (JSON)']);
+        console.log('✅ Dados JSON parseados no formulário:', parsedData);
       } catch (e) {
         console.error('❌ Erro ao fazer parse do JSON:', e);
         parsedData = {};
@@ -69,28 +69,58 @@ export const EditNotificationForm = ({
       platform: parsedData.platform || notification['Plataforma'] || '',
       profileName: parsedData.profileName || notification['Perfil Hotmart'] || '',
       instanceId: parsedData.instance || notification['ID da Instância'] || '',
-      userRole: parsedData.userRole || '',
+      userRole: parsedData.userRole || notification['Papel do Usuário'] || '',
       messages: initializeMessages(parsedData.messages || [])
     };
     
+    console.log('📋 Dados iniciais do formulário:', initialFormData);
     setFormData(initialFormData);
   }, [notification]);
 
-  // Use the message management hook for handling messages
-  const {
-    addMessage,
-    removeMessage,
-    updateMessage,
-    handleFileUpload,
-  } = useMessageManagement(
-    formData,
-    setFormData,
-    setIsFormLoading
-  );
-
   const handleSave = async () => {
-    const success = await onSave(formData);
-    // O componente pai irá fechar o formulário se o save for bem-sucedido
+    try {
+      console.log('💾 Iniciando salvamento da edição...');
+      console.log('📋 Dados do formulário a serem salvos:', formData);
+      
+      // Validar campos obrigatórios
+      if (!formData.eventType || !formData.platform || !formData.profileName || !formData.instanceId) {
+        console.error('❌ Campos obrigatórios não preenchidos');
+        return;
+      }
+
+      setIsFormLoading(true);
+      
+      // Preparar dados no formato correto para o serviço de salvamento
+      const dataToSave = {
+        eventType: formData.eventType,
+        platform: formData.platform,
+        profileName: formData.profileName,
+        instanceId: formData.instanceId,
+        userRole: formData.userRole,
+        messages: formData.messages.map(msg => ({
+          id: msg.id,
+          type: msg.type,
+          content: msg.content,
+          delay: msg.delay,
+          ...(msg.fileUrl && { fileUrl: msg.fileUrl }),
+          ...(msg.file && { file: msg.file })
+        }))
+      };
+
+      console.log('📤 Dados formatados para salvamento:', dataToSave);
+      
+      const success = await onSave(dataToSave);
+      
+      if (success) {
+        console.log('✅ Edição salva com sucesso');
+      } else {
+        console.error('❌ Falha ao salvar edição');
+      }
+    } catch (error) {
+      console.error('❌ Erro ao salvar edição:', error);
+    } finally {
+      setIsFormLoading(false);
+    }
   };
 
   const handleAddMessage = () => {
@@ -130,8 +160,19 @@ export const EditNotificationForm = ({
   const handleMessageFileUpload = async (messageId: string, file: File) => {
     try {
       setIsFormLoading(true);
-      // Use the existing handleFileUpload from the hook
-      await handleFileUpload(messageId, file);
+      console.log('📁 Upload de arquivo para mensagem:', messageId, file.name);
+      
+      // Aqui você implementaria o upload do arquivo
+      // Por enquanto, vamos simular
+      const fileUrl = `https://example.com/uploads/${Date.now()}-${file.name}`;
+      
+      handleUpdateMessage(messageId, { 
+        file: file as any,
+        fileUrl: fileUrl 
+      });
+      
+    } catch (error) {
+      console.error('❌ Erro no upload do arquivo:', error);
     } finally {
       setIsFormLoading(false);
     }

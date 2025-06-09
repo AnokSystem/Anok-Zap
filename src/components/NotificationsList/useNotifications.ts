@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { nocodbService } from '@/services/nocodb';
+import { notificationSaveService } from '@/components/IntelligentNotifications/services/notificationSaveService';
 import { Notification, SyncStatus } from './types';
 
 export const useNotifications = () => {
@@ -126,36 +127,83 @@ export const useNotifications = () => {
     });
   };
 
-  const saveEditedNotification = async (updatedNotification: any) => {
+  const saveEditedNotification = async (updatedNotificationData: any): Promise<boolean> => {
+    if (!editingNotification) {
+      console.error('❌ Nenhuma notificação sendo editada');
+      return false;
+    }
+
+    setIsLoading(true);
+    
     try {
-      console.log('💾 Salvando notificação editada:', updatedNotification);
+      console.log('💾 Salvando notificação editada no NocoDB...');
+      console.log('📋 Dados originais da notificação:', editingNotification);
+      console.log('📋 Dados atualizados recebidos:', updatedNotificationData);
       
-      // Aqui você implementaria a chamada para atualizar no NocoDB
-      // Por enquanto, vamos apenas atualizar na lista local
-      setNotifications(prev => 
-        prev.map(n => 
-          n.ID === editingNotification?.ID 
-            ? { ...n, ...updatedNotification }
-            : n
-        )
+      // Usar o serviço de salvamento com o ID da notificação para edição
+      const editingRule = {
+        ID: editingNotification.ID,
+        id: editingNotification.ID
+      };
+
+      // Chamar o serviço de salvamento que já trata edições
+      const result = await notificationSaveService.saveNotification(
+        updatedNotificationData, 
+        editingRule
       );
+
+      if (result.success) {
+        console.log('✅ Notificação atualizada com sucesso no NocoDB');
+        
+        // Atualizar a notificação na lista local
+        setNotifications(prev => 
+          prev.map(n => 
+            n.ID === editingNotification.ID 
+              ? {
+                  ...n,
+                  'Tipo de Evento': updatedNotificationData.eventType,
+                  'Plataforma': updatedNotificationData.platform,
+                  'Perfil Hotmart': updatedNotificationData.profileName,
+                  'ID da Instância': updatedNotificationData.instanceId,
+                  'Papel do Usuário': updatedNotificationData.userRole,
+                  'Contagem de Mensagens': updatedNotificationData.messages?.length || 0,
+                  'Dados Completos (JSON)': JSON.stringify({
+                    ...updatedNotificationData,
+                    timestamp: new Date().toISOString(),
+                    saved_timestamp: new Date().toISOString(),
+                    ruleId: editingNotification.ID
+                  }, null, 2)
+                }
+              : n
+          )
+        );
+        
+        // Fechar o modo de edição
+        setEditingNotification(null);
+        
+        toast({
+          title: "✅ Sucesso",
+          description: "Notificação atualizada com sucesso no banco de dados!",
+        });
+        
+        // Recarregar as notificações para garantir que temos os dados mais recentes
+        await loadNotifications();
+        
+        return true;
+      } else {
+        throw new Error('Falha no serviço de salvamento');
+      }
       
-      setEditingNotification(null);
-      
-      toast({
-        title: "Sucesso",
-        description: "Notificação atualizada com sucesso",
-      });
-      
-      return true;
     } catch (error) {
-      console.error('❌ Erro ao salvar notificação:', error);
+      console.error('❌ Erro ao salvar notificação editada:', error);
       toast({
-        title: "Erro",
-        description: "Falha ao salvar as alterações",
+        title: "❌ Erro",
+        description: "Falha ao salvar as alterações no banco de dados",
         variant: "destructive",
       });
       return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
