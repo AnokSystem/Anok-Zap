@@ -30,7 +30,8 @@ const NotificationsList = () => {
         lastSync={lastSync}
         syncStatus={syncStatus}
         onRefresh={loadNotifications}
-        notificationCount={notifications.length}
+        notifications={notifications}
+        isLoading={isLoading}
       />
 
       {/* Tabela de Notificações */}
@@ -56,6 +57,7 @@ const NotificationsList = () => {
         isOpen={deleteConfirmation.isOpen}
         onClose={hideDeleteConfirmation}
         onConfirm={confirmDelete}
+        notificationId={deleteConfirmation.notificationId || ''}
       />
     </div>
   );
