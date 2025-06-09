@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from 'react-router-dom';
@@ -110,8 +109,7 @@ export const useNotifications = () => {
   const editNotification = (notification: Notification) => {
     console.log('📝 Iniciando edição da notificação:', notification);
     
-    // Navegar para a página principal com os dados da notificação para editar
-    // Utilizamos sessionStorage para passar os dados da notificação
+    // Salvar os dados da notificação no sessionStorage
     sessionStorage.setItem('editNotification', JSON.stringify(notification));
     
     toast({
@@ -119,7 +117,7 @@ export const useNotifications = () => {
       description: "Carregando dados da notificação no formulário...",
     });
     
-    // Redirecionar para a página principal
+    // Redirecionar para a página principal onde está o formulário de notificações
     navigate('/');
   };
 
