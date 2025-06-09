@@ -24,6 +24,11 @@ const DeleteConfirmationDialog = ({
   onConfirm, 
   notificationId 
 }: DeleteConfirmationDialogProps) => {
+  // Garantir que notificationId seja uma string antes de usar .slice()
+  const displayId = notificationId && typeof notificationId === 'string' 
+    ? notificationId.slice(0, 8) 
+    : 'N/A';
+
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent className="bg-gray-800 border-gray-700">
@@ -35,7 +40,7 @@ const DeleteConfirmationDialog = ({
             Tem certeza que deseja excluir esta notificação?
             <br />
             <span className="font-mono text-sm text-purple-accent">
-              ID: {notificationId.slice(0, 8)}...
+              ID: {displayId}...
             </span>
             <br />
             Esta ação não pode ser desfeita.
