@@ -45,23 +45,23 @@ export const useNotificationEditing = (
       console.log('📋 Dados originais da notificação:', editingNotification);
       console.log('📋 Dados atualizados recebidos:', updatedNotificationData);
       
-      // Preparar dados para salvamento garantindo que temos o ID correto
-      const dataToSave = {
+      // Preparar dados no formato correto para o serviço
+      const ruleData = {
         eventType: updatedNotificationData.eventType,
-        instanceId: updatedNotificationData.instanceId,
+        instanceId: updatedNotificationData.instanceId, // Manter instanceId aqui
         userRole: updatedNotificationData.userRole,
         platform: updatedNotificationData.platform,
         profileName: updatedNotificationData.profileName,
         messages: updatedNotificationData.messages || [],
-        ruleId: editingNotification.ID // ID da notificação para edição
       };
 
-      console.log('📤 Dados formatados para salvamento:', dataToSave);
+      console.log('📤 Dados formatados para o serviço:', ruleData);
+      console.log('🔑 ID da notificação para edição:', editingNotification.ID);
 
-      // Usar o serviço de salvamento passando o editingRule corretamente
+      // Usar o serviço de salvamento com o editingRule contendo o ID
       const result = await notificationSaveService.saveNotification(
-        dataToSave, 
-        editingNotification // Passar a notificação completa como editingRule
+        ruleData,
+        { ID: editingNotification.ID, id: editingNotification.ID } // Garantir que tem o ID
       );
 
       if (result.success) {
