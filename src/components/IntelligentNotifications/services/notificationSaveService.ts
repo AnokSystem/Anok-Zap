@@ -9,15 +9,15 @@ export const notificationSaveService = {
     editingRule?: any
   ): Promise<{ success: boolean; webhookUrl: string }> => {
     console.log('🔄 Serviço de salvamento iniciado');
-    console.log('📋 Dados da regra:', rule);
+    console.log('📋 Dados da regra recebidos:', rule);
     console.log('📋 Regra sendo editada:', editingRule);
     
     const webhookUrl = webhookService.getWebhookUrl(rule.eventType!);
     
-    // Base notification data - corrigir mapeamento instanceId/instance
+    // Base notification data - garantir mapeamento correto instanceId -> instance
     const notificationData: any = {
       eventType: rule.eventType!,
-      instance: rule.instanceId!, // O banco espera 'instance'
+      instance: rule.instanceId!, // IMPORTANTE: O banco espera 'instance', não 'instanceId'
       userRole: rule.userRole!,
       platform: rule.platform!,
       profileName: rule.profileName!,
@@ -31,11 +31,11 @@ export const notificationSaveService = {
       const recordId = editingRule.ID || editingRule.id;
       notificationData.ruleId = recordId;
       console.log('📝 Atualizando notificação existente com ID:', recordId);
+      console.log('📤 Dados preparados para atualização (com instance):', notificationData);
     } else {
       console.log('➕ Criando nova notificação');
+      console.log('📤 Dados preparados para criação (com instance):', notificationData);
     }
-
-    console.log('📤 Dados preparados para salvamento:', notificationData);
 
     try {
       // Salvar no NocoDB - o serviço já trata criação/atualização

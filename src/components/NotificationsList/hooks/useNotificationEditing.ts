@@ -57,6 +57,12 @@ export const useNotificationEditing = (
           platform: !updatedNotificationData.platform,
           profileName: !updatedNotificationData.profileName
         });
+        
+        toast({
+          title: "❌ Erro de Validação",
+          description: "Dados obrigatórios estão faltando",
+          variant: "destructive",
+        });
         return false;
       }
 
@@ -67,20 +73,25 @@ export const useNotificationEditing = (
 
       if (validMessages.length === 0) {
         console.error('❌ Nenhuma mensagem válida encontrada');
+        toast({
+          title: "❌ Erro de Validação",
+          description: "Pelo menos uma mensagem é obrigatória",
+          variant: "destructive",
+        });
         return false;
       }
 
-      // Preparar dados no formato correto para o serviço - CRUCIAL: usar 'instance' para o banco
+      // Preparar dados no formato correto para o serviço
       const ruleData = {
         eventType: updatedNotificationData.eventType,
-        instance: updatedNotificationData.instanceId, // O banco espera 'instance', não 'instanceId'
+        instanceId: updatedNotificationData.instanceId, // Manter como instanceId aqui
         userRole: updatedNotificationData.userRole,
         platform: updatedNotificationData.platform,
         profileName: updatedNotificationData.profileName,
         messages: validMessages,
       };
 
-      console.log('📤 Dados formatados para o serviço (com instance):', ruleData);
+      console.log('📤 Dados formatados para o serviço:', ruleData);
       console.log('🔑 ID da notificação para edição:', editingNotification.ID);
 
       // Usar o serviço de salvamento com o editingRule contendo o ID
@@ -92,6 +103,11 @@ export const useNotificationEditing = (
       if (result.success) {
         console.log('✅ Notificação atualizada com sucesso no banco');
         
+        toast({
+          title: "✅ Sucesso",
+          description: "Notificação atualizada com sucesso!",
+        });
+        
         // Recarregar as notificações do banco para garantir sincronização
         await loadNotifications();
         
@@ -101,11 +117,21 @@ export const useNotificationEditing = (
         return true;
       } else {
         console.error('❌ Falha no serviço de salvamento');
+        toast({
+          title: "❌ Erro",
+          description: "Falha ao salvar as alterações no banco de dados",
+          variant: "destructive",
+        });
         return false;
       }
       
     } catch (error) {
       console.error('❌ Erro ao salvar notificação editada:', error);
+      toast({
+        title: "❌ Erro",
+        description: "Erro inesperado ao salvar as alterações",
+        variant: "destructive",
+      });
       return false;
     } finally {
       setIsLoading(false);

@@ -61,7 +61,7 @@ export const EditNotificationForm = ({
         eventType: formData.eventType,
         platform: formData.platform,
         profileName: formData.profileName,
-        instanceId: formData.instanceId, // Manter como instanceId
+        instanceId: formData.instanceId, // Manter como instanceId - será convertido para instance no serviço
         userRole: formData.userRole,
         messages: formData.messages
           .filter(msg => (msg.content && msg.content.trim() !== '') || msg.fileUrl)
@@ -77,6 +77,7 @@ export const EditNotificationForm = ({
 
       console.log('📤 Dados formatados para salvamento:', dataToSave);
       console.log('🔑 ID da notificação sendo editada:', notification.ID);
+      console.log('📊 Número de mensagens válidas:', dataToSave.messages.length);
       
       const success = await onSave(dataToSave);
       

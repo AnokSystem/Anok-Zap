@@ -26,7 +26,7 @@ export const useEditFormValidation = (formData: FormData) => {
         (msg.content && msg.content.trim() !== '') || msg.fileUrl
       );
 
-    console.log('🔍 Validação do formulário:', {
+    console.log('🔍 Validação do formulário de edição:', {
       hasRequiredFields,
       hasValidMessage,
       isValid: hasRequiredFields && hasValidMessage,
@@ -37,7 +37,9 @@ export const useEditFormValidation = (formData: FormData) => {
         instanceId: formData.instanceId,
         userRole: formData.userRole,
         messagesCount: formData.messages?.length || 0,
-        messages: formData.messages
+        validMessages: formData.messages?.filter(msg => 
+          (msg.content && msg.content.trim() !== '') || msg.fileUrl
+        ).length || 0
       }
     });
 
@@ -59,6 +61,7 @@ export const useEditFormValidation = (formData: FormData) => {
       );
     if (!hasValidMessage) errors.push('Pelo menos uma mensagem com conteúdo é obrigatória');
     
+    console.log('❌ Erros de validação encontrados:', errors);
     return errors;
   };
 
