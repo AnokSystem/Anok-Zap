@@ -71,15 +71,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-gray-950 relative overflow-hidden">
-      {/* Background Image */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
-        style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=5760&auto=format&fit=crop')`,
-        }}
-      />
-      
-      {/* Gradient Overlay */}
+      {/* Gradient Overlay - removida a imagem de fundo */}
       <div className="absolute inset-0 bg-gradient-to-br from-purple-900/80 via-gray-900/90 to-blue-900/80" />
       
       {/* Content */}
