@@ -1,3 +1,4 @@
+
 import { NocodbConfig, ConnectionTestResult } from './types';
 import { NocodbTableManager } from './tableManager';
 import { NotificationService } from './notificationService';
@@ -5,7 +6,7 @@ import { DataService } from './dataService';
 import { FallbackService } from './fallbackService';
 
 class NocodbService {
-  private config: NocodbConfig = {
+  private _config: NocodbConfig = {
     baseUrl: 'https://kovalski.novahagencia.com.br',
     apiToken: 'aY4YYKsICfBJXDtjLj4GWlwwaFIOkwSsOy64gslJ'
   };
@@ -16,21 +17,21 @@ class NocodbService {
   private fallbackService: FallbackService;
 
   constructor() {
-    this.tableManager = new NocodbTableManager(this.config);
-    this.notificationService = new NotificationService(this.config);
-    this.dataService = new DataService(this.config);
+    this.tableManager = new NocodbTableManager(this._config);
+    this.notificationService = new NotificationService(this._config);
+    this.dataService = new DataService(this._config);
     this.fallbackService = new FallbackService();
   }
 
   // Expor config e headers para o serviço de auth
   get config() {
-    return this.config;
+    return this._config;
   }
 
   get headers() {
     return {
       'Content-Type': 'application/json',
-      'xc-token': this.config.apiToken,
+      'xc-token': this._config.apiToken,
     };
   }
 
@@ -44,7 +45,7 @@ class NocodbService {
 
   async getTableId(baseId: string, tableName: string): Promise<string | null> {
     try {
-      const response = await fetch(`${this.config.baseUrl}/api/v1/db/meta/projects/${baseId}/tables`, {
+      const response = await fetch(`${this._config.baseUrl}/api/v1/db/meta/projects/${baseId}/tables`, {
         headers: this.headers,
       });
       
