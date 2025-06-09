@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -31,12 +30,14 @@ const Login = () => {
     setIsCreatingUser(true);
     
     try {
+      console.log('🚀 Iniciando criação de usuário...');
       const result = await createTestUser();
       
       if (result.success) {
+        const message = result.message || "Usuário de teste criado com sucesso!";
         toast({
           title: "Usuário Criado",
-          description: "Usuário de teste criado com sucesso! Use: admin@teste.com / 123456",
+          description: `${message} Use: admin@teste.com / 123456`,
         });
         
         // Preencher automaticamente os campos
@@ -45,6 +46,7 @@ const Login = () => {
           senha: '123456'
         });
       } else {
+        console.error('❌ Erro detalhado:', result.error);
         toast({
           title: "Erro",
           description: result.error || "Erro ao criar usuário de teste",
@@ -52,7 +54,7 @@ const Login = () => {
         });
       }
     } catch (error) {
-      console.error('Erro ao criar usuário:', error);
+      console.error('❌ Erro ao criar usuário:', error);
       toast({
         title: "Erro",
         description: "Erro interno ao criar usuário",
