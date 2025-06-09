@@ -3,7 +3,9 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Copy, X } from 'lucide-react';
 import { Notification } from './types';
+import { useToast } from "@/hooks/use-toast";
 
 interface NotificationDetailsModalProps {
   notification: Notification | null;
@@ -11,6 +13,8 @@ interface NotificationDetailsModalProps {
 }
 
 const NotificationDetailsModal = ({ notification, onClose }: NotificationDetailsModalProps) => {
+  const { toast } = useToast();
+
   if (!notification) return null;
 
   const getEventTypeLabel = (type: string) => {
@@ -48,19 +52,41 @@ const NotificationDetailsModal = ({ notification, onClose }: NotificationDetails
     }
   };
 
+  const copyWebhookUrl = () => {
+    const webhookUrl = notification['URL do Webhook'];
+    if (webhookUrl) {
+      navigator.clipboard.writeText(webhookUrl);
+      toast({
+        title: "Copiado!",
+        description: "URL do webhook copiada para a área de transferência",
+      });
+    }
+  };
+
+  const handleClose = () => {
+    console.log('🔄 Fechando modal de detalhes');
+    onClose();
+  };
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6">
-      <Card className="w-full max-w-4xl max-h-[90vh] overflow-auto bg-gray-800 border-gray-600">
+    <div 
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6"
+      onClick={handleClose}
+    >
+      <Card 
+        className="w-full max-w-4xl max-h-[90vh] overflow-auto bg-gray-800 border-gray-600"
+        onClick={(e) => e.stopPropagation()}
+      >
         <CardHeader>
           <CardTitle className="flex items-center justify-between text-primary-contrast">
             <span>Detalhes da Notificação</span>
             <Button
-              onClick={onClose}
-              variant="outline"
+              onClick={handleClose}
+              variant="ghost"
               size="sm"
-              className="bg-gray-700/50 border-gray-600 text-gray-200 hover:bg-gray-600/50"
+              className="text-gray-400 hover:text-gray-200 hover:bg-gray-700/50"
             >
-              Fechar
+              <X className="w-4 h-4" />
             </Button>
           </CardTitle>
         </CardHeader>
@@ -92,9 +118,22 @@ const NotificationDetailsModal = ({ notification, onClose }: NotificationDetails
             
             <div className="md:col-span-2">
               <label className="text-sm font-medium text-gray-300">URL do Webhook</label>
-              <p className="mt-1 break-all text-sm bg-gray-700/50 p-2 rounded text-gray-200">
-                {notification['URL do Webhook'] || '-'}
-              </p>
+              <div className="mt-1 flex items-center space-x-2">
+                <div className="flex-1 break-all text-sm bg-gray-700/50 p-2 rounded text-gray-200">
+                  {notification['URL do Webhook'] || '-'}
+                </div>
+                {notification['URL do Webhook'] && (
+                  <Button
+                    onClick={copyWebhookUrl}
+                    size="sm"
+                    variant="outline"
+                    className="bg-gray-700/50 border-gray-600 text-gray-200 hover:bg-gray-600/50 shrink-0"
+                    title="Copiar URL do webhook"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
             </div>
             
             <div className="md:col-span-2">
@@ -122,6 +161,16 @@ const NotificationDetailsModal = ({ notification, onClose }: NotificationDetails
                 ))}
               </div>
             </div>
+          </div>
+          
+          <div className="flex justify-end pt-4 border-t border-gray-600/50">
+            <Button
+              onClick={handleClose}
+              variant="outline"
+              className="bg-gray-700/50 border-gray-600 text-gray-200 hover:bg-gray-600/50"
+            >
+              Fechar
+            </Button>
           </div>
         </CardContent>
       </Card>
