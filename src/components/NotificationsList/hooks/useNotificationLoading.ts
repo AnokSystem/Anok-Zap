@@ -18,6 +18,16 @@ export const useNotificationLoading = () => {
     try {
       console.log('📡 Carregando notificações do NocoDB...');
       
+      // Verificar se o usuário está autenticado
+      const savedUser = localStorage.getItem('currentUser');
+      if (!savedUser) {
+        console.error('❌ Usuário não autenticado');
+        throw new Error('Usuário não autenticado');
+      }
+      
+      const user = JSON.parse(savedUser);
+      console.log('👤 Usuário autenticado:', user.ID);
+      
       // Primeiro testar a conexão
       const connectionTest = await nocodbService.testConnection();
       console.log('🔌 Teste de conexão:', connectionTest);
@@ -28,8 +38,18 @@ export const useNotificationLoading = () => {
       
       const data = await nocodbService.getHotmartNotifications();
       
-      console.log('📋 Dados recebidos:', data);
-      console.log(`📊 Total de notificações: ${data.length}`);
+      console.log('📋 Dados recebidos do NocoDB:', data);
+      console.log(`📊 Total de notificações encontradas: ${data.length}`);
+      
+      // Log das notificações encontradas para debug
+      data.forEach((notification, index) => {
+        console.log(`📌 Notificação ${index + 1}:`, {
+          ID: notification.ID,
+          'Tipo de Evento': notification['Tipo de Evento'],
+          'ID do Usuário': notification['ID do Usuário'],
+          'Perfil Hotmart': notification['Perfil Hotmart']
+        });
+      });
       
       setNotifications(data);
       setLastSync(new Date());

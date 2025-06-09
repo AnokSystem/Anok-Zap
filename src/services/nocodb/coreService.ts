@@ -1,4 +1,3 @@
-
 import { NocodbConfig, ConnectionTestResult } from './types';
 import { NocodbTableManager } from './tableManager';
 import { NotificationService } from './notificationService';
@@ -171,6 +170,11 @@ export class CoreNocodbService {
       this.fallbackService.saveLocalFallback('hotmart_notifications', notificationData);
       return true;
     }
+  }
+
+  // Novo método público para deletar notificações
+  async deleteNotification(baseId: string, recordId: string): Promise<boolean> {
+    return await this.notificationService.deleteNotification(baseId, recordId);
   }
 
   // Delegate data service methods

@@ -43,17 +43,17 @@ export const useNotificationDeletion = (
         throw new Error('Base do NocoDB não encontrada');
       }
 
-      // Usar o novo método de exclusão que verifica o usuário
-      const success = await nocodbService.notificationService.deleteNotification(
+      // Usar o método público deleteNotification do serviço principal
+      const success = await nocodbService.deleteNotification(
         targetBaseId, 
         deleteConfirmation.notificationId
       );
 
       if (success) {
-        // Remover da lista local
+        // Remover da lista local usando a propriedade correta ID
         setNotifications(prev => 
           prev.filter(notification => 
-            (notification.ID || notification.id) !== deleteConfirmation.notificationId
+            notification.ID !== deleteConfirmation.notificationId
           )
         );
 
