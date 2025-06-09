@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -6,14 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { authService } from '@/services/auth';
-import { createTestUser } from '@/utils/createTestUser';
-import { Lock, Mail, LogIn, UserPlus } from 'lucide-react';
+import { Lock, Mail, LogIn, Zap } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     senha: ''
@@ -24,45 +23,6 @@ const Login = () => {
       ...prev,
       [e.target.name]: e.target.value
     }));
-  };
-
-  const handleCreateTestUser = async () => {
-    setIsCreatingUser(true);
-    
-    try {
-      console.log('🚀 Iniciando criação de usuário...');
-      const result = await createTestUser();
-      
-      if (result.success) {
-        const message = result.message || "Usuário de teste criado com sucesso!";
-        toast({
-          title: "Usuário Criado",
-          description: `${message} Use: admin@teste.com / 123456`,
-        });
-        
-        // Preencher automaticamente os campos
-        setFormData({
-          email: 'admin@teste.com',
-          senha: '123456'
-        });
-      } else {
-        console.error('❌ Erro detalhado:', result.error);
-        toast({
-          title: "Erro",
-          description: result.error || "Erro ao criar usuário de teste",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('❌ Erro ao criar usuário:', error);
-      toast({
-        title: "Erro",
-        description: "Erro interno ao criar usuário",
-        variant: "destructive",
-      });
-    } finally {
-      setIsCreatingUser(false);
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -113,13 +73,15 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center p-6">
       <div className="w-full max-w-md">
-        {/* Logo/Header */}
+        {/* Logo/Header - usando a mesma logo do sistema */}
         <div className="text-center mb-8">
           <div className="w-20 h-20 gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-purple">
-            <LogIn className="w-10 h-10 text-white" />
+            <Zap className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gradient mb-2">Anok Zap</h1>
-          <p className="text-gray-400 text-lg">Faça login para acessar o sistema</p>
+          <h1 className="text-gradient text-4xl font-bold mb-2">Anok Zap</h1>
+          <p className="text-lg text-gray-400 font-medium">
+            Faça login para acessar o sistema
+          </p>
         </div>
 
         {/* Login Form */}
@@ -188,33 +150,6 @@ const Login = () => {
                   </div>
                 )}
               </Button>
-
-              {/* Botão para criar usuário de teste */}
-              <div className="pt-4 border-t border-gray-600">
-                <Button
-                  type="button"
-                  onClick={handleCreateTestUser}
-                  disabled={isCreatingUser}
-                  variant="outline"
-                  className="w-full border-gray-600 text-gray-300 hover:bg-gray-800"
-                  size="lg"
-                >
-                  {isCreatingUser ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 border-2 border-gray-400/30 border-t-gray-400 rounded-full animate-spin" />
-                      <span>Criando usuário...</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center space-x-2">
-                      <UserPlus className="w-4 h-4" />
-                      <span>Criar Usuário de Teste</span>
-                    </div>
-                  )}
-                </Button>
-                <p className="text-xs text-gray-500 text-center mt-2">
-                  Clique para criar um usuário de teste automaticamente
-                </p>
-              </div>
             </form>
           </CardContent>
         </Card>
