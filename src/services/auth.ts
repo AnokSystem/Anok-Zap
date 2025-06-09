@@ -32,8 +32,6 @@ class AuthService {
 
   async login(credentials: LoginCredentials): Promise<{ success: boolean; user?: User; error?: string }> {
     try {
-      console.log('🔐 Tentando fazer login com:', credentials.email);
-
       // Garantir que a tabela de usuários existe
       await nocodbService.ensureTableExists('Usuarios');
       
@@ -50,7 +48,6 @@ class AuthService {
       }
 
       const user = users[0];
-      console.log('👤 Usuário encontrado:', user);
       
       // Verificar senha (em produção, use hash)
       if (user.Senha !== credentials.senha) {
@@ -88,7 +85,6 @@ class AuthService {
       this.currentUser = userToSave;
       localStorage.setItem('currentUser', JSON.stringify(userToSave));
 
-      console.log('✅ Login realizado com sucesso:', userToSave);
       return { success: true, user: userToSave };
 
     } catch (error) {
@@ -109,8 +105,6 @@ class AuthService {
         throw new Error('Tabela de usuários não encontrada');
       }
 
-      console.log('🔍 Buscando usuário na URL:', `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}?where=(Email,eq,${email})`);
-
       const response = await fetch(`${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}?where=(Email,eq,${email})`, {
         method: 'GET',
         headers: nocodbService.headers,
@@ -118,7 +112,6 @@ class AuthService {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('📋 Dados retornados da busca:', data);
         return data.list || [];
       } else {
         const errorText = await response.text();
