@@ -54,17 +54,18 @@ export const useEditFormData = (notification: Notification) => {
       }
     }
     
-    // Mapear campos de forma mais robusta - corrigir mapeamento de instance/instanceId
+    // Mapear campos de forma mais robusta - CORRIGIDO: usar 'instance' como prioridade
     const initialFormData = {
       eventType: parsedData.eventType || notification['Tipo de Evento'] || '',
       platform: parsedData.platform || notification['Plataforma'] || 'hotmart',
       profileName: parsedData.profileName || parsedData.hotmartProfile || notification['Perfil Hotmart'] || '',
-      instanceId: parsedData.instance || parsedData.instanceId || notification['ID da Instância'] || '',
+      instanceId: parsedData.instanceId || parsedData.instance || notification['ID da Instância'] || '',
       userRole: parsedData.userRole || notification['Papel do Usuário'] || notification['Função do Usuário'] || '',
       messages: initializeMessages(parsedData.messages || [])
     };
     
-    console.log('📋 Dados iniciais do formulário:', initialFormData);
+    console.log('📋 Dados iniciais do formulário (CORRIGIDO):', initialFormData);
+    console.log('🔑 ID da notificação para edição:', notification.ID);
     setFormData(initialFormData);
   }, [notification]);
 

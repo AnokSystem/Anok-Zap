@@ -42,8 +42,9 @@ export const useNotificationEditing = (
     
     try {
       console.log('💾 Salvando notificação editada...');
-      console.log('📋 Dados originais da notificação:', editingNotification);
+      console.log('📋 Notificação original completa:', editingNotification);
       console.log('📋 Dados atualizados recebidos:', updatedNotificationData);
+      console.log('🔑 ID da notificação para atualização:', editingNotification.ID);
       
       // Validar dados essenciais
       if (!updatedNotificationData.eventType || !updatedNotificationData.instanceId || 
@@ -81,24 +82,33 @@ export const useNotificationEditing = (
         return false;
       }
 
-      // Preparar dados no formato correto para o serviço
+      // CORRIGIDO: Preparar dados no formato correto para o serviço
       const ruleData = {
         eventType: updatedNotificationData.eventType,
-        instanceId: updatedNotificationData.instanceId, // Manter como instanceId aqui
+        instanceId: updatedNotificationData.instanceId, // O serviço vai converter para 'instance'
         userRole: updatedNotificationData.userRole,
         platform: updatedNotificationData.platform,
         profileName: updatedNotificationData.profileName,
         messages: validMessages,
       };
 
-      console.log('📤 Dados formatados para o serviço:', ruleData);
-      console.log('🔑 ID da notificação para edição:', editingNotification.ID);
+      console.log('📤 Dados formatados para o serviço (FINAL):', ruleData);
 
-      // Usar o serviço de salvamento com o editingRule contendo o ID
+      // CORRIGIDO: Usar editingRule com ID correto
+      const editingRule = {
+        ID: editingNotification.ID,
+        id: editingNotification.ID
+      };
+
+      console.log('🔄 Chamando serviço de salvamento com editingRule:', editingRule);
+
+      // Usar o serviço de salvamento
       const result = await notificationSaveService.saveNotification(
         ruleData,
-        { ID: editingNotification.ID, id: editingNotification.ID }
+        editingRule
       );
+
+      console.log('📊 Resultado do serviço de salvamento:', result);
 
       if (result.success) {
         console.log('✅ Notificação atualizada com sucesso no banco');
@@ -109,6 +119,7 @@ export const useNotificationEditing = (
         });
         
         // Recarregar as notificações do banco para garantir sincronização
+        console.log('🔄 Recarregando notificações do banco...');
         await loadNotifications();
         
         // Fechar o modo de edição

@@ -71,12 +71,16 @@ export class NotificationService extends BaseNocodbService {
         return false;
       }
 
-      ErrorHandler.logOperationStart('Salvando/Atualizando notificação Hotmart no NocoDB', notificationData);
+      console.log('🚀 INÍCIO - Salvando/Atualizando notificação Hotmart no NocoDB');
+      console.log('📋 Dados recebidos pelo notificationService:', notificationData);
+      console.log('👤 ID do usuário atual:', userId);
       
       const data = DataFormatter.formatNotificationForNocoDB({
         ...notificationData,
         userId // Adicionar ID do usuário aos dados
       });
+      
+      console.log('📦 Dados formatados pelo DataFormatter:', data);
       
       const tableId = await this.findTableId(baseId);
       if (!tableId) {
@@ -85,15 +89,17 @@ export class NotificationService extends BaseNocodbService {
       }
 
       console.log('✅ Tabela encontrada para operação:', tableId);
-      console.log('👤 Salvando notificação para usuário ID:', userId);
 
       if (notificationData.ruleId) {
+        console.log('📝 Modo ATUALIZAÇÃO - ID da regra:', notificationData.ruleId);
         return await this.updateNotification(baseId, tableId, notificationData.ruleId, data, userId);
       } else {
+        console.log('➕ Modo CRIAÇÃO - Nova notificação');
         return await this.createNotification(baseId, tableId, data);
       }
       
     } catch (error) {
+      console.error('❌ ERRO CRÍTICO no notificationService:', error);
       return ErrorHandler.handleApiError(error, 'ao salvar/atualizar notificação Hotmart', notificationData);
     }
   }
@@ -116,22 +122,38 @@ export class NotificationService extends BaseNocodbService {
 
   private async updateNotification(baseId: string, tableId: string, recordId: string, data: any, userId: string): Promise<boolean> {
     try {
-      console.log('📝 Atualizando notificação existente com ID:', recordId);
-      console.log('👤 Verificando propriedade da notificação para usuário:', userId);
+      console.log('📝 INÍCIO - Atualizando notificação existente');
+      console.log('🔑 ID do registro:', recordId);
+      console.log('👤 Verificando propriedade para usuário:', userId);
+      console.log('📦 Dados para atualização:', data);
       
       // Verificar se a notificação pertence ao usuário antes de atualizar
       const existingRecord = await this.apiOperations.getRecordById(baseId, tableId, recordId);
-      if (!existingRecord || existingRecord['ID do Usuário'] !== userId) {
-        console.error('❌ Acesso negado: notificação não pertence ao usuário');
+      console.log('📄 Registro existente encontrado:', existingRecord);
+      
+      if (!existingRecord) {
+        console.error('❌ Registro não encontrado com ID:', recordId);
         return false;
       }
       
+      if (existingRecord['ID do Usuário'] !== userId) {
+        console.error('❌ Acesso negado: notificação não pertence ao usuário');
+        console.error('❌ Usuário do registro:', existingRecord['ID do Usuário']);
+        console.error('❌ Usuário atual:', userId);
+        return false;
+      }
+      
+      console.log('✅ Verificação de propriedade passou - prosseguindo com atualização');
+      
       const result = await this.apiOperations.updateRecord(baseId, tableId, recordId, data);
+      console.log('📊 Resultado da atualização:', result);
       
       DataFormatter.logUpdatedFields(data);
       ErrorHandler.logOperationSuccess('Notificação atualizada');
+      console.log('✅ FIM - Notificação atualizada com sucesso');
       return true;
     } catch (error) {
+      console.error('❌ ERRO na atualização:', error);
       ErrorHandler.logOperationFailure('atualizar notificação');
       return false;
     }
@@ -139,13 +161,18 @@ export class NotificationService extends BaseNocodbService {
 
   private async createNotification(baseId: string, tableId: string, data: any): Promise<boolean> {
     try {
-      console.log('➕ Criando nova notificação com todos os dados');
+      console.log('➕ INÍCIO - Criando nova notificação');
+      console.log('📦 Dados para criação:', data);
+      
       const result = await this.apiOperations.createRecord(baseId, tableId, data);
+      console.log('📊 Resultado da criação:', result);
       
       DataFormatter.logSavedFields(result, data);
       ErrorHandler.logOperationSuccess('Nova notificação criada');
+      console.log('✅ FIM - Nova notificação criada com sucesso');
       return true;
     } catch (error) {
+      console.error('❌ ERRO na criação:', error);
       ErrorHandler.logOperationFailure('criar nova notificação');
       return false;
     }

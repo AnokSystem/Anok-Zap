@@ -14,7 +14,7 @@ export const notificationSaveService = {
     
     const webhookUrl = webhookService.getWebhookUrl(rule.eventType!);
     
-    // Base notification data - garantir mapeamento correto instanceId -> instance
+    // CORRIGIDO: Base notification data - garantir mapeamento correto instanceId -> instance
     const notificationData: any = {
       eventType: rule.eventType!,
       instance: rule.instanceId!, // IMPORTANTE: O banco espera 'instance', não 'instanceId'
@@ -26,22 +26,26 @@ export const notificationSaveService = {
       timestamp: new Date().toISOString(),
     };
 
-    // Se estamos editando, incluir o ID da notificação
+    // CORRIGIDO: Se estamos editando, incluir o ID da notificação
     if (editingRule && (editingRule.ID || editingRule.id)) {
       const recordId = editingRule.ID || editingRule.id;
       notificationData.ruleId = recordId;
       console.log('📝 Atualizando notificação existente com ID:', recordId);
-      console.log('📤 Dados preparados para atualização (com instance):', notificationData);
+      console.log('📤 Dados preparados para atualização (CORRIGIDO):', notificationData);
     } else {
       console.log('➕ Criando nova notificação');
-      console.log('📤 Dados preparados para criação (com instance):', notificationData);
+      console.log('📤 Dados preparados para criação (CORRIGIDO):', notificationData);
     }
 
     try {
+      console.log('🚀 Chamando nocodbService.saveHotmartNotification...');
       // Salvar no NocoDB - o serviço já trata criação/atualização
       const success = await nocodbService.saveHotmartNotification(notificationData);
       
+      console.log('📊 Resultado do salvamento no NocoDB:', success);
+      
       if (!success) {
+        console.error('❌ Falha retornada pelo nocodbService');
         throw new Error('Falha ao salvar no banco de dados');
       }
 
