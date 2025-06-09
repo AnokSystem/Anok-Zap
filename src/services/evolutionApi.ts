@@ -1,3 +1,4 @@
+
 const API_BASE_URL = 'https://api.novahagencia.com.br';
 const API_KEY = '26bda82495a95caeae71f96534841285';
 
@@ -22,6 +23,15 @@ class EvolutionApiService {
 
   private formatInstanceName(name: string, userId: string): string {
     return `${name}-user-${userId}`.toLowerCase().replace(/\s+/g, '-');
+  }
+
+  private extractOriginalName(instanceName: string, userId: string): string {
+    // Extrair o nome original removendo o sufixo "-user-{userId}"
+    const suffix = `-user-${userId}`;
+    if (instanceName.endsWith(suffix)) {
+      return instanceName.slice(0, -suffix.length);
+    }
+    return instanceName;
   }
 
   private isUserInstance(instanceName: string, userId: string): boolean {
@@ -58,12 +68,17 @@ class EvolutionApiService {
         
         console.log(`Instâncias do usuário ${userId}:`, userInstances);
         
-        return userInstances.map((instance: any) => ({
-          id: instance.name || instance.instanceName || instance.id,
-          name: instance.name || instance.instanceName || 'Instância',
-          status: this.translateStatus(instance.connectionStatus || 'disconnected'),
-          creationDate: instance.createdAt || new Date().toISOString(),
-        }));
+        return userInstances.map((instance: any) => {
+          const instanceId = instance.name || instance.instanceName || instance.id;
+          const originalName = this.extractOriginalName(instanceId, userId);
+          
+          return {
+            id: instanceId,
+            name: originalName, // Mostrar o nome original sem o sufixo
+            status: this.translateStatus(instance.connectionStatus || 'disconnected'),
+            creationDate: instance.createdAt || new Date().toISOString(),
+          };
+        });
       }
       
       throw new Error('Falha ao buscar instâncias');
@@ -357,7 +372,7 @@ class EvolutionApiService {
         
         return {
           id: data.instanceName || instanceName,
-          name: name, // Nome original para exibição
+          name: name, // Retornar o nome original para exibição
           status: 'desconectado',
           creationDate: new Date().toISOString(),
         };
