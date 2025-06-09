@@ -1,11 +1,13 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from 'react-router-dom';
 import { nocodbService } from '@/services/nocodb';
 import { Notification, SyncStatus } from './types';
 
 export const useNotifications = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
@@ -105,6 +107,22 @@ export const useNotifications = () => {
     setSelectedNotification(null);
   };
 
+  const editNotification = (notification: Notification) => {
+    console.log('📝 Iniciando edição da notificação:', notification);
+    
+    // Navegar para a página principal com os dados da notificação para editar
+    // Utilizamos sessionStorage para passar os dados da notificação
+    sessionStorage.setItem('editNotification', JSON.stringify(notification));
+    
+    toast({
+      title: "Redirecionando para Edição",
+      description: "Carregando dados da notificação no formulário...",
+    });
+    
+    // Redirecionar para a página principal
+    navigate('/');
+  };
+
   useEffect(() => {
     console.log('🚀 NotificationsList montado, carregando notificações...');
     loadNotifications();
@@ -132,5 +150,6 @@ export const useNotifications = () => {
     confirmDelete,
     viewNotificationDetails,
     closeNotificationDetails,
+    editNotification,
   };
 };

@@ -1,10 +1,10 @@
 
 import React from 'react';
 import { useNotifications } from './NotificationsList/useNotifications';
-import SyncStatusCard from './NotificationsList/SyncStatusCard';
 import NotificationsTable from './NotificationsList/NotificationsTable';
 import NotificationDetailsModal from './NotificationsList/NotificationDetailsModal';
 import DeleteConfirmationDialog from './NotificationsList/DeleteConfirmationDialog';
+import SyncStatusCard from './NotificationsList/SyncStatusCard';
 
 const NotificationsList = () => {
   const {
@@ -20,36 +20,42 @@ const NotificationsList = () => {
     confirmDelete,
     viewNotificationDetails,
     closeNotificationDetails,
+    editNotification,
   } = useNotifications();
 
   return (
     <div className="space-y-6">
+      {/* Status Card */}
       <SyncStatusCard
-        syncStatus={syncStatus}
         lastSync={lastSync}
-        notifications={notifications}
-        isLoading={isLoading}
+        syncStatus={syncStatus}
         onRefresh={loadNotifications}
+        notificationCount={notifications.length}
       />
 
+      {/* Tabela de Notificações */}
       <NotificationsTable
         notifications={notifications}
         isLoading={isLoading}
         onViewDetails={viewNotificationDetails}
         onDelete={showDeleteConfirmation}
+        onEdit={editNotification}
         onRefresh={loadNotifications}
       />
 
-      <NotificationDetailsModal
-        notification={selectedNotification}
-        onClose={closeNotificationDetails}
-      />
+      {/* Modal de Detalhes */}
+      {selectedNotification && (
+        <NotificationDetailsModal
+          notification={selectedNotification}
+          onClose={closeNotificationDetails}
+        />
+      )}
 
+      {/* Dialog de Confirmação de Exclusão */}
       <DeleteConfirmationDialog
         isOpen={deleteConfirmation.isOpen}
         onClose={hideDeleteConfirmation}
         onConfirm={confirmDelete}
-        notificationId={deleteConfirmation.notificationId || ''}
       />
     </div>
   );

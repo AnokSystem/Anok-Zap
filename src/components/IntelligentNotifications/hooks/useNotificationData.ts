@@ -14,6 +14,25 @@ export const useNotificationData = () => {
   useEffect(() => {
     loadInstances();
     loadRules();
+    
+    // Verificar se há uma notificação para editar no sessionStorage
+    const editNotificationData = sessionStorage.getItem('editNotification');
+    if (editNotificationData) {
+      try {
+        const notification = JSON.parse(editNotificationData);
+        console.log('📝 Dados de edição encontrados no sessionStorage:', notification);
+        
+        // Disparar evento customizado para que o useNotificationForm possa pegar os dados
+        window.dispatchEvent(new CustomEvent('loadEditNotification', { 
+          detail: notification 
+        }));
+        
+        // Limpar o sessionStorage
+        sessionStorage.removeItem('editNotification');
+      } catch (error) {
+        console.error('❌ Erro ao processar dados de edição:', error);
+      }
+    }
   }, []);
 
   const loadInstances = async () => {

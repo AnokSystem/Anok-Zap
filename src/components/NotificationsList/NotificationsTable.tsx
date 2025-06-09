@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Database, Eye, Trash2, RefreshCw } from 'lucide-react';
+import { Database, Eye, Trash2, RefreshCw, Edit } from 'lucide-react';
 import { Notification } from './types';
 
 interface NotificationsTableProps {
@@ -12,10 +12,18 @@ interface NotificationsTableProps {
   isLoading: boolean;
   onViewDetails: (notification: Notification) => void;
   onDelete: (notificationId: string) => void;
+  onEdit?: (notification: Notification) => void;
   onRefresh: () => void;
 }
 
-const NotificationsTable = ({ notifications, isLoading, onViewDetails, onDelete, onRefresh }: NotificationsTableProps) => {
+const NotificationsTable = ({ 
+  notifications, 
+  isLoading, 
+  onViewDetails, 
+  onDelete, 
+  onEdit,
+  onRefresh 
+}: NotificationsTableProps) => {
   const getEventTypeLabel = (type: string) => {
     switch (type) {
       case 'purchase-approved': return 'Compra Aprovada';
@@ -136,14 +144,27 @@ const NotificationsTable = ({ notifications, isLoading, onViewDetails, onDelete,
                           size="sm"
                           variant="ghost"
                           className="text-purple-accent hover:text-purple-accent/80 hover:bg-purple-accent/10"
+                          title="Ver detalhes"
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
+                        {onEdit && (
+                          <Button
+                            onClick={() => onEdit(notification)}
+                            size="sm"
+                            variant="ghost"
+                            className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/20"
+                            title="Editar notificação"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        )}
                         <Button
                           onClick={() => onDelete(notification.ID)}
                           size="sm"
                           variant="ghost"
                           className="text-red-400 hover:text-red-300 hover:bg-red-500/20"
+                          title="Excluir notificação"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>

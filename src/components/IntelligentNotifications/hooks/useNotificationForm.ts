@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { minioService } from '@/services/minio';
 import { nocodbService } from '@/services/nocodb';
@@ -20,6 +19,18 @@ export const useNotificationForm = (onRulesUpdate: () => void) => {
   const [editingRule, setEditingRule] = useState<any>(null);
   const [createdWebhookUrl, setCreatedWebhookUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Escutar evento de carregamento de dados para edição
+  useEffect(() => {
+    const handleLoadEditNotification = (event: CustomEvent) => {
+      const notification = event.detail;
+      console.log('📝 Evento de edição recebido:', notification);
+      handleEditRule(notification);
+    };
+
+    window.addEventListener('loadEditNotification', handleLoadEditNotification);
+    return () => window.removeEventListener('loadEditNotification', handleLoadEditNotification);
+  }, []);
 
   const handleEditRule = (rule: any) => {
     try {
