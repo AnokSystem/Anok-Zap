@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -71,93 +70,127 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-6">
-      <div className="w-full max-w-md">
-        {/* Logo/Header - usando a mesma logo do sistema */}
-        <div className="text-center mb-8">
-          <div className="w-20 h-20 gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-purple">
-            <Zap className="w-10 h-10 text-white" />
+    <div className="min-h-screen bg-gray-950 relative overflow-hidden">
+      {/* Background Image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
+        style={{
+          backgroundImage: `url('https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=5760&auto=format&fit=crop')`,
+        }}
+      />
+      
+      {/* Gradient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-900/80 via-gray-900/90 to-blue-900/80" />
+      
+      {/* Content */}
+      <div className="relative z-10 min-h-screen flex">
+        {/* Left Side - Logo */}
+        <div className="hidden lg:flex lg:w-1/2 items-center justify-center p-12">
+          <div className="text-center">
+            <div className="w-32 h-32 gradient-primary rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl">
+              <Zap className="w-16 h-16 text-white" />
+            </div>
+            <h1 className="text-gradient text-6xl font-bold mb-4">Anok Zap</h1>
+            <p className="text-2xl text-gray-300 font-medium max-w-md">
+              Sistema Completo de Automação WhatsApp
+            </p>
           </div>
-          <h1 className="text-gradient text-4xl font-bold mb-2">Anok Zap</h1>
-          <p className="text-lg text-gray-400 font-medium">
-            Faça login para acessar o sistema
-          </p>
         </div>
 
-        {/* Login Form */}
-        <Card className="card-glass border-gray-600/50">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-primary-contrast">
-              Entrar na Conta
-            </CardTitle>
-            <CardDescription className="text-gray-400">
-              Digite suas credenciais para acessar
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        {/* Right Side - Login Form */}
+        <div className="w-full lg:w-1/2 flex items-center justify-center p-6">
+          <div className="w-full max-w-md">
+            {/* Mobile Logo */}
+            <div className="lg:hidden text-center mb-8">
+              <div className="w-20 h-20 gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-2xl">
+                <Zap className="w-10 h-10 text-white" />
+              </div>
+              <h1 className="text-gradient text-4xl font-bold mb-2">Anok Zap</h1>
+            </div>
+
+            {/* Login Title */}
+            <div className="mb-8">
+              <h2 className="text-4xl font-bold text-white mb-2">
+                Faça seu login<span className="text-purple-400">.</span>
+              </h2>
+            </div>
+
+            {/* Login Form */}
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-300 flex items-center space-x-2">
-                  <Mail className="w-4 h-4" />
-                  <span>Email</span>
+                <Label htmlFor="email" className="text-gray-300 text-sm font-medium">
+                  Email
                 </Label>
                 <Input
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="seu@email.com"
                   value={formData.email}
                   onChange={handleChange}
                   disabled={isLoading}
-                  className="bg-gray-800/50 border-gray-600 text-gray-200 placeholder-gray-500"
+                  className="h-14 bg-gray-800/50 border-2 border-gray-600/50 rounded-2xl text-white placeholder-gray-400 focus:border-purple-500 focus:ring-0 text-lg px-6"
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="senha" className="text-gray-300 flex items-center space-x-2">
-                  <Lock className="w-4 h-4" />
-                  <span>Senha</span>
+                <Label htmlFor="senha" className="text-gray-300 text-sm font-medium">
+                  Senha
                 </Label>
                 <Input
                   id="senha"
                   name="senha"
                   type="password"
-                  placeholder="Digite sua senha"
                   value={formData.senha}
                   onChange={handleChange}
                   disabled={isLoading}
-                  className="bg-gray-800/50 border-gray-600 text-gray-200 placeholder-gray-500"
+                  className="h-14 bg-gray-800/50 border-2 border-gray-600/50 rounded-2xl text-white placeholder-gray-400 focus:border-purple-500 focus:ring-0 text-lg px-6"
                   required
                 />
               </div>
 
+              {/* Forgot Password Link */}
+              <div className="text-right">
+                <a 
+                  href="#" 
+                  className="text-gray-400 hover:text-purple-400 text-sm underline transition-colors"
+                >
+                  Esqueci minha senha
+                </a>
+              </div>
+
+              {/* Login Button */}
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full gradient-primary text-white font-medium py-3"
-                size="lg"
+                className="w-full h-14 gradient-primary text-white font-semibold text-lg rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 {isLoading ? (
                   <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     <span>Entrando...</span>
                   </div>
                 ) : (
-                  <div className="flex items-center space-x-2">
-                    <LogIn className="w-4 h-4" />
-                    <span>Entrar</span>
-                  </div>
+                  "Entrar"
                 )}
               </Button>
-            </form>
-          </CardContent>
-        </Card>
 
-        {/* Footer */}
-        <div className="text-center mt-8 text-gray-500 text-sm">
-          <p>Sistema de Automação WhatsApp</p>
-          <p className="mt-1">© 2024 Anok Zap. Todos os direitos reservados.</p>
+              {/* Sign Up Link */}
+              <div className="text-center pt-6">
+                <p className="text-gray-400 text-sm">
+                  Ainda não tenho uma conta{' '}
+                  <a 
+                    href="https://cupomativado.store/pv-anokzap"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-purple-400 hover:text-purple-300 underline font-medium transition-colors"
+                  >
+                    Criar conta
+                  </a>
+                </p>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>
