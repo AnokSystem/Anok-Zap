@@ -29,7 +29,7 @@ const NotificationsTable = ({
       case 'purchase-approved': return 'Compra Aprovada';
       case 'awaiting-payment': return 'Aguardando Pagamento';
       case 'cart-abandoned': return 'Carrinho Abandonado';
-      default: return type;
+      default: return type || 'Não especificado';
     }
   };
 
@@ -37,7 +37,7 @@ const NotificationsTable = ({
     try {
       return new Date(dateString).toLocaleString('pt-BR');
     } catch {
-      return dateString;
+      return dateString || '-';
     }
   };
 
@@ -48,12 +48,12 @@ const NotificationsTable = ({
       if (messages.length === 0) return 'Nenhuma mensagem';
       
       const firstMessage = messages[0];
-      if (firstMessage.type === 'text') {
+      if (firstMessage.type === 'text' && firstMessage.content) {
         return firstMessage.content.length > 50 
           ? firstMessage.content.substring(0, 50) + '...' 
           : firstMessage.content;
       }
-      return `${firstMessage.type} (${messages.length} mensagens)`;
+      return `${firstMessage.type || 'texto'} (${messages.length} mensagens)`;
     } catch {
       return 'Dados inválidos';
     }
@@ -65,6 +65,18 @@ const NotificationsTable = ({
       case 'awaiting-payment': return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
       case 'cart-abandoned': return 'bg-red-500/10 text-red-400 border-red-500/20';
       default: return 'bg-gray-500/10 text-gray-400 border-gray-500/20';
+    }
+  };
+
+  const handleEditClick = (notification: Notification, event: React.MouseEvent) => {
+    event.stopPropagation();
+    console.log('🖱️ Clique em editar capturado para notificação:', notification.ID);
+    
+    if (onEdit) {
+      console.log('📝 Chamando função de edição...');
+      onEdit(notification);
+    } else {
+      console.error('❌ Função de edição não disponível');
     }
   };
 
@@ -129,10 +141,13 @@ const NotificationsTable = ({
                       {notification['Perfil Hotmart'] || '-'}
                     </TableCell>
                     <TableCell className="font-mono text-sm text-gray-300">
-                      {notification['ID da Instância']?.slice(0, 8) || '-'}...
+                      {notification['ID da Instância'] ? 
+                        `${notification['ID da Instância'].slice(0, 8)}...` : 
+                        '-'
+                      }
                     </TableCell>
                     <TableCell className="max-w-xs truncate text-gray-300">
-                      {getMessagePreview(notification['Dados Completos (JSON)'])}
+                      {getMessagePreview(notification['Dados Completos (JSON)'] || '{}')}
                     </TableCell>
                     <TableCell className="text-sm text-gray-400">
                       {formatDate(notification['CreatedAt'])}
@@ -150,7 +165,7 @@ const NotificationsTable = ({
                         </Button>
                         {onEdit && (
                           <Button
-                            onClick={() => onEdit(notification)}
+                            onClick={(e) => handleEditClick(notification, e)}
                             size="sm"
                             variant="ghost"
                             className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/20"

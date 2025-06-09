@@ -53,25 +53,28 @@ export const EditNotificationForm = ({
   };
 
   useEffect(() => {
+    console.log('🔄 Inicializando formulário de edição com notificação:', notification);
+    
     // Parse dos dados da notificação para preencher o formulário
     let parsedData: any = {};
     
     if (notification['Dados Completos (JSON)']) {
       try {
         parsedData = JSON.parse(notification['Dados Completos (JSON)']);
-        console.log('✅ Dados JSON parseados no formulário:', parsedData);
+        console.log('✅ Dados JSON parseados:', parsedData);
       } catch (e) {
         console.error('❌ Erro ao fazer parse do JSON:', e);
         parsedData = {};
       }
     }
     
+    // Mapear campos de forma mais robusta
     const initialFormData = {
       eventType: parsedData.eventType || notification['Tipo de Evento'] || '',
       platform: parsedData.platform || notification['Plataforma'] || '',
-      profileName: parsedData.profileName || notification['Perfil Hotmart'] || '',
-      instanceId: parsedData.instance || notification['ID da Instância'] || '',
-      userRole: parsedData.userRole || notification['Papel do Usuário'] || '',
+      profileName: parsedData.profileName || parsedData.hotmartProfile || notification['Perfil Hotmart'] || '',
+      instanceId: parsedData.instance || parsedData.instanceId || notification['ID da Instância'] || '',
+      userRole: parsedData.userRole || notification['Papel do Usuário'] || notification['Função do Usuário'] || '',
       messages: initializeMessages(parsedData.messages || [])
     };
     
@@ -80,10 +83,12 @@ export const EditNotificationForm = ({
   }, [notification]);
 
   const handleFieldUpdate = (field: string, value: string) => {
+    console.log(`📝 Atualizando campo ${field}:`, value);
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleUserRoleUpdate = (value: string) => {
+    console.log('👤 Atualizando papel do usuário:', value);
     setFormData(prev => ({ ...prev, userRole: value }));
   };
 
@@ -93,7 +98,7 @@ export const EditNotificationForm = ({
       console.log('📋 Dados do formulário a serem salvos:', formData);
       
       if (!isFormValid) {
-        console.error('❌ Campos obrigatórios não preenchidos');
+        console.error('❌ Formulário inválido - campos obrigatórios não preenchidos');
         return;
       }
 
@@ -106,7 +111,7 @@ export const EditNotificationForm = ({
         profileName: formData.profileName,
         instanceId: formData.instanceId,
         userRole: formData.userRole,
-        messages: formData.messages.map(msg => ({
+        messages: formData.messages.filter(msg => msg.content.trim() !== '').map(msg => ({
           id: msg.id,
           type: msg.type,
           content: msg.content,
@@ -133,7 +138,10 @@ export const EditNotificationForm = ({
   };
 
   const handleAddMessage = () => {
-    if (formData.messages.length >= 5) return;
+    if (formData.messages.length >= 5) {
+      console.log('⚠️ Limite máximo de mensagens atingido');
+      return;
+    }
     
     const newMessage: Message = {
       id: Date.now().toString(),
@@ -142,6 +150,7 @@ export const EditNotificationForm = ({
       delay: 0
     };
     
+    console.log('➕ Adicionando nova mensagem:', newMessage);
     setFormData(prev => ({
       ...prev,
       messages: [...prev.messages, newMessage]
@@ -149,8 +158,12 @@ export const EditNotificationForm = ({
   };
 
   const handleRemoveMessage = (messageId: string) => {
-    if (formData.messages.length <= 1) return;
+    if (formData.messages.length <= 1) {
+      console.log('⚠️ Não é possível remover - mínimo de 1 mensagem');
+      return;
+    }
     
+    console.log('🗑️ Removendo mensagem:', messageId);
     setFormData(prev => ({
       ...prev,
       messages: prev.messages.filter(msg => msg.id !== messageId)
@@ -158,6 +171,7 @@ export const EditNotificationForm = ({
   };
 
   const handleUpdateMessage = (messageId: string, updates: Partial<Message>) => {
+    console.log(`📝 Atualizando mensagem ${messageId}:`, updates);
     setFormData(prev => ({
       ...prev,
       messages: prev.messages.map(msg => 
@@ -171,8 +185,7 @@ export const EditNotificationForm = ({
       setIsFormLoading(true);
       console.log('📁 Upload de arquivo para mensagem:', messageId, file.name);
       
-      // Aqui você implementaria o upload do arquivo
-      // Por enquanto, vamos simular
+      // Por enquanto, simular o upload
       const fileUrl = `https://example.com/uploads/${Date.now()}-${file.name}`;
       
       handleUpdateMessage(messageId, { 

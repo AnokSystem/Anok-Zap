@@ -41,24 +41,24 @@ export const useNotificationEditing = (
     setIsLoading(true);
     
     try {
-      console.log('💾 Salvando notificação editada no NocoDB...');
+      console.log('💾 Salvando notificação editada...');
       console.log('📋 Dados originais da notificação:', editingNotification);
       console.log('📋 Dados atualizados recebidos:', updatedNotificationData);
       
-      // Usar o serviço de salvamento com o ID da notificação para edição
-      const editingRule = {
-        ID: editingNotification.ID,
-        id: editingNotification.ID
+      // Preparar dados para salvamento com o ID da notificação
+      const dataToSave = {
+        ...updatedNotificationData,
+        ruleId: editingNotification.ID // Garantir que temos o ID para edição
       };
 
-      // Chamar o serviço de salvamento que já trata edições
+      // Usar o serviço de salvamento que já trata edições
       const result = await notificationSaveService.saveNotification(
-        updatedNotificationData, 
-        editingRule
+        dataToSave, 
+        { ID: editingNotification.ID, id: editingNotification.ID }
       );
 
       if (result.success) {
-        console.log('✅ Notificação atualizada com sucesso no NocoDB');
+        console.log('✅ Notificação atualizada com sucesso');
         
         // Atualizar a notificação na lista local
         setNotifications(prev => 
@@ -88,10 +88,10 @@ export const useNotificationEditing = (
         
         toast({
           title: "✅ Sucesso",
-          description: "Notificação atualizada com sucesso no banco de dados!",
+          description: "Notificação atualizada com sucesso!",
         });
         
-        // Recarregar as notificações para garantir que temos os dados mais recentes
+        // Recarregar as notificações para garantir sincronização
         await loadNotifications();
         
         return true;
@@ -103,7 +103,7 @@ export const useNotificationEditing = (
       console.error('❌ Erro ao salvar notificação editada:', error);
       toast({
         title: "❌ Erro",
-        description: "Falha ao salvar as alterações no banco de dados",
+        description: "Falha ao salvar as alterações. Tente novamente.",
         variant: "destructive",
       });
       return false;

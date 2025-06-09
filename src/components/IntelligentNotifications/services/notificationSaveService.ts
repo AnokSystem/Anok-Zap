@@ -6,8 +6,12 @@ import { webhookService } from './webhookService';
 export const notificationSaveService = {
   saveNotification: async (
     rule: Partial<NotificationRule>,
-    editingRule: any
+    editingRule?: any
   ): Promise<{ success: boolean; webhookUrl: string }> => {
+    console.log('🔄 Serviço de salvamento iniciado');
+    console.log('📋 Dados da regra:', rule);
+    console.log('📋 Regra sendo editada:', editingRule);
+    
     const webhookUrl = webhookService.getWebhookUrl(rule.eventType!);
     
     const notificationData = {
@@ -23,17 +27,24 @@ export const notificationSaveService = {
       ...(editingRule && { ruleId: editingRule.ID || editingRule.id })
     };
 
-    console.log(editingRule ? '📝 Atualizando notificação:' : '➕ Criando notificação:', notificationData);
+    const isEditing = editingRule && (editingRule.ID || editingRule.id);
+    console.log(isEditing ? '📝 Atualizando notificação existente' : '➕ Criando nova notificação');
+    console.log('📤 Dados preparados para salvamento:', notificationData);
 
-    // Salvar no NocoDB - o serviço já trata criação/atualização
-    const success = await nocodbService.saveHotmartNotification(notificationData);
-    
-    if (!success) {
-      throw new Error('Falha ao salvar no banco de dados');
+    try {
+      // Salvar no NocoDB - o serviço já trata criação/atualização
+      const success = await nocodbService.saveHotmartNotification(notificationData);
+      
+      if (!success) {
+        throw new Error('Falha ao salvar no banco de dados');
+      }
+
+      console.log(isEditing ? '✅ Notificação atualizada com sucesso' : '✅ Notificação criada com sucesso');
+      
+      return { success: true, webhookUrl };
+    } catch (error) {
+      console.error('❌ Erro no serviço de salvamento:', error);
+      throw error;
     }
-
-    console.log(editingRule ? '✅ Notificação atualizada com sucesso' : '✅ Notificação criada com sucesso');
-    
-    return { success: true, webhookUrl };
   }
 };
