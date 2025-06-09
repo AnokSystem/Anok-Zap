@@ -2,14 +2,28 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Settings, Users, Bell, MessageSquare, Zap, Server, LogOut, User, Activity } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/hooks/useAuth';
+import MassMessaging from '@/components/MassMessaging';
+import ContactManagement from '@/components/ContactManagement';
+import IntelligentNotifications from '@/components/IntelligentNotifications';
+import InstanceManagement from '@/components/InstanceManagement';
+import IntegrationStatus from '@/components/IntegrationStatus';
 
 const Index = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, logout } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState('mass-messaging');
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   const handleLogout = () => {
     logout();
@@ -21,9 +35,10 @@ const Index = () => {
   };
 
   const handleCardClick = (tab: string) => {
+    setActiveTab(tab);
     const urlParams = new URLSearchParams();
     urlParams.set('tab', tab);
-    navigate(`/?${urlParams.toString()}`);
+    setSearchParams(urlParams);
   };
 
   const navigationCards = [
@@ -33,37 +48,58 @@ const Index = () => {
       subtitle: 'Envie mensagens para múltiplos contatos',
       icon: MessageSquare,
       gradient: 'gradient-primary',
-      active: true
+      active: activeTab === 'mass-messaging'
     },
     {
       id: 'contact-management',
       title: 'Contatos',
       subtitle: 'Gerencie seus contatos e grupos',
       icon: Users,
-      gradient: 'gradient-secondary'
+      gradient: 'gradient-secondary',
+      active: activeTab === 'contact-management'
     },
     {
       id: 'intelligent-notifications',
       title: 'Notificações',
       subtitle: 'Configure alertas inteligentes',
       icon: Bell,
-      gradient: 'gradient-subtle'
+      gradient: 'gradient-subtle',
+      active: activeTab === 'intelligent-notifications'
     },
     {
       id: 'instance-management',
       title: 'Config',
       subtitle: 'Configurações do WhatsApp',
       icon: Settings,
-      gradient: 'gradient-card'
+      gradient: 'gradient-card',
+      active: activeTab === 'instance-management'
     },
     {
       id: 'integration-status',
       title: 'Status',
       subtitle: 'Status das integrações',
       icon: Activity,
-      gradient: 'gradient-form'
+      gradient: 'gradient-form',
+      active: activeTab === 'integration-status'
     }
   ];
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'mass-messaging':
+        return <MassMessaging />;
+      case 'contact-management':
+        return <ContactManagement />;
+      case 'intelligent-notifications':
+        return <IntelligentNotifications />;
+      case 'instance-management':
+        return <InstanceManagement />;
+      case 'integration-status':
+        return <IntegrationStatus />;
+      default:
+        return <MassMessaging />;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-950 relative">
@@ -135,6 +171,11 @@ const Index = () => {
                 </div>
               );
             })}
+          </div>
+
+          {/* Tab Content */}
+          <div className="mt-8">
+            {renderTabContent()}
           </div>
 
           {/* Quick Actions */}
