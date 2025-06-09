@@ -50,6 +50,7 @@ class AuthService {
       }
 
       const user = users[0];
+      console.log('👤 Usuário encontrado:', user);
       
       // Verificar senha (em produção, use hash)
       if (user.Senha !== credentials.senha) {
@@ -61,9 +62,12 @@ class AuthService {
         return { success: false, error: 'Conta inativa' };
       }
 
+      // Mapear os campos corretamente (o NocoDB pode retornar com nomes diferentes)
+      const assinaturaExpira = user.AssinaturaExpira || user['Assinatura Expira'] || null;
+
       // Verificar se a assinatura não expirou
-      if (user.AssinaturaExpira) {
-        const expirationDate = new Date(user.AssinaturaExpira);
+      if (assinaturaExpira) {
+        const expirationDate = new Date(assinaturaExpira);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
@@ -74,11 +78,11 @@ class AuthService {
 
       // Login bem-sucedido
       const userToSave: User = {
-        ID: user.ID,
+        ID: String(user.ID),
         Email: user.Email,
         Nome: user.Nome,
         Ativo: user.Ativo,
-        AssinaturaExpira: user.AssinaturaExpira
+        AssinaturaExpira: assinaturaExpira
       };
 
       this.currentUser = userToSave;
@@ -105,6 +109,8 @@ class AuthService {
         throw new Error('Tabela de usuários não encontrada');
       }
 
+      console.log('🔍 Buscando usuário na URL:', `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}?where=(Email,eq,${email})`);
+
       const response = await fetch(`${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}?where=(Email,eq,${email})`, {
         method: 'GET',
         headers: nocodbService.headers,
@@ -112,8 +118,11 @@ class AuthService {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('📋 Dados retornados da busca:', data);
         return data.list || [];
       } else {
+        const errorText = await response.text();
+        console.error('❌ Erro na busca:', response.status, errorText);
         throw new Error('Erro ao buscar usuário');
       }
     } catch (error) {
