@@ -171,8 +171,10 @@ export class NotificationService extends BaseNocodbService {
     }
   }
 
-  // NOVA FUNÇÃO: Extrair userId de forma mais robusta
+  // CORREÇÃO: Melhorar a extração do userId do registro
   private extractUserIdFromRecord(record: any): string | null {
+    console.log('🔍 EXTRACTUSER - Tentando extrair userId do registro:', record);
+    
     // Tentar diferentes campos possíveis
     const possibleFields = [
       record['ID do Usuário'],
@@ -184,30 +186,44 @@ export class NotificationService extends BaseNocodbService {
     ];
 
     for (const field of possibleFields) {
-      if (field) {
+      if (field !== undefined && field !== null) {
+        console.log('✅ EXTRACTUSER - UserId encontrado em campo direto:', field);
         // Se for um objeto com _type e value (como nos logs), extrair o value
         if (typeof field === 'object' && field.value !== undefined) {
           return String(field.value);
         }
-        // Se for string diretamente
+        // Se for string ou número diretamente
         if (typeof field === 'string' || typeof field === 'number') {
           return String(field);
         }
       }
     }
 
-    // Se não encontrou nos campos diretos, tentar no JSON
-    if (record['Dados Completos (JSON)']) {
+    // CORREÇÃO: Se não encontrou nos campos diretos, buscar no JSON de forma mais robusta
+    const jsonField = record['Dados Completos (JSON)'];
+    if (jsonField) {
       try {
-        const jsonData = JSON.parse(record['Dados Completos (JSON)']);
+        console.log('🔍 EXTRACTUSER - Tentando extrair do JSON:', jsonField);
+        const jsonData = JSON.parse(jsonField);
+        console.log('📋 EXTRACTUSER - Dados do JSON:', jsonData);
+        
         if (jsonData.userId) {
+          console.log('✅ EXTRACTUSER - UserId encontrado no JSON:', jsonData.userId);
           return String(jsonData.userId);
         }
+        
+        // Também tentar outras variações no JSON
+        if (jsonData.user_id) {
+          console.log('✅ EXTRACTUSER - user_id encontrado no JSON:', jsonData.user_id);
+          return String(jsonData.user_id);
+        }
+        
       } catch (e) {
-        console.log('⚠️ Erro ao fazer parse do JSON para extrair userId');
+        console.error('❌ EXTRACTUSER - Erro ao fazer parse do JSON:', e);
       }
     }
 
+    console.log('❌ EXTRACTUSER - UserId não encontrado');
     return null;
   }
 
@@ -236,37 +252,57 @@ export class NotificationService extends BaseNocodbService {
     try {
       const userId = this.getCurrentUserId();
       if (!userId) {
-        console.error('❌ Usuário não autenticado');
+        console.error('❌ DELETE - Usuário não autenticado');
         return false;
       }
 
       const tableId = await this.findTableId(baseId);
       if (!tableId) {
-        console.error('❌ Tabela não encontrada');
+        console.error('❌ DELETE - Tabela não encontrada');
         return false;
       }
 
-      console.log('🗑️ Excluindo notificação:', recordId);
-      console.log('👤 Verificando propriedade para usuário:', userId);
+      console.log('🗑️ DELETE - Excluindo notificação:', recordId);
+      console.log('👤 DELETE - Verificando propriedade para usuário:', userId);
 
-      // Verificar se a notificação pertence ao usuário antes de excluir
+      // CORREÇÃO: Verificar se a notificação pertence ao usuário antes de excluir
       const existingRecord = await this.apiOperations.getRecordById(baseId, tableId, recordId);
-      const recordUserId = this.extractUserIdFromRecord(existingRecord);
+      console.log('📄 DELETE - Registro encontrado:', existingRecord);
       
-      if (!existingRecord || recordUserId !== userId) {
-        console.error('❌ Acesso negado: notificação não pertence ao usuário');
+      if (!existingRecord) {
+        console.error('❌ DELETE - Registro não encontrado:', recordId);
+        return false;
+      }
+      
+      const recordUserId = this.extractUserIdFromRecord(existingRecord);
+      console.log('🔍 DELETE - UserId do registro:', recordUserId);
+      console.log('🔍 DELETE - UserId atual:', userId);
+      
+      if (!recordUserId) {
+        console.error('❌ DELETE - Não foi possível extrair o userId do registro');
+        return false;
+      }
+      
+      if (recordUserId !== userId) {
+        console.error('❌ DELETE - Acesso negado: notificação não pertence ao usuário');
+        console.error('❌ DELETE - UserId do registro:', recordUserId);
+        console.error('❌ DELETE - UserId atual:', userId);
         return false;
       }
 
+      console.log('✅ DELETE - Verificação de propriedade passou, prosseguindo com exclusão');
+      
       const success = await this.apiOperations.deleteRecord(baseId, tableId, recordId);
       
       if (success) {
-        console.log('✅ Notificação excluída com sucesso');
+        console.log('✅ DELETE - Notificação excluída com sucesso');
+      } else {
+        console.error('❌ DELETE - Falha na exclusão');
       }
       
       return success;
     } catch (error) {
-      console.error('❌ Erro ao excluir notificação:', error);
+      console.error('❌ DELETE - Erro ao excluir notificação:', error);
       return false;
     }
   }
