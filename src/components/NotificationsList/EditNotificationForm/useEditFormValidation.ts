@@ -21,9 +21,10 @@ export const useEditFormValidation = (formData: FormData) => {
     );
 
     // Verificar se há pelo menos uma mensagem válida
-    const hasValidMessage = formData.messages.some(msg => 
-      msg.content.trim() !== '' || msg.fileUrl
-    );
+    const hasValidMessage = formData.messages && formData.messages.length > 0 && 
+      formData.messages.some(msg => 
+        (msg.content && msg.content.trim() !== '') || msg.fileUrl
+      );
 
     console.log('🔍 Validação do formulário:', {
       hasRequiredFields,
@@ -35,7 +36,8 @@ export const useEditFormValidation = (formData: FormData) => {
         profileName: formData.profileName,
         instanceId: formData.instanceId,
         userRole: formData.userRole,
-        messagesCount: formData.messages.length
+        messagesCount: formData.messages?.length || 0,
+        messages: formData.messages
       }
     });
 
@@ -51,9 +53,10 @@ export const useEditFormValidation = (formData: FormData) => {
     if (!formData.instanceId) errors.push('ID da instância é obrigatório');
     if (!formData.userRole) errors.push('Papel do usuário é obrigatório');
     
-    const hasValidMessage = formData.messages.some(msg => 
-      msg.content.trim() !== '' || msg.fileUrl
-    );
+    const hasValidMessage = formData.messages && formData.messages.length > 0 && 
+      formData.messages.some(msg => 
+        (msg.content && msg.content.trim() !== '') || msg.fileUrl
+      );
     if (!hasValidMessage) errors.push('Pelo menos uma mensagem com conteúdo é obrigatória');
     
     return errors;

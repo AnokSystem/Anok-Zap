@@ -45,45 +45,42 @@ export const useNotificationEditing = (
       console.log('📋 Dados originais da notificação:', editingNotification);
       console.log('📋 Dados atualizados recebidos:', updatedNotificationData);
       
-      // Validar dados antes de enviar
+      // Validar dados essenciais
       if (!updatedNotificationData.eventType || !updatedNotificationData.instanceId || 
           !updatedNotificationData.userRole || !updatedNotificationData.platform || 
           !updatedNotificationData.profileName) {
         console.error('❌ Dados obrigatórios faltando para salvamento');
-        toast({
-          title: "❌ Erro",
-          description: "Preencha todos os campos obrigatórios antes de salvar.",
-          variant: "destructive",
+        console.error('❌ Dados faltando:', {
+          eventType: !updatedNotificationData.eventType,
+          instanceId: !updatedNotificationData.instanceId,
+          userRole: !updatedNotificationData.userRole,
+          platform: !updatedNotificationData.platform,
+          profileName: !updatedNotificationData.profileName
         });
         return false;
       }
 
       // Verificar se há pelo menos uma mensagem válida
       const validMessages = updatedNotificationData.messages?.filter(msg => 
-        msg.content.trim() !== '' || msg.fileUrl
+        (msg.content && msg.content.trim() !== '') || msg.fileUrl
       ) || [];
 
       if (validMessages.length === 0) {
         console.error('❌ Nenhuma mensagem válida encontrada');
-        toast({
-          title: "❌ Erro",
-          description: "Adicione pelo menos uma mensagem com conteúdo válido.",
-          variant: "destructive",
-        });
         return false;
       }
 
-      // Preparar dados no formato correto para o serviço
+      // Preparar dados no formato correto para o serviço - CRUCIAL: usar 'instance' para o banco
       const ruleData = {
         eventType: updatedNotificationData.eventType,
-        instanceId: updatedNotificationData.instanceId,
+        instance: updatedNotificationData.instanceId, // O banco espera 'instance', não 'instanceId'
         userRole: updatedNotificationData.userRole,
         platform: updatedNotificationData.platform,
         profileName: updatedNotificationData.profileName,
         messages: validMessages,
       };
 
-      console.log('📤 Dados formatados para o serviço:', ruleData);
+      console.log('📤 Dados formatados para o serviço (com instance):', ruleData);
       console.log('🔑 ID da notificação para edição:', editingNotification.ID);
 
       // Usar o serviço de salvamento com o editingRule contendo o ID
@@ -101,23 +98,14 @@ export const useNotificationEditing = (
         // Fechar o modo de edição
         setEditingNotification(null);
         
-        toast({
-          title: "✅ Sucesso",
-          description: "Notificação atualizada com sucesso!",
-        });
-        
         return true;
       } else {
-        throw new Error('Falha no serviço de salvamento');
+        console.error('❌ Falha no serviço de salvamento');
+        return false;
       }
       
     } catch (error) {
       console.error('❌ Erro ao salvar notificação editada:', error);
-      toast({
-        title: "❌ Erro",
-        description: "Falha ao salvar as alterações. Verifique os dados e tente novamente.",
-        variant: "destructive",
-      });
       return false;
     } finally {
       setIsLoading(false);

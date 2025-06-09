@@ -10,6 +10,7 @@ import { FormActions } from './EditNotificationForm/FormActions';
 import { useEditFormValidation } from './EditNotificationForm/useEditFormValidation';
 import { useEditFormData } from './EditNotificationForm/useEditFormData';
 import { useEditFormMessages } from './EditNotificationForm/useEditFormMessages';
+import { useToast } from "@/hooks/use-toast";
 
 interface EditNotificationFormProps {
   notification: Notification;
@@ -25,9 +26,10 @@ export const EditNotificationForm = ({
   isLoading = false 
 }: EditNotificationFormProps) => {
   const [isFormLoading, setIsFormLoading] = useState(false);
+  const { toast } = useToast();
   
   const { formData, setFormData, handleFieldUpdate, handleUserRoleUpdate } = useEditFormData(notification);
-  const { isFormValid } = useEditFormValidation(formData);
+  const { isFormValid, getValidationErrors } = useEditFormValidation(formData);
   const { 
     handleAddMessage, 
     handleRemoveMessage, 
@@ -42,13 +44,12 @@ export const EditNotificationForm = ({
       console.log('🔍 Validação do formulário:', { isFormValid });
       
       if (!isFormValid) {
-        console.error('❌ Formulário inválido - campos obrigatórios não preenchidos');
-        console.error('❌ Dados faltando:', {
-          eventType: !formData.eventType,
-          platform: !formData.platform,
-          profileName: !formData.profileName,
-          instanceId: !formData.instanceId,
-          userRole: !formData.userRole
+        const errors = getValidationErrors();
+        console.error('❌ Formulário inválido:', errors);
+        toast({
+          title: "❌ Formulário Inválido",
+          description: errors.join(', '),
+          variant: "destructive",
         });
         return;
       }
@@ -60,15 +61,15 @@ export const EditNotificationForm = ({
         eventType: formData.eventType,
         platform: formData.platform,
         profileName: formData.profileName,
-        instanceId: formData.instanceId,
+        instanceId: formData.instanceId, // Manter como instanceId
         userRole: formData.userRole,
         messages: formData.messages
-          .filter(msg => msg.content.trim() !== '' || msg.fileUrl) // Incluir mensagens com conteúdo ou arquivo
+          .filter(msg => (msg.content && msg.content.trim() !== '') || msg.fileUrl)
           .map(msg => ({
             id: msg.id,
             type: msg.type,
-            content: msg.content,
-            delay: msg.delay,
+            content: msg.content || '',
+            delay: msg.delay || 0,
             ...(msg.fileUrl && { fileUrl: msg.fileUrl }),
             ...(msg.file && { file: msg.file })
           }))
@@ -81,11 +82,25 @@ export const EditNotificationForm = ({
       
       if (success) {
         console.log('✅ Edição salva com sucesso pelo formulário');
+        toast({
+          title: "✅ Sucesso",
+          description: "Notificação atualizada com sucesso!",
+        });
       } else {
         console.error('❌ Falha ao salvar edição pelo formulário');
+        toast({
+          title: "❌ Erro",
+          description: "Falha ao salvar as alterações",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('❌ Erro ao salvar edição:', error);
+      toast({
+        title: "❌ Erro",
+        description: "Erro inesperado ao salvar",
+        variant: "destructive",
+      });
     } finally {
       setIsFormLoading(false);
     }
