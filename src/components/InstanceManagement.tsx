@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/hooks/useAuth';
 import { evolutionApiService } from '@/services/evolutionApi';
 import UserAuthWarning from './UserAuthWarning';
+import DeleteInstanceDialog from './InstanceManagement/DeleteInstanceDialog';
 
 interface Instance {
   id: string;
@@ -29,6 +30,13 @@ const InstanceManagement = () => {
   const [currentQrCode, setCurrentQrCode] = useState('');
   const [connectingInstance, setConnectingInstance] = useState<string | null>(null);
   const [monitoringInstanceId, setMonitoringInstanceId] = useState<string | null>(null);
+  
+  // Estados para confirmação de exclusão
+  const [deleteConfirmation, setDeleteConfirmation] = useState({
+    isOpen: false,
+    instanceId: '',
+    instanceName: '',
+  });
 
   useEffect(() => {
     if (user) {
@@ -117,7 +125,10 @@ const InstanceManagement = () => {
       console.log('🔄 Criando instância para usuário:', user.Nome, 'Nome:', newInstanceName);
       await evolutionApiService.createInstance(newInstanceName);
       setNewInstanceName('');
+      
+      // Atualizar lista automaticamente após criação
       await loadInstances();
+      
       toast({
         title: "Sucesso",
         description: `Instância "${newInstanceName}" criada com sucesso`,
@@ -134,15 +145,36 @@ const InstanceManagement = () => {
     }
   };
 
-  const deleteInstance = async (instanceId: string) => {
+  const showDeleteConfirmation = (instanceId: string, instanceName: string) => {
+    setDeleteConfirmation({
+      isOpen: true,
+      instanceId,
+      instanceName,
+    });
+  };
+
+  const hideDeleteConfirmation = () => {
+    setDeleteConfirmation({
+      isOpen: false,
+      instanceId: '',
+      instanceName: '',
+    });
+  };
+
+  const confirmDeleteInstance = async () => {
+    if (!deleteConfirmation.instanceId) return;
+
     setIsLoading(true);
     try {
-      console.log('🔄 Deletando instância:', instanceId);
-      await evolutionApiService.deleteInstance(instanceId);
+      console.log('🔄 Deletando instância:', deleteConfirmation.instanceId);
+      await evolutionApiService.deleteInstance(deleteConfirmation.instanceId);
+      
+      // Atualizar lista automaticamente após exclusão
       await loadInstances();
+      
       toast({
         title: "Sucesso",
-        description: "Instância removida com sucesso",
+        description: `Instância "${deleteConfirmation.instanceName}" removida com sucesso`,
       });
     } catch (error) {
       console.error('❌ Erro ao deletar instância:', error);
@@ -153,6 +185,7 @@ const InstanceManagement = () => {
       });
     } finally {
       setIsLoading(false);
+      hideDeleteConfirmation();
     }
   };
 
@@ -388,7 +421,8 @@ const InstanceManagement = () => {
                       size="sm"
                       variant="ghost"
                       className="text-red-400 hover:text-red-300 hover:bg-red-500/20 h-8 w-8 p-0"
-                      onClick={() => deleteInstance(instance.id)}
+                      onClick={() => showDeleteConfirmation(instance.id, instance.name)}
+                      disabled={isLoading}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -473,6 +507,14 @@ const InstanceManagement = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de Confirmação de Exclusão */}
+      <DeleteInstanceDialog
+        isOpen={deleteConfirmation.isOpen}
+        onClose={hideDeleteConfirmation}
+        onConfirm={confirmDeleteInstance}
+        instanceName={deleteConfirmation.instanceName}
+      />
     </div>
   );
 };
