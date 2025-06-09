@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Settings, Trash2, ExternalLink, Edit } from 'lucide-react';
+import { Settings, ExternalLink, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface ActiveNotificationsListProps {
@@ -76,6 +76,12 @@ export const ActiveNotificationsList: React.FC<ActiveNotificationsListProps> = (
       instanceId: notification['ID da Instância'],
       messageCount: notification['Quantidade de Mensagens'] || 0
     };
+  };
+
+  const handleViewDetails = (rule: any) => {
+    // Salvar os dados da notificação no sessionStorage para visualização
+    sessionStorage.setItem('viewNotification', JSON.stringify(rule));
+    navigate('/notifications');
   };
 
   return (
@@ -174,27 +180,16 @@ export const ActiveNotificationsList: React.FC<ActiveNotificationsListProps> = (
                     </div>
                   </div>
 
-                  {/* Ações */}
-                  <div className="flex items-center space-x-2 ml-4">
-                    {onEditRule && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onEditRule(rule)}
-                        className="text-purple-accent hover:text-purple-accent/80 hover:bg-purple-accent/10"
-                        title="Editar notificação"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                    )}
+                  {/* Ação - Apenas Visualizar */}
+                  <div className="flex items-center ml-4">
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onDeleteRule(rule.ID || rule.id)}
-                      className="text-red-400 hover:text-red-300 hover:bg-red-500/20"
-                      title="Excluir notificação"
+                      onClick={() => handleViewDetails(rule)}
+                      className="text-purple-accent hover:text-purple-accent/80 hover:bg-purple-accent/10"
+                      title="Ver detalhes"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Eye className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
