@@ -177,19 +177,6 @@ const Index = () => {
           <div className="mt-8">
             {renderTabContent()}
           </div>
-
-          {/* Quick Actions */}
-          <div className="mt-12 flex justify-center">
-            <Button
-              onClick={() => navigate('/notifications')}
-              variant="secondary"
-              size="lg"
-              className="bg-gray-800/50 border border-gray-600/50 text-gray-200 hover:bg-gray-700/50"
-            >
-              <Bell className="w-5 h-5 mr-2" />
-              Ver Todas as Notificações
-            </Button>
-          </div>
         </div>
       </div>
     </div>
