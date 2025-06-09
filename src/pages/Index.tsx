@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Settings, Users, Bell, MessageSquare, Zap, Server, LogOut, User, Activity } from 'lucide-react';
@@ -55,7 +54,7 @@ const Index = () => {
       title: 'Contatos',
       subtitle: 'Gerencie seus contatos e grupos',
       icon: Users,
-      gradient: 'gradient-secondary',
+      gradient: 'gradient-primary',
       active: activeTab === 'contact-management'
     },
     {
@@ -63,7 +62,7 @@ const Index = () => {
       title: 'Notificações',
       subtitle: 'Configure alertas inteligentes',
       icon: Bell,
-      gradient: 'gradient-subtle',
+      gradient: 'gradient-primary',
       active: activeTab === 'intelligent-notifications'
     },
     {
@@ -71,7 +70,7 @@ const Index = () => {
       title: 'Config',
       subtitle: 'Configurações do WhatsApp',
       icon: Settings,
-      gradient: 'gradient-card',
+      gradient: 'gradient-primary',
       active: activeTab === 'instance-management'
     },
     {
@@ -79,12 +78,12 @@ const Index = () => {
       title: 'Status',
       subtitle: 'Status das integrações',
       icon: Activity,
-      gradient: 'gradient-form',
+      gradient: 'gradient-primary',
       active: activeTab === 'integration-status'
     }
   ];
 
-  const renderTabContent = () => {
+  function renderTabContent() {
     switch (activeTab) {
       case 'mass-messaging':
         return <MassMessaging />;
@@ -99,7 +98,7 @@ const Index = () => {
       default:
         return <MassMessaging />;
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-gray-950 relative">
