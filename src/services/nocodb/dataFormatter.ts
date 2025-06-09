@@ -1,4 +1,3 @@
-
 export class DataFormatter {
   static formatNotificationForNocoDB(notificationData: any): any {
     console.log('📝 Formatando dados da notificação para NocoDB:', notificationData);
@@ -16,10 +15,14 @@ export class DataFormatter {
         ...notificationData,
         saved_timestamp: new Date().toISOString()
       }, null, 2),
-      'ID do Usuário': notificationData.userId, // Novo campo para identificar o usuário
+      // Tentar múltiplas variações do campo de usuário para garantir compatibilidade
+      'ID do Usuário': notificationData.userId,
+      'UserId': notificationData.userId,
+      'user_id': notificationData.userId,
+      'UserID': notificationData.userId,
     };
 
-    console.log('✅ Dados formatados:', formatted);
+    console.log('✅ Dados formatados com múltiplas variações de ID do usuário:', formatted);
     return formatted;
   }
 
