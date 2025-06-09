@@ -1,8 +1,8 @@
 
-import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { minioService } from '@/services/minio';
 import { Message, NotificationRule } from '../types';
+import { messageService } from '../services/messageService';
+import { fileUploadService } from '../services/fileUploadService';
 
 export const useMessageManagement = (
   newRule: Partial<NotificationRule>,
@@ -14,39 +14,33 @@ export const useMessageManagement = (
   const addMessage = () => {
     if (!newRule.messages || newRule.messages.length >= 5) return;
     
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      type: 'text',
-      content: '',
-      delay: 0
-    };
-    
+    const updatedMessages = messageService.addMessage(newRule.messages);
     setNewRule(prev => ({
       ...prev,
-      messages: [...(prev.messages || []), newMessage]
+      messages: updatedMessages
     }));
   };
 
   const removeMessage = (messageId: string) => {
+    const updatedMessages = messageService.removeMessage(newRule.messages, messageId);
     setNewRule(prev => ({
       ...prev,
-      messages: prev.messages?.filter(msg => msg.id !== messageId) || []
+      messages: updatedMessages
     }));
   };
 
   const updateMessage = (messageId: string, updates: Partial<Message>) => {
+    const updatedMessages = messageService.updateMessage(newRule.messages, messageId, updates);
     setNewRule(prev => ({
       ...prev,
-      messages: prev.messages?.map(msg => 
-        msg.id === messageId ? { ...msg, ...updates } : msg
-      ) || []
+      messages: updatedMessages
     }));
   };
 
   const handleFileUpload = async (messageId: string, file: File) => {
     try {
       setIsLoading(true);
-      const fileUrl = await minioService.uploadFile(file);
+      const fileUrl = await fileUploadService.uploadFile(file);
       updateMessage(messageId, { file, fileUrl });
       toast({
         title: "Sucesso",
