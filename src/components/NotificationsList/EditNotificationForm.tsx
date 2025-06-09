@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Save, X, RefreshCw } from 'lucide-react';
+import { MessageEditor } from '../IntelligentNotifications/MessageEditor';
+import { useMessageManagement } from '../IntelligentNotifications/hooks/useMessageManagement';
 import { Notification } from './types';
+import { Message } from '../IntelligentNotifications/types';
 
 interface EditNotificationFormProps {
   notification: Notification;
@@ -29,8 +31,25 @@ export const EditNotificationForm = ({
     profileName: '',
     instanceId: '',
     userRole: '',
-    messages: [] as any[]
+    messages: [] as Message[]
   });
+  const [isFormLoading, setIsFormLoading] = useState(false);
+
+  // Initialize messages with default structure if empty
+  const initializeMessages = (messages: any[]): Message[] => {
+    if (!messages || messages.length === 0) {
+      return [{ id: '1', type: 'text', content: '', delay: 0 }];
+    }
+    
+    return messages.map((msg, index) => ({
+      id: msg.id || (index + 1).toString(),
+      type: msg.type || 'text',
+      content: msg.content || '',
+      delay: msg.delay || 0,
+      file: msg.file,
+      fileUrl: msg.fileUrl
+    }));
+  };
 
   useEffect(() => {
     // Parse dos dados da notificação para preencher o formulário
@@ -45,41 +64,80 @@ export const EditNotificationForm = ({
       }
     }
     
-    setFormData({
+    const initialFormData = {
       eventType: parsedData.eventType || notification['Tipo de Evento'] || '',
       platform: parsedData.platform || notification['Plataforma'] || '',
       profileName: parsedData.profileName || notification['Perfil Hotmart'] || '',
       instanceId: parsedData.instance || notification['ID da Instância'] || '',
       userRole: parsedData.userRole || '',
-      messages: parsedData.messages || []
-    });
+      messages: initializeMessages(parsedData.messages || [])
+    };
+    
+    setFormData(initialFormData);
   }, [notification]);
+
+  // Use the message management hook for handling messages
+  const {
+    addMessage,
+    removeMessage,
+    updateMessage,
+    handleFileUpload,
+  } = useMessageManagement(
+    formData,
+    setFormData,
+    setIsFormLoading
+  );
 
   const handleSave = async () => {
     const success = await onSave(formData);
     // O componente pai irá fechar o formulário se o save for bem-sucedido
   };
 
-  const getEventTypeLabel = (type: string) => {
-    switch (type) {
-      case 'purchase-approved': return 'Compra Aprovada';
-      case 'awaiting-payment': return 'Aguardando Pagamento';
-      case 'cart-abandoned': return 'Carrinho Abandonado';
-      default: return type;
+  const handleAddMessage = () => {
+    if (formData.messages.length >= 5) return;
+    
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      type: 'text',
+      content: '',
+      delay: 0
+    };
+    
+    setFormData(prev => ({
+      ...prev,
+      messages: [...prev.messages, newMessage]
+    }));
+  };
+
+  const handleRemoveMessage = (messageId: string) => {
+    if (formData.messages.length <= 1) return;
+    
+    setFormData(prev => ({
+      ...prev,
+      messages: prev.messages.filter(msg => msg.id !== messageId)
+    }));
+  };
+
+  const handleUpdateMessage = (messageId: string, updates: Partial<Message>) => {
+    setFormData(prev => ({
+      ...prev,
+      messages: prev.messages.map(msg => 
+        msg.id === messageId ? { ...msg, ...updates } : msg
+      )
+    }));
+  };
+
+  const handleMessageFileUpload = async (messageId: string, file: File) => {
+    try {
+      setIsFormLoading(true);
+      // Use the existing handleFileUpload from the hook
+      await handleFileUpload(messageId, file);
+    } finally {
+      setIsFormLoading(false);
     }
   };
 
-  const getMessagePreview = (messages: any[]) => {
-    if (!messages || messages.length === 0) return 'Nenhuma mensagem';
-    
-    const firstMessage = messages[0];
-    if (firstMessage?.type === 'text') {
-      return firstMessage.content?.length > 100 
-        ? firstMessage.content.substring(0, 100) + '...' 
-        : firstMessage.content;
-    }
-    return `${firstMessage?.type || 'Mensagem'} (${messages.length} mensagens)`;
-  };
+  const currentIsLoading = isLoading || isFormLoading;
 
   return (
     <Card className="border-blue-500/50 bg-blue-500/10">
@@ -184,18 +242,16 @@ export const EditNotificationForm = ({
           </Select>
         </div>
 
-        {/* Preview das Mensagens */}
-        <div className="space-y-2">
-          <Label className="text-gray-200 font-medium text-sm">Mensagens Configuradas</Label>
-          <Textarea
-            value={getMessagePreview(formData.messages)}
-            readOnly
-            className="bg-gray-700/30 border-gray-600 text-gray-300 min-h-[80px]"
-            placeholder="Nenhuma mensagem configurada"
+        {/* Editor de Mensagens */}
+        <div className="space-y-4">
+          <Label className="text-gray-200 font-medium text-sm">Configuração das Mensagens</Label>
+          <MessageEditor
+            messages={formData.messages}
+            onAddMessage={handleAddMessage}
+            onRemoveMessage={handleRemoveMessage}
+            onUpdateMessage={handleUpdateMessage}
+            onFileUpload={handleMessageFileUpload}
           />
-          <p className="text-xs text-gray-500">
-            Para editar as mensagens completamente, use o formulário principal de notificações
-          </p>
         </div>
 
         {/* Botões de Ação */}
@@ -203,17 +259,17 @@ export const EditNotificationForm = ({
           <Button
             onClick={onCancel}
             variant="ghost"
-            disabled={isLoading}
+            disabled={currentIsLoading}
             className="text-gray-400 hover:text-gray-200"
           >
             Cancelar
           </Button>
           <Button 
             onClick={handleSave}
-            disabled={isLoading || !formData.eventType || !formData.platform || !formData.profileName}
+            disabled={currentIsLoading || !formData.eventType || !formData.platform || !formData.profileName}
             className="bg-blue-500 hover:bg-blue-600 text-white"
           >
-            {isLoading ? (
+            {currentIsLoading ? (
               <>
                 <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                 Salvando...
