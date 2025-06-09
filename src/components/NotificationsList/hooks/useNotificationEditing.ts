@@ -48,7 +48,7 @@ export const useNotificationEditing = (
       // Preparar dados no formato correto para o serviço
       const ruleData = {
         eventType: updatedNotificationData.eventType,
-        instanceId: updatedNotificationData.instanceId, // Manter instanceId aqui
+        instanceId: updatedNotificationData.instanceId, // O serviço vai converter para 'instance'
         userRole: updatedNotificationData.userRole,
         platform: updatedNotificationData.platform,
         profileName: updatedNotificationData.profileName,

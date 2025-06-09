@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -67,10 +68,10 @@ export const EditNotificationForm = ({
       }
     }
     
-    // Mapear campos de forma mais robusta
+    // Mapear campos de forma mais robusta - corrigir mapeamento de instance/instanceId
     const initialFormData = {
       eventType: parsedData.eventType || notification['Tipo de Evento'] || '',
-      platform: parsedData.platform || notification['Plataforma'] || '',
+      platform: parsedData.platform || notification['Plataforma'] || 'hotmart',
       profileName: parsedData.profileName || parsedData.hotmartProfile || notification['Perfil Hotmart'] || '',
       instanceId: parsedData.instance || parsedData.instanceId || notification['ID da Instância'] || '',
       userRole: parsedData.userRole || notification['Papel do Usuário'] || notification['Função do Usuário'] || '',
@@ -108,7 +109,7 @@ export const EditNotificationForm = ({
         eventType: formData.eventType,
         platform: formData.platform,
         profileName: formData.profileName,
-        instanceId: formData.instanceId,
+        instanceId: formData.instanceId, // Vai ser convertido para 'instance' no serviço
         userRole: formData.userRole,
         messages: formData.messages.filter(msg => msg.content.trim() !== '').map(msg => ({
           id: msg.id,

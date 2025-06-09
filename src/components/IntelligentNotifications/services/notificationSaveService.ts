@@ -14,10 +14,10 @@ export const notificationSaveService = {
     
     const webhookUrl = webhookService.getWebhookUrl(rule.eventType!);
     
-    // Base notification data - mapear instanceId para instance
+    // Base notification data - corrigir mapeamento instanceId/instance
     const notificationData: any = {
       eventType: rule.eventType!,
-      instance: rule.instanceId!, // Corrigir: usar instance em vez de instanceId
+      instance: rule.instanceId!, // O banco espera 'instance'
       userRole: rule.userRole!,
       platform: rule.platform!,
       profileName: rule.profileName!,
