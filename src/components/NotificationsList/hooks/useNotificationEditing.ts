@@ -45,43 +45,30 @@ export const useNotificationEditing = (
       console.log('📋 Dados originais da notificação:', editingNotification);
       console.log('📋 Dados atualizados recebidos:', updatedNotificationData);
       
-      // Preparar dados para salvamento com o ID da notificação
+      // Preparar dados para salvamento garantindo que temos o ID correto
       const dataToSave = {
-        ...updatedNotificationData,
-        ruleId: editingNotification.ID // Garantir que temos o ID para edição
+        eventType: updatedNotificationData.eventType,
+        instanceId: updatedNotificationData.instanceId,
+        userRole: updatedNotificationData.userRole,
+        platform: updatedNotificationData.platform,
+        profileName: updatedNotificationData.profileName,
+        messages: updatedNotificationData.messages || [],
+        ruleId: editingNotification.ID // ID da notificação para edição
       };
 
-      // Usar o serviço de salvamento que já trata edições
+      console.log('📤 Dados formatados para salvamento:', dataToSave);
+
+      // Usar o serviço de salvamento passando o editingRule corretamente
       const result = await notificationSaveService.saveNotification(
         dataToSave, 
-        { ID: editingNotification.ID, id: editingNotification.ID }
+        editingNotification // Passar a notificação completa como editingRule
       );
 
       if (result.success) {
-        console.log('✅ Notificação atualizada com sucesso');
+        console.log('✅ Notificação atualizada com sucesso no banco');
         
-        // Atualizar a notificação na lista local
-        setNotifications(prev => 
-          prev.map(n => 
-            n.ID === editingNotification.ID 
-              ? {
-                  ...n,
-                  'Tipo de Evento': updatedNotificationData.eventType,
-                  'Plataforma': updatedNotificationData.platform,
-                  'Perfil Hotmart': updatedNotificationData.profileName,
-                  'ID da Instância': updatedNotificationData.instanceId,
-                  'Papel do Usuário': updatedNotificationData.userRole,
-                  'Contagem de Mensagens': updatedNotificationData.messages?.length || 0,
-                  'Dados Completos (JSON)': JSON.stringify({
-                    ...updatedNotificationData,
-                    timestamp: new Date().toISOString(),
-                    saved_timestamp: new Date().toISOString(),
-                    ruleId: editingNotification.ID
-                  }, null, 2)
-                }
-              : n
-          )
-        );
+        // Recarregar as notificações do banco para garantir sincronização
+        await loadNotifications();
         
         // Fechar o modo de edição
         setEditingNotification(null);
@@ -90,9 +77,6 @@ export const useNotificationEditing = (
           title: "✅ Sucesso",
           description: "Notificação atualizada com sucesso!",
         });
-        
-        // Recarregar as notificações para garantir sincronização
-        await loadNotifications();
         
         return true;
       } else {

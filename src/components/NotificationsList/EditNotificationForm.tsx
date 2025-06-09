@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -122,13 +121,14 @@ export const EditNotificationForm = ({
       };
 
       console.log('📤 Dados formatados para salvamento:', dataToSave);
+      console.log('🔑 ID da notificação sendo editada:', notification.ID);
       
       const success = await onSave(dataToSave);
       
       if (success) {
-        console.log('✅ Edição salva com sucesso');
+        console.log('✅ Edição salva com sucesso pelo formulário');
       } else {
-        console.error('❌ Falha ao salvar edição');
+        console.error('❌ Falha ao salvar edição pelo formulário');
       }
     } catch (error) {
       console.error('❌ Erro ao salvar edição:', error);
