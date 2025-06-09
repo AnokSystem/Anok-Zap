@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Copy, X } from 'lucide-react';
+import { Copy } from 'lucide-react';
 import { Notification } from './types';
 import { useToast } from "@/hooks/use-toast";
 
@@ -63,31 +63,31 @@ const NotificationDetailsModal = ({ notification, onClose }: NotificationDetails
     }
   };
 
-  const handleClose = () => {
+  const handleClose = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     console.log('🔄 Fechando modal de detalhes');
     onClose();
+  };
+
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      handleClose(e);
+    }
   };
 
   return (
     <div 
       className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6"
-      onClick={handleClose}
+      onClick={handleBackdropClick}
     >
       <Card 
         className="w-full max-w-4xl max-h-[90vh] overflow-auto bg-gray-800 border-gray-600"
         onClick={(e) => e.stopPropagation()}
       >
         <CardHeader>
-          <CardTitle className="flex items-center justify-between text-primary-contrast">
-            <span>Detalhes da Notificação</span>
-            <Button
-              onClick={handleClose}
-              variant="ghost"
-              size="sm"
-              className="text-gray-400 hover:text-gray-200 hover:bg-gray-700/50"
-            >
-              <X className="w-4 h-4" />
-            </Button>
+          <CardTitle className="text-primary-contrast">
+            Detalhes da Notificação
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
