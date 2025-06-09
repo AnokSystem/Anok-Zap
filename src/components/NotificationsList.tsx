@@ -7,7 +7,11 @@ import DeleteConfirmationDialog from './NotificationsList/DeleteConfirmationDial
 import SyncStatusCard from './NotificationsList/SyncStatusCard';
 import { EditNotificationForm } from './NotificationsList/EditNotificationForm';
 
-const NotificationsList = () => {
+interface NotificationsListProps {
+  autoOpenNotification?: any;
+}
+
+const NotificationsList = ({ autoOpenNotification }: NotificationsListProps) => {
   const {
     notifications,
     isLoading,
@@ -25,7 +29,7 @@ const NotificationsList = () => {
     editNotification,
     cancelEdit,
     saveEditedNotification,
-  } = useNotifications();
+  } = useNotifications(autoOpenNotification);
 
   return (
     <div className="space-y-6">

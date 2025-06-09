@@ -79,8 +79,8 @@ export const ActiveNotificationsList: React.FC<ActiveNotificationsListProps> = (
   };
 
   const handleViewDetails = (rule: any) => {
-    // Salvar os dados da notificação no sessionStorage para visualização
-    sessionStorage.setItem('viewNotification', JSON.stringify(rule));
+    // Salvar os dados da notificação no sessionStorage para visualização automática
+    sessionStorage.setItem('autoOpenNotification', JSON.stringify(rule));
     navigate('/notifications');
   };
 

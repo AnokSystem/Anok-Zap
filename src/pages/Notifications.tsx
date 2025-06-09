@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bell, ArrowLeft, RefreshCw } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
@@ -8,6 +8,21 @@ import NotificationsList from '@/components/NotificationsList';
 const Notifications = () => {
   const navigate = useNavigate();
   const [lastUpdate, setLastUpdate] = useState(new Date());
+  const [autoOpenNotification, setAutoOpenNotification] = useState(null);
+
+  useEffect(() => {
+    // Verificar se há uma notificação para abrir automaticamente
+    const autoOpenData = sessionStorage.getItem('autoOpenNotification');
+    if (autoOpenData) {
+      try {
+        const notification = JSON.parse(autoOpenData);
+        setAutoOpenNotification(notification);
+        sessionStorage.removeItem('autoOpenNotification');
+      } catch (error) {
+        console.error('Erro ao processar notificação para abertura automática:', error);
+      }
+    }
+  }, []);
 
   const handleManualRefresh = () => {
     setLastUpdate(new Date());
@@ -68,7 +83,10 @@ const Notifications = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="animate-fade-in-up">
-          <NotificationsList key={lastUpdate.getTime()} />
+          <NotificationsList 
+            key={lastUpdate.getTime()} 
+            autoOpenNotification={autoOpenNotification}
+          />
         </div>
       </div>
     </div>

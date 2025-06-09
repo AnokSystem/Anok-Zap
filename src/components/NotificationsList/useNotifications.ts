@@ -5,7 +5,7 @@ import { nocodbService } from '@/services/nocodb';
 import { notificationSaveService } from '@/components/IntelligentNotifications/services/notificationSaveService';
 import { Notification, SyncStatus } from './types';
 
-export const useNotifications = () => {
+export const useNotifications = (autoOpenNotification?: any) => {
   const { toast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -220,6 +220,26 @@ export const useNotifications = () => {
     window.addEventListener('refreshNotifications', handleRefresh);
     return () => window.removeEventListener('refreshNotifications', handleRefresh);
   }, []);
+
+  // Efeito para abrir automaticamente uma notificação se especificada
+  useEffect(() => {
+    if (autoOpenNotification && notifications.length > 0) {
+      console.log('🔍 Procurando notificação para abrir automaticamente:', autoOpenNotification);
+      
+      // Tentar encontrar a notificação correspondente pelo ID
+      const matchingNotification = notifications.find(n => 
+        n.ID === autoOpenNotification.ID || 
+        n.ID === autoOpenNotification.id
+      );
+      
+      if (matchingNotification) {
+        console.log('✅ Notificação encontrada, abrindo automaticamente:', matchingNotification);
+        setSelectedNotification(matchingNotification);
+      } else {
+        console.log('⚠️ Notificação não encontrada na lista atual');
+      }
+    }
+  }, [autoOpenNotification, notifications]);
 
   return {
     notifications,
