@@ -45,14 +45,42 @@ export const useNotificationEditing = (
       console.log('📋 Dados originais da notificação:', editingNotification);
       console.log('📋 Dados atualizados recebidos:', updatedNotificationData);
       
+      // Validar dados antes de enviar
+      if (!updatedNotificationData.eventType || !updatedNotificationData.instanceId || 
+          !updatedNotificationData.userRole || !updatedNotificationData.platform || 
+          !updatedNotificationData.profileName) {
+        console.error('❌ Dados obrigatórios faltando para salvamento');
+        toast({
+          title: "❌ Erro",
+          description: "Preencha todos os campos obrigatórios antes de salvar.",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      // Verificar se há pelo menos uma mensagem válida
+      const validMessages = updatedNotificationData.messages?.filter(msg => 
+        msg.content.trim() !== '' || msg.fileUrl
+      ) || [];
+
+      if (validMessages.length === 0) {
+        console.error('❌ Nenhuma mensagem válida encontrada');
+        toast({
+          title: "❌ Erro",
+          description: "Adicione pelo menos uma mensagem com conteúdo válido.",
+          variant: "destructive",
+        });
+        return false;
+      }
+
       // Preparar dados no formato correto para o serviço
       const ruleData = {
         eventType: updatedNotificationData.eventType,
-        instanceId: updatedNotificationData.instanceId, // O serviço vai converter para 'instance'
+        instanceId: updatedNotificationData.instanceId,
         userRole: updatedNotificationData.userRole,
         platform: updatedNotificationData.platform,
         profileName: updatedNotificationData.profileName,
-        messages: updatedNotificationData.messages || [],
+        messages: validMessages,
       };
 
       console.log('📤 Dados formatados para o serviço:', ruleData);
@@ -61,7 +89,7 @@ export const useNotificationEditing = (
       // Usar o serviço de salvamento com o editingRule contendo o ID
       const result = await notificationSaveService.saveNotification(
         ruleData,
-        { ID: editingNotification.ID, id: editingNotification.ID } // Garantir que tem o ID
+        { ID: editingNotification.ID, id: editingNotification.ID }
       );
 
       if (result.success) {
@@ -87,7 +115,7 @@ export const useNotificationEditing = (
       console.error('❌ Erro ao salvar notificação editada:', error);
       toast({
         title: "❌ Erro",
-        description: "Falha ao salvar as alterações. Tente novamente.",
+        description: "Falha ao salvar as alterações. Verifique os dados e tente novamente.",
         variant: "destructive",
       });
       return false;

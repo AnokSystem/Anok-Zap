@@ -39,9 +39,17 @@ export const EditNotificationForm = ({
     try {
       console.log('💾 Iniciando salvamento da edição...');
       console.log('📋 Dados do formulário a serem salvos:', formData);
+      console.log('🔍 Validação do formulário:', { isFormValid });
       
       if (!isFormValid) {
         console.error('❌ Formulário inválido - campos obrigatórios não preenchidos');
+        console.error('❌ Dados faltando:', {
+          eventType: !formData.eventType,
+          platform: !formData.platform,
+          profileName: !formData.profileName,
+          instanceId: !formData.instanceId,
+          userRole: !formData.userRole
+        });
         return;
       }
 
@@ -52,16 +60,18 @@ export const EditNotificationForm = ({
         eventType: formData.eventType,
         platform: formData.platform,
         profileName: formData.profileName,
-        instanceId: formData.instanceId, // Vai ser convertido para 'instance' no serviço
+        instanceId: formData.instanceId,
         userRole: formData.userRole,
-        messages: formData.messages.filter(msg => msg.content.trim() !== '').map(msg => ({
-          id: msg.id,
-          type: msg.type,
-          content: msg.content,
-          delay: msg.delay,
-          ...(msg.fileUrl && { fileUrl: msg.fileUrl }),
-          ...(msg.file && { file: msg.file })
-        }))
+        messages: formData.messages
+          .filter(msg => msg.content.trim() !== '' || msg.fileUrl) // Incluir mensagens com conteúdo ou arquivo
+          .map(msg => ({
+            id: msg.id,
+            type: msg.type,
+            content: msg.content,
+            delay: msg.delay,
+            ...(msg.fileUrl && { fileUrl: msg.fileUrl }),
+            ...(msg.file && { file: msg.file })
+          }))
       };
 
       console.log('📤 Dados formatados para salvamento:', dataToSave);
