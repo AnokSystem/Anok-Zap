@@ -1,15 +1,15 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from 'react-router-dom';
 import { nocodbService } from '@/services/nocodb';
 import { Notification, SyncStatus } from './types';
 
 export const useNotifications = () => {
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  const [editingNotification, setEditingNotification] = useState<Notification | null>(null);
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
@@ -108,17 +108,55 @@ export const useNotifications = () => {
 
   const editNotification = (notification: Notification) => {
     console.log('📝 Iniciando edição da notificação:', notification);
-    
-    // Salvar os dados da notificação no sessionStorage
-    sessionStorage.setItem('editNotification', JSON.stringify(notification));
+    setEditingNotification(notification);
     
     toast({
-      title: "Redirecionando para Edição",
-      description: "Carregando dados da notificação no formulário...",
+      title: "Modo de Edição Ativado",
+      description: "Agora você pode editar os dados da notificação abaixo.",
     });
+  };
+
+  const cancelEdit = () => {
+    console.log('❌ Cancelando edição');
+    setEditingNotification(null);
     
-    // Redirecionar para a página principal onde está o formulário de notificações
-    navigate('/');
+    toast({
+      title: "Edição Cancelada",
+      description: "Modo de edição desativado",
+    });
+  };
+
+  const saveEditedNotification = async (updatedNotification: any) => {
+    try {
+      console.log('💾 Salvando notificação editada:', updatedNotification);
+      
+      // Aqui você implementaria a chamada para atualizar no NocoDB
+      // Por enquanto, vamos apenas atualizar na lista local
+      setNotifications(prev => 
+        prev.map(n => 
+          n.ID === editingNotification?.ID 
+            ? { ...n, ...updatedNotification }
+            : n
+        )
+      );
+      
+      setEditingNotification(null);
+      
+      toast({
+        title: "Sucesso",
+        description: "Notificação atualizada com sucesso",
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('❌ Erro ao salvar notificação:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao salvar as alterações",
+        variant: "destructive",
+      });
+      return false;
+    }
   };
 
   useEffect(() => {
@@ -139,6 +177,7 @@ export const useNotifications = () => {
     notifications,
     isLoading,
     selectedNotification,
+    editingNotification,
     lastSync,
     syncStatus,
     deleteConfirmation,
@@ -149,5 +188,7 @@ export const useNotifications = () => {
     viewNotificationDetails,
     closeNotificationDetails,
     editNotification,
+    cancelEdit,
+    saveEditedNotification,
   };
 };

@@ -5,12 +5,14 @@ import NotificationsTable from './NotificationsList/NotificationsTable';
 import NotificationDetailsModal from './NotificationsList/NotificationDetailsModal';
 import DeleteConfirmationDialog from './NotificationsList/DeleteConfirmationDialog';
 import SyncStatusCard from './NotificationsList/SyncStatusCard';
+import { EditNotificationForm } from './NotificationsList/EditNotificationForm';
 
 const NotificationsList = () => {
   const {
     notifications,
     isLoading,
     selectedNotification,
+    editingNotification,
     lastSync,
     syncStatus,
     deleteConfirmation,
@@ -21,6 +23,8 @@ const NotificationsList = () => {
     viewNotificationDetails,
     closeNotificationDetails,
     editNotification,
+    cancelEdit,
+    saveEditedNotification,
   } = useNotifications();
 
   return (
@@ -33,6 +37,16 @@ const NotificationsList = () => {
         notifications={notifications}
         isLoading={isLoading}
       />
+
+      {/* Formulário de Edição */}
+      {editingNotification && (
+        <EditNotificationForm
+          notification={editingNotification}
+          onSave={saveEditedNotification}
+          onCancel={cancelEdit}
+          isLoading={isLoading}
+        />
+      )}
 
       {/* Tabela de Notificações */}
       <NotificationsTable
