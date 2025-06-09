@@ -1,6 +1,8 @@
 
 import { useState } from 'react';
 import { Message } from '../../IntelligentNotifications/types';
+import { fileUploadService } from '../../IntelligentNotifications/services/fileUploadService';
+import { useToast } from "@/hooks/use-toast";
 
 interface FormData {
   messages: Message[];
@@ -11,6 +13,8 @@ export const useEditFormMessages = (
   setFormData: React.Dispatch<React.SetStateAction<FormData>>,
   setIsFormLoading: (loading: boolean) => void
 ) => {
+  const { toast } = useToast();
+
   const handleAddMessage = () => {
     if (formData.messages.length >= 5) {
       console.log('⚠️ Limite máximo de mensagens atingido');
@@ -57,18 +61,35 @@ export const useEditFormMessages = (
   const handleMessageFileUpload = async (messageId: string, file: File) => {
     try {
       setIsFormLoading(true);
-      console.log('📁 Upload de arquivo para mensagem:', messageId, file.name);
+      console.log('📁 MINIO - Upload iniciado para mensagem:', messageId, file.name);
+      console.log('📁 MINIO - Tamanho do arquivo:', file.size, 'bytes');
+      console.log('📁 MINIO - Tipo do arquivo:', file.type);
       
-      // Por enquanto, simular o upload
-      const fileUrl = `https://example.com/uploads/${Date.now()}-${file.name}`;
+      // Usar o serviço de upload que já está integrado com MinIO
+      const fileUrl = await fileUploadService.uploadFile(file);
       
+      console.log('✅ MINIO - Upload realizado com sucesso:', fileUrl);
+      
+      // Atualizar a mensagem com o arquivo e URL
       handleUpdateMessage(messageId, { 
         file: file as any,
         fileUrl: fileUrl 
       });
       
+      toast({
+        title: "✅ Upload Realizado",
+        description: `Arquivo ${file.name} enviado com sucesso`,
+      });
+      
     } catch (error) {
-      console.error('❌ Erro no upload do arquivo:', error);
+      console.error('❌ MINIO - Erro no upload do arquivo:', error);
+      console.error('❌ MINIO - Stack trace:', error.stack);
+      
+      toast({
+        title: "❌ Erro no Upload",
+        description: `Falha ao enviar arquivo: ${error.message}`,
+        variant: "destructive",
+      });
     } finally {
       setIsFormLoading(false);
     }
