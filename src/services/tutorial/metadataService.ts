@@ -1,3 +1,4 @@
+
 import { nocodbService } from '../nocodb';
 import { TutorialData } from './types';
 import { tutorialLocalStorageService } from './localStorageService';
@@ -16,7 +17,7 @@ class TutorialMetadataService {
 
   async getTutorials(): Promise<TutorialData[]> {
     try {
-      console.log('Buscando tutoriais do NocoDB...');
+      console.log('🔍 Buscando TODOS os tutoriais do NocoDB (sem filtro de usuário)...');
       
       // Garantir que a tabela existe
       await nocodbService.ensureTableExists(this.TUTORIALS_TABLE);
@@ -33,6 +34,8 @@ class TutorialMetadataService {
         return tutorialLocalStorageService.getTutorials();
       }
 
+      // CORREÇÃO: Buscar TODOS os tutoriais sem filtro de usuário
+      console.log('📋 Fazendo busca geral de todos os tutoriais...');
       const response = await fetch(`${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}`, {
         method: 'GET',
         headers: nocodbService.headers,
@@ -52,7 +55,7 @@ class TutorialMetadataService {
           updatedAt: item.updatedAt || item.UpdatedAt
         }));
         
-        console.log('Tutoriais carregados do NocoDB:', tutorials.length, 'itens');
+        console.log('✅ Tutoriais carregados do NocoDB (TODOS os usuários):', tutorials.length, 'itens');
         return tutorials;
       } else {
         console.warn('Erro ao buscar tutoriais do NocoDB, usando localStorage como fallback');
