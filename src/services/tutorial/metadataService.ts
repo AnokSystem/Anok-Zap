@@ -1,3 +1,4 @@
+
 import { nocodbService } from '../nocodb';
 import { TutorialData } from './types';
 import { tutorialLocalStorageService } from './localStorageService';
@@ -82,15 +83,15 @@ class TutorialMetadataService {
             table_name: this.TUTORIALS_TABLE,
             title: this.TUTORIALS_TABLE,
             columns: [
-              { column_name: 'id', title: 'ID', uidt: 'SingleLineText', pk: true },
-              { column_name: 'title', title: 'Title', uidt: 'SingleLineText' },
-              { column_name: 'description', title: 'Description', uidt: 'LongText' },
-              { column_name: 'videoUrl', title: 'VideoUrl', uidt: 'URL' },
-              { column_name: 'documentUrls', title: 'DocumentUrls', uidt: 'LongText' },
-              { column_name: 'coverImageUrl', title: 'CoverImageUrl', uidt: 'URL' },
-              { column_name: 'category', title: 'Category', uidt: 'SingleLineText' },
-              { column_name: 'createdAt', title: 'CreatedAt', uidt: 'DateTime' },
-              { column_name: 'updatedAt', title: 'UpdatedAt', uidt: 'DateTime' }
+              { column_name: 'ID', title: 'ID', uidt: 'SingleLineText', pk: false },
+              { column_name: 'Title', title: 'Title', uidt: 'SingleLineText' },
+              { column_name: 'Description', title: 'Description', uidt: 'LongText' },
+              { column_name: 'VideoUrl', title: 'VideoUrl', uidt: 'URL' },
+              { column_name: 'DocumentUrls', title: 'DocumentUrls', uidt: 'LongText' },
+              { column_name: 'CoverImageUrl', title: 'CoverImageUrl', uidt: 'URL' },
+              { column_name: 'Category', title: 'Category', uidt: 'SingleLineText' },
+              { column_name: 'CreatedAt', title: 'CreatedAt', uidt: 'DateTime' },
+              { column_name: 'UpdatedAt', title: 'UpdatedAt', uidt: 'DateTime' }
             ]
           }),
         });
@@ -137,15 +138,15 @@ class TutorialMetadataService {
       if (response.ok) {
         const data = await response.json();
         const tutorials = (data.list || []).map((item: any) => ({
-          id: item.id || item.Id || item.ID,
-          title: item.title || item.Title,
-          description: item.description || item.Description,
-          videoUrl: item.videoUrl || item.VideoUrl || undefined,
-          documentUrls: this.parseDocumentUrls(item.documentUrls || item.DocumentUrls || ''),
-          coverImageUrl: item.coverImageUrl || item.CoverImageUrl || undefined,
-          category: item.category || item.Category,
-          createdAt: item.createdAt || item.CreatedAt,
-          updatedAt: item.updatedAt || item.UpdatedAt
+          id: item.ID,
+          title: item.Title,
+          description: item.Description,
+          videoUrl: item.VideoUrl || undefined,
+          documentUrls: this.parseDocumentUrls(item.DocumentUrls || ''),
+          coverImageUrl: item.CoverImageUrl || undefined,
+          category: item.Category,
+          createdAt: item.CreatedAt,
+          updatedAt: item.UpdatedAt
         }));
         
         console.log('✅ Tutoriais carregados do NocoDB:', tutorials.length, 'itens');
@@ -188,15 +189,15 @@ class TutorialMetadataService {
       }
 
       const tutorialData = {
-        id: tutorial.id,
-        title: tutorial.title,
-        description: tutorial.description,
-        videoUrl: tutorial.videoUrl || null,
-        documentUrls: JSON.stringify(tutorial.documentUrls),
-        coverImageUrl: tutorial.coverImageUrl || null,
-        category: tutorial.category,
-        createdAt: tutorial.createdAt,
-        updatedAt: tutorial.updatedAt
+        ID: tutorial.id,
+        Title: tutorial.title,
+        Description: tutorial.description,
+        VideoUrl: tutorial.videoUrl || null,
+        DocumentUrls: JSON.stringify(tutorial.documentUrls),
+        CoverImageUrl: tutorial.coverImageUrl || null,
+        Category: tutorial.category,
+        CreatedAt: tutorial.createdAt,
+        UpdatedAt: tutorial.updatedAt
       };
 
       const response = await fetch(`${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}`, {
@@ -244,9 +245,9 @@ class TutorialMetadataService {
         throw new Error('Tabela de tutoriais não encontrada');
       }
 
-      // Primeiro, encontrar o registro pelo ID customizado
+      // Primeiro, encontrar o registro pelo ID customizado usando o nome correto da coluna
       const searchResponse = await fetch(
-        `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}?where=(id,eq,${tutorial.id})`,
+        `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}?where=(ID,eq,${tutorial.id})`,
         {
           method: 'GET',
           headers: nocodbService.headers,
@@ -258,16 +259,16 @@ class TutorialMetadataService {
         const records = searchData.list || [];
         
         if (records.length > 0) {
-          const recordId = records[0].Id || records[0].ID; // ID interno do NocoDB
+          const recordId = records[0].Id; // ID interno do NocoDB (auto-increment)
           
           const tutorialData = {
-            title: tutorial.title,
-            description: tutorial.description,
-            videoUrl: tutorial.videoUrl || null,
-            documentUrls: JSON.stringify(tutorial.documentUrls),
-            coverImageUrl: tutorial.coverImageUrl || null,
-            category: tutorial.category,
-            updatedAt: tutorial.updatedAt
+            Title: tutorial.title,
+            Description: tutorial.description,
+            VideoUrl: tutorial.videoUrl || null,
+            DocumentUrls: JSON.stringify(tutorial.documentUrls),
+            CoverImageUrl: tutorial.coverImageUrl || null,
+            Category: tutorial.category,
+            UpdatedAt: tutorial.updatedAt
           };
 
           // Atualizar o registro
@@ -323,10 +324,10 @@ class TutorialMetadataService {
         throw new Error('Tabela de tutoriais não encontrada no NocoDB');
       }
 
-      // Primeiro, encontrar o registro pelo ID customizado
+      // Primeiro, encontrar o registro pelo ID customizado usando o nome correto da coluna
       console.log('🔍 MetadataService - Buscando registro no NocoDB...');
       const searchResponse = await fetch(
-        `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}?where=(id,eq,${tutorialId})`,
+        `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}?where=(ID,eq,${tutorialId})`,
         {
           method: 'GET',
           headers: nocodbService.headers,
@@ -348,7 +349,7 @@ class TutorialMetadataService {
         throw new Error('Tutorial não encontrado no servidor');
       }
 
-      const recordId = records[0].Id || records[0].ID; // ID interno do NocoDB
+      const recordId = records[0].Id; // ID interno do NocoDB (auto-increment)
       console.log('📝 MetadataService - Registro encontrado, ID interno:', recordId);
       
       // Deletar o registro

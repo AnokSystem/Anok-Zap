@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { tutorialService, TutorialData, CreateTutorialData } from '@/services/tutorialService';
 import { tutorialMetadataService } from '@/services/tutorial/metadataService';
@@ -194,7 +195,6 @@ export const useTutorials = () => {
   const deleteTutorial = async (tutorialId: string): Promise<boolean> => {
     console.log('🚀 useTutorials.deleteTutorial - INICIANDO PROCESSO DE EXCLUSÃO');
     console.log('📝 useTutorials.deleteTutorial - Tutorial ID:', tutorialId);
-    console.log('📋 useTutorials.deleteTutorial - Lista atual de tutoriais:', tutorials.map(t => ({ id: t.id, title: t.title })));
     
     try {
       // Encontrar o tutorial que será deletado para mostrar o nome
@@ -216,24 +216,13 @@ export const useTutorials = () => {
       
       // Chamar o serviço de exclusão
       console.log('⏳ useTutorials.deleteTutorial - Chamando tutorialService.deleteTutorial...');
-      console.log('🔧 useTutorials.deleteTutorial - Tipo do tutorialService:', typeof tutorialService);
-      console.log('🔧 useTutorials.deleteTutorial - Função deleteTutorial existe:', typeof tutorialService.deleteTutorial);
-      
-      const serviceResult = await tutorialService.deleteTutorial(tutorialId);
-      console.log('📊 useTutorials.deleteTutorial - Resultado do serviço:', serviceResult);
-      
-      if (serviceResult !== true) {
-        console.error('❌ useTutorials.deleteTutorial - Serviço retornou falso');
-        throw new Error('Falha na exclusão pelo serviço');
-      }
-      
-      console.log('✅ useTutorials.deleteTutorial - Tutorial deletado no backend, atualizando interface...');
+      await tutorialService.deleteTutorial(tutorialId);
+      console.log('✅ useTutorials.deleteTutorial - Serviço executado com sucesso');
       
       // Remover da interface apenas após confirmação do backend
       setTutorials(prevTutorials => {
         const filtered = prevTutorials.filter(t => t.id !== tutorialId);
         console.log('🔄 useTutorials.deleteTutorial - Lista atualizada, restam:', filtered.length, 'tutoriais');
-        console.log('📋 useTutorials.deleteTutorial - Nova lista:', filtered.map(t => ({ id: t.id, title: t.title })));
         return filtered;
       });
       
@@ -248,17 +237,11 @@ export const useTutorials = () => {
       return true;
     } catch (error) {
       console.error('❌ useTutorials.deleteTutorial - ERRO DURANTE EXCLUSÃO:', error);
-      console.error('🔍 useTutorials.deleteTutorial - Detalhes do erro:', {
-        message: error instanceof Error ? error.message : 'Erro desconhecido',
-        stack: error instanceof Error ? error.stack : undefined,
-        type: typeof error,
-        tutorialId
-      });
       
       let errorMessage = "Não foi possível excluir o tutorial";
       if (error instanceof Error) {
         if (error.message.includes('Tutorial não encontrado')) {
-          errorMessage = "Tutorial não encontrado";
+          errorMessage = "Tutorial não encontrado no servidor";
         } else if (error.message.includes('conexão') || error.message.includes('NocoDB')) {
           errorMessage = "Erro de conexão com o servidor. Verifique sua internet.";
         } else {

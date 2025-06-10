@@ -95,15 +95,13 @@ class TutorialService {
     return tutorialMetadataService.getTutorials();
   }
 
-  async deleteTutorial(tutorialId: string): Promise<boolean> {
+  async deleteTutorial(tutorialId: string): Promise<void> {
     console.log('🚀 TutorialService.deleteTutorial - INICIANDO EXCLUSÃO');
     console.log('📝 TutorialService.deleteTutorial - Tutorial ID:', tutorialId);
-    console.log('⏰ TutorialService.deleteTutorial - Timestamp:', new Date().toISOString());
     
     try {
       console.log('🔍 TutorialService.deleteTutorial - Buscando tutorial na lista...');
       const tutorials = await this.getTutorials();
-      console.log('📋 TutorialService.deleteTutorial - Total de tutoriais encontrados:', tutorials.length);
       
       const tutorial = tutorials.find(t => t.id === tutorialId);
       console.log('🔍 TutorialService.deleteTutorial - Tutorial encontrado:', tutorial ? tutorial.title : 'NÃO ENCONTRADO');
@@ -114,18 +112,9 @@ class TutorialService {
       }
       
       console.log('📝 TutorialService.deleteTutorial - Tutorial encontrado:', tutorial.title);
-      console.log('🔧 TutorialService.deleteTutorial - Dados do tutorial:', {
-        id: tutorial.id,
-        title: tutorial.title,
-        videoUrl: tutorial.videoUrl,
-        documentUrls: tutorial.documentUrls,
-        coverImageUrl: tutorial.coverImageUrl
-      });
       
-      // Tentar deletar metadata primeiro (mais crítico)
+      // Deletar metadata primeiro (mais crítico)
       console.log('🔄 TutorialService.deleteTutorial - Deletando metadata...');
-      console.log('🔧 TutorialService.deleteTutorial - Chamando tutorialMetadataService.deleteTutorial...');
-      
       await tutorialMetadataService.deleteTutorial(tutorialId);
       console.log('✅ TutorialService.deleteTutorial - Metadata deletado com sucesso');
       
@@ -139,16 +128,9 @@ class TutorialService {
       }
       
       console.log('🎉 TutorialService.deleteTutorial - TUTORIAL DELETADO COMPLETAMENTE');
-      return true;
     } catch (error) {
       console.error('❌ TutorialService.deleteTutorial - ERRO CRÍTICO:', error);
-      console.error('🔍 TutorialService.deleteTutorial - Detalhes do erro:', {
-        message: error instanceof Error ? error.message : 'Erro desconhecido',
-        stack: error instanceof Error ? error.stack : undefined,
-        type: typeof error,
-        tutorialId
-      });
-      throw error; // Re-lançar o erro para que o hook possa tratá-lo
+      throw error;
     }
   }
 
