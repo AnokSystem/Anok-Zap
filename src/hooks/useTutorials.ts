@@ -13,17 +13,19 @@ export const useTutorials = () => {
   const fetchTutorials = async () => {
     try {
       setLoading(true);
-      console.log('🔍 Iniciando busca de tutoriais...');
+      console.log('🔍 useTutorials - Iniciando busca de tutoriais...');
       
       // Garantir que a tabela existe antes de buscar
       await tutorialMetadataService.ensureTutorialsTable();
       
       const data = await tutorialService.getTutorials();
-      console.log('📚 Tutoriais carregados:', data.length);
+      console.log('📚 useTutorials - Tutoriais carregados:', data.length);
+      console.log('📋 useTutorials - Lista completa:', data);
+      
       setTutorials(data);
       return data;
     } catch (error) {
-      console.error('❌ Erro ao buscar tutoriais:', error);
+      console.error('❌ useTutorials - Erro ao buscar tutoriais:', error);
       toast({
         title: "Erro",
         description: "Não foi possível carregar os tutoriais",

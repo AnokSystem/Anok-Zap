@@ -1,4 +1,3 @@
-
 import { nocodbService } from '../nocodb';
 import { TutorialData } from './types';
 import { tutorialLocalStorageService } from './localStorageService';
@@ -23,6 +22,8 @@ class TutorialMetadataService {
     try {
       console.log('🔌 Testando conexão com NocoDB...');
       const targetBaseId = nocodbService.getTargetBaseId();
+      console.log('📋 Base ID encontrado:', targetBaseId);
+      
       if (!targetBaseId) {
         console.warn('❌ Base do NocoDB não encontrada');
         this.isConnected = false;
@@ -36,6 +37,7 @@ class TutorialMetadataService {
         headers: nocodbService.headers,
       });
 
+      console.log('📡 Response status da conexão:', response.status);
       this.isConnected = response.ok;
       this.connectionTested = true;
       
@@ -43,6 +45,8 @@ class TutorialMetadataService {
         console.log('✅ Conexão com NocoDB estabelecida');
       } else {
         console.warn('❌ Falha na conexão com NocoDB:', response.status);
+        const errorText = await response.text();
+        console.warn('❌ Detalhes do erro:', errorText);
       }
       
       return this.isConnected;
@@ -65,45 +69,8 @@ class TutorialMetadataService {
       
       // Garantir que a tabela existe
       await nocodbService.ensureTableExists(this.TUTORIALS_TABLE);
+      console.log('✅ Tabela de tutoriais verificada/criada');
       
-      const targetBaseId = nocodbService.getTargetBaseId();
-      const tableId = await nocodbService.getTableId(targetBaseId!, this.TUTORIALS_TABLE);
-      
-      if (!tableId) {
-        console.warn('❌ Tabela de tutoriais não encontrada, tentando criar...');
-        
-        // Criar a tabela com as colunas necessárias
-        const createTableResponse = await fetch(`${nocodbService.config.baseUrl}/api/v1/db/meta/projects/${targetBaseId}/tables`, {
-          method: 'POST',
-          headers: {
-            ...nocodbService.headers,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            table_name: this.TUTORIALS_TABLE,
-            title: this.TUTORIALS_TABLE,
-            columns: [
-              { column_name: 'ID', title: 'ID', uidt: 'SingleLineText', pk: false },
-              { column_name: 'Title', title: 'Title', uidt: 'SingleLineText' },
-              { column_name: 'Description', title: 'Description', uidt: 'LongText' },
-              { column_name: 'VideoUrl', title: 'VideoUrl', uidt: 'URL' },
-              { column_name: 'DocumentUrls', title: 'DocumentUrls', uidt: 'LongText' },
-              { column_name: 'CoverImageUrl', title: 'CoverImageUrl', uidt: 'URL' },
-              { column_name: 'Category', title: 'Category', uidt: 'SingleLineText' },
-              { column_name: 'CreatedAt', title: 'CreatedAt', uidt: 'DateTime' },
-              { column_name: 'UpdatedAt', title: 'UpdatedAt', uidt: 'DateTime' }
-            ]
-          }),
-        });
-
-        if (createTableResponse.ok) {
-          console.log('✅ Tabela de tutoriais criada com sucesso');
-        } else {
-          console.error('❌ Erro ao criar tabela de tutoriais:', await createTableResponse.text());
-        }
-      } else {
-        console.log('✅ Tabela de tutoriais já existe');
-      }
     } catch (error) {
       console.error('❌ Erro ao garantir tabela de tutoriais:', error);
     }
@@ -112,6 +79,9 @@ class TutorialMetadataService {
   async getTutorials(): Promise<TutorialData[]> {
     try {
       console.log('🔍 Buscando tutoriais...');
+      
+      // Forçar um novo teste de conexão
+      this.connectionTested = false;
       
       if (!(await this.testConnection())) {
         console.warn('❌ Sem conexão com NocoDB, usando localStorage como fallback');
@@ -124,6 +94,8 @@ class TutorialMetadataService {
       const targetBaseId = nocodbService.getTargetBaseId();
       const tableId = await nocodbService.getTableId(targetBaseId!, this.TUTORIALS_TABLE);
       
+      console.log('📋 Table ID encontrado:', tableId);
+      
       if (!tableId) {
         console.warn('❌ Tabela de tutoriais não encontrada, usando localStorage como fallback');
         return tutorialLocalStorageService.getTutorials();
@@ -135,21 +107,29 @@ class TutorialMetadataService {
         headers: nocodbService.headers,
       });
 
+      console.log('📡 Response status da busca:', response.status);
+
       if (response.ok) {
         const data = await response.json();
-        const tutorials = (data.list || []).map((item: any) => ({
-          id: item.ID,
-          title: item.Title,
-          description: item.Description,
-          videoUrl: item.VideoUrl || undefined,
-          documentUrls: this.parseDocumentUrls(item.DocumentUrls || ''),
-          coverImageUrl: item.CoverImageUrl || undefined,
-          category: item.Category,
-          createdAt: item.CreatedAt,
-          updatedAt: item.UpdatedAt
-        }));
+        console.log('📊 Dados brutos recebidos do NocoDB:', data);
         
-        console.log('✅ Tutoriais carregados do NocoDB:', tutorials.length, 'itens');
+        const tutorials = (data.list || []).map((item: any) => {
+          console.log('🔄 Processando item:', item);
+          return {
+            id: item.ID || item.id, // Tentar ambas as variações
+            title: item.Title || item.title,
+            description: item.Description || item.description,
+            videoUrl: item.VideoUrl || item.videoUrl || undefined,
+            documentUrls: this.parseDocumentUrls(item.DocumentUrls || item.documentUrls || ''),
+            coverImageUrl: item.CoverImageUrl || item.coverImageUrl || undefined,
+            category: item.Category || item.category,
+            createdAt: item.CreatedAt || item.createdAt,
+            updatedAt: item.UpdatedAt || item.updatedAt
+          };
+        });
+        
+        console.log('✅ Tutoriais processados:', tutorials.length, 'itens');
+        console.log('📋 Tutoriais processados:', tutorials);
         
         // Sincronizar com localStorage como backup
         tutorials.forEach(tutorial => {
@@ -158,7 +138,8 @@ class TutorialMetadataService {
         
         return tutorials;
       } else {
-        console.warn('❌ Erro ao buscar tutoriais do NocoDB, usando localStorage como fallback');
+        const errorText = await response.text();
+        console.warn('❌ Erro ao buscar tutoriais do NocoDB:', response.status, errorText);
         return tutorialLocalStorageService.getTutorials();
       }
     } catch (error) {

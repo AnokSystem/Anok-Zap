@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { BookOpen } from 'lucide-react';
 import { useTutorials } from '@/hooks/useTutorials';
@@ -18,18 +19,24 @@ const TutorialsSection = () => {
 
   useEffect(() => {
     console.log('📊 TutorialsSection - Lista de tutoriais atualizada:', tutorials.length, 'tutoriais');
-    console.log('📋 TutorialsSection - Tutoriais:', tutorials.map(t => ({ id: t.id, title: t.title })));
+    console.log('📋 TutorialsSection - Tutoriais completos:', tutorials);
     setTutorialsCount(tutorials.length);
   }, [tutorials]);
 
-  // Force refresh on component mount
+  // Force refresh on component mount and periodically
   useEffect(() => {
     console.log('🔄 TutorialsSection montado, forçando refresh...');
-    const timer = setTimeout(() => {
-      refreshTutorials();
-    }, 500);
     
-    return () => clearTimeout(timer);
+    // Refresh imediato
+    refreshTutorials();
+    
+    // Refresh periódico para garantir sincronização
+    const interval = setInterval(() => {
+      console.log('⏰ Refresh automático de tutoriais...');
+      refreshTutorials();
+    }, 30000); // A cada 30 segundos
+    
+    return () => clearInterval(interval);
   }, []);
 
   const handleDeleteTutorial = async (tutorialId: string) => {
@@ -99,9 +106,13 @@ const TutorialsSection = () => {
         onCreateClick={() => setIsCreateModalOpen(true)}
       />
 
-      {/* Debug Info */}
-      <div className="text-xs text-gray-500 p-2 bg-gray-800/20 rounded">
-        Debug: {tutorialsCount} tutoriais carregados | Última atualização: {new Date().toLocaleTimeString()}
+      {/* Debug Info Melhorado */}
+      <div className="text-xs text-gray-500 p-3 bg-gray-800/20 rounded">
+        <div>Debug: {tutorialsCount} tutoriais carregados | Última atualização: {new Date().toLocaleTimeString()}</div>
+        <div className="mt-1">Status: {loading ? 'Carregando...' : 'Pronto'}</div>
+        {tutorials.length > 0 && (
+          <div className="mt-1">Tutoriais: {tutorials.map(t => t.title).join(', ')}</div>
+        )}
       </div>
 
       {/* Tutoriais por Categoria */}
