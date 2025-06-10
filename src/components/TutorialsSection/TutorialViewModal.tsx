@@ -3,7 +3,7 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Video, FileText, Download, Calendar } from 'lucide-react';
+import { Video, FileText, Download, Calendar, Maximize } from 'lucide-react';
 import { TutorialData } from '@/services/tutorialService';
 
 interface TutorialViewModalProps {
@@ -19,6 +19,19 @@ const TutorialViewModal = ({ tutorial, isOpen, onClose }: TutorialViewModalProps
     window.open(docUrl, '_blank');
   };
 
+  const handleFullscreen = () => {
+    const videoElement = document.getElementById('tutorial-video') as HTMLVideoElement;
+    if (videoElement) {
+      if (videoElement.requestFullscreen) {
+        videoElement.requestFullscreen();
+      } else if ((videoElement as any).webkitRequestFullscreen) {
+        (videoElement as any).webkitRequestFullscreen();
+      } else if ((videoElement as any).msRequestFullscreen) {
+        (videoElement as any).msRequestFullscreen();
+      }
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR', {
       day: '2-digit',
@@ -31,7 +44,7 @@ const TutorialViewModal = ({ tutorial, isOpen, onClose }: TutorialViewModalProps
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[800px] bg-gray-900 border-gray-700 max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[900px] bg-gray-900 border-gray-700 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-start justify-between">
             <div className="space-y-2">
@@ -50,27 +63,52 @@ const TutorialViewModal = ({ tutorial, isOpen, onClose }: TutorialViewModalProps
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Vídeo */}
+          {/* Player de Vídeo */}
           {tutorial.videoUrl && (
             <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <Video className="w-5 h-5 text-blue-400" />
-                <h3 className="font-semibold text-gray-200">Vídeo Tutorial</h3>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Video className="w-5 h-5 text-blue-400" />
+                  <h3 className="font-semibold text-gray-200">Vídeo Tutorial</h3>
+                </div>
+                <Button
+                  onClick={handleFullscreen}
+                  variant="outline"
+                  size="sm"
+                  className="border-gray-600"
+                >
+                  <Maximize className="w-4 h-4 mr-2" />
+                  Tela Cheia
+                </Button>
               </div>
               
-              <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-600">
-                <div className="aspect-video bg-gray-700 rounded-lg flex items-center justify-center">
-                  <div className="text-center space-y-3">
-                    <Video className="w-12 h-12 text-gray-400 mx-auto" />
-                    <p className="text-gray-400">
-                      Player de vídeo será implementado aqui
-                    </p>
-                    <Button
-                      onClick={() => window.open(tutorial.videoUrl, '_blank')}
-                      className="btn-primary"
-                    >
-                      Abrir Vídeo
-                    </Button>
+              <div className="bg-gray-800/50 rounded-lg p-2 border border-gray-600">
+                <div className="relative">
+                  <video
+                    id="tutorial-video"
+                    className="w-full aspect-video rounded-lg bg-black"
+                    controls
+                    preload="metadata"
+                    controlsList="nodownload"
+                  >
+                    <source src={tutorial.videoUrl} type="video/mp4" />
+                    <source src={tutorial.videoUrl} type="video/webm" />
+                    <source src={tutorial.videoUrl} type="video/ogg" />
+                    Seu navegador não suporta a reprodução de vídeo.
+                  </video>
+                </div>
+              </div>
+
+              {/* Informações do Vídeo */}
+              <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-600">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center space-x-4">
+                    <span className="text-gray-400">Formato:</span>
+                    <span className="text-gray-200">MP4/WebM</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Video className="w-4 h-4 text-blue-400" />
+                    <span className="text-blue-400">Controles disponíveis</span>
                   </div>
                 </div>
               </div>
