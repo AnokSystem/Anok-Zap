@@ -28,7 +28,7 @@ export class NotificationService extends BaseNocodbService {
 
   async getHotmartNotifications(baseId: string): Promise<any[]> {
     try {
-      console.log('🔍 Buscando notificações Hotmart do NocoDB...');
+      console.log('🔍 Buscando TODAS as notificações Hotmart do NocoDB...');
       console.log('Base ID:', baseId);
       
       const userId = this.getCurrentUserId();
@@ -37,7 +37,7 @@ export class NotificationService extends BaseNocodbService {
         return [];
       }
       
-      console.log('👤 Filtrando notificações para usuário ID:', userId);
+      console.log('👤 Usuário autenticado ID:', userId);
       
       const tableId = await this.getTableId(baseId, 'NotificacoesHotmart');
       if (!tableId) {
@@ -55,7 +55,10 @@ export class NotificationService extends BaseNocodbService {
       }
       
       const finalTableId = tableId || await this.getTableId(baseId, 'Notificações Hotmart');
-      return await this.apiOperations.fetchNotificationsByUser(baseId, finalTableId!, userId);
+      
+      // CORREÇÃO: Buscar TODAS as notificações, não filtrar por usuário na visualização
+      console.log('📋 Buscando todas as notificações sem filtro de usuário...');
+      return await this.apiOperations.fetchAllNotifications(baseId, finalTableId!);
       
     } catch (error) {
       console.error('❌ Erro ao buscar notificações:', error);
