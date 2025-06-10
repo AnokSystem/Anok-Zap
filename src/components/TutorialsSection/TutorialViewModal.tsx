@@ -8,7 +8,6 @@ import { TutorialData } from '@/services/tutorialService';
 import VideoPlayerSection from './VideoPlayerSection';
 import TutorialDescription from './TutorialDescription';
 import DocumentsSection from './DocumentsSection';
-import TutorialInfoSection from './TutorialInfoSection';
 
 interface TutorialViewModalProps {
   tutorial: TutorialData | null;
@@ -60,9 +59,6 @@ const TutorialViewModal = ({ tutorial, isOpen, onClose }: TutorialViewModalProps
 
           {/* Documentos */}
           <DocumentsSection documentUrls={tutorial.documentUrls} />
-
-          {/* Informações do Tutorial */}
-          <TutorialInfoSection tutorial={tutorial} />
         </div>
 
         <div className="flex justify-end pt-6">
