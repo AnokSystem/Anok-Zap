@@ -204,34 +204,64 @@ export const useTutorials = () => {
 
   const deleteTutorial = async (tutorialId: string): Promise<boolean> => {
     try {
-      console.log('🗑️ Deletando tutorial:', tutorialId);
+      console.log('🗑️ Iniciando exclusão do tutorial:', tutorialId);
       
-      // Atualizar estado imediatamente (otimistic update)
-      setTutorials(prevTutorials => prevTutorials.filter(t => t.id !== tutorialId));
+      // Armazenar a lista atual para restaurar em caso de erro
+      const currentTutorials = [...tutorials];
       
+      // Encontrar o tutorial que será deletado para mostrar no toast
+      const tutorialToDelete = tutorials.find(t => t.id === tutorialId);
+      const tutorialTitle = tutorialToDelete?.title || 'Tutorial';
+      
+      console.log('📝 Tutorial a ser deletado:', tutorialTitle);
+      
+      // Remover imediatamente da interface (optimistic update)
+      setTutorials(prevTutorials => {
+        const filtered = prevTutorials.filter(t => t.id !== tutorialId);
+        console.log('🔄 Lista atualizada, restam:', filtered.length, 'tutoriais');
+        return filtered;
+      });
+      
+      // Tentar deletar no backend
+      console.log('⏳ Executando exclusão no backend...');
       const success = await tutorialService.deleteTutorial(tutorialId);
+      
       if (success) {
+        console.log('✅ Tutorial deletado com sucesso no backend');
         toast({
           title: "Sucesso",
-          description: "Tutorial deletado com sucesso"
+          description: `Tutorial "${tutorialTitle}" foi excluído com sucesso`,
+          variant: "default"
         });
         
-        // Recarregar em segundo plano para garantir sincronização
+        // Recarregar a lista completa para garantir sincronização
         setTimeout(() => {
+          console.log('🔄 Recarregando lista após exclusão bem-sucedida...');
           fetchTutorials();
         }, 500);
+        
+        return true;
       } else {
-        // Se falhou, recarregar a lista para reverter a mudança otimista
-        await fetchTutorials();
+        console.log('❌ Falha na exclusão do backend, revertendo mudanças...');
+        // Reverter as mudanças se a exclusão falhou
+        setTutorials(currentTutorials);
+        toast({
+          title: "Erro",
+          description: `Não foi possível excluir o tutorial "${tutorialTitle}"`,
+          variant: "destructive"
+        });
+        return false;
       }
-      return success;
     } catch (error) {
-      console.error('❌ Erro ao deletar tutorial:', error);
-      // Recarregar a lista para reverter a mudança otimista
+      console.error('❌ Erro durante exclusão do tutorial:', error);
+      
+      // Recarregar a lista completa para garantir que está sincronizada
+      console.log('🔄 Recarregando lista após erro...');
       await fetchTutorials();
+      
       toast({
         title: "Erro",
-        description: "Não foi possível deletar o tutorial",
+        description: "Ocorreu um erro ao tentar excluir o tutorial",
         variant: "destructive"
       });
       return false;

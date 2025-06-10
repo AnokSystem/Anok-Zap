@@ -27,16 +27,34 @@ const TutorialCard = ({ tutorial, onView, onEdit, onDelete }: TutorialCardProps)
   const { user } = useAuth();
   const isAdmin = user?.Email === 'kona@admin.com';
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log('🗑️ Botão de deletar clicado para tutorial:', tutorial.id);
+    console.log('🗑️ TutorialCard - Botão de deletar clicado para tutorial:', tutorial.id, tutorial.title);
     setShowDeleteDialog(true);
   };
 
-  const handleConfirmDelete = () => {
-    console.log('✅ Confirmação de delete aceita via AlertDialog');
-    onDelete(tutorial.id);
+  const handleConfirmDelete = async () => {
+    console.log('✅ TutorialCard - Confirmação de delete aceita via AlertDialog');
+    console.log('📝 TutorialCard - Deletando tutorial:', tutorial.id, tutorial.title);
+    
+    setIsDeleting(true);
+    
+    try {
+      console.log('⏳ TutorialCard - Chamando função onDelete...');
+      await onDelete(tutorial.id);
+      console.log('✅ TutorialCard - Função onDelete executada');
+    } catch (error) {
+      console.error('❌ TutorialCard - Erro na execução do onDelete:', error);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    console.log('❌ TutorialCard - Exclusão cancelada pelo usuário');
     setShowDeleteDialog(false);
   };
 
@@ -87,7 +105,8 @@ const TutorialCard = ({ tutorial, onView, onEdit, onDelete }: TutorialCardProps)
                   variant="ghost"
                   size="sm"
                   onClick={handleDeleteClick}
-                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                  disabled={isDeleting}
+                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10 disabled:opacity-50"
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>
@@ -151,14 +170,19 @@ const TutorialCard = ({ tutorial, onView, onEdit, onDelete }: TutorialCardProps)
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600">
+            <AlertDialogCancel 
+              onClick={handleCancelDelete}
+              className="bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600"
+              disabled={isDeleting}
+            >
               Cancelar
             </AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleConfirmDelete}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
             >
-              Excluir Tutorial
+              {isDeleting ? 'Excluindo...' : 'Excluir Tutorial'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
