@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Video, FileText, Plus, Trash2, Play } from 'lucide-react';
@@ -11,16 +11,31 @@ import TutorialViewModal from './TutorialsSection/TutorialViewModal';
 
 const TutorialsSection = () => {
   const { user } = useAuth();
-  const { tutorials, loading, deleteTutorial } = useTutorials();
+  const { tutorials, loading, deleteTutorial, refreshTutorials } = useTutorials();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedTutorial, setSelectedTutorial] = useState<TutorialData | null>(null);
+  const [tutorialsCount, setTutorialsCount] = useState(0);
 
   const isAdmin = user?.Email === 'kona@admin.com';
+
+  // Forçar re-renderização quando a lista de tutoriais mudar
+  useEffect(() => {
+    console.log('📊 Lista de tutoriais atualizada:', tutorials.length, 'tutoriais');
+    setTutorialsCount(tutorials.length);
+  }, [tutorials]);
 
   const handleDeleteTutorial = async (tutorialId: string) => {
     if (window.confirm('Tem certeza que deseja deletar este tutorial?')) {
       await deleteTutorial(tutorialId);
     }
+  };
+
+  const handleCreateModalClose = () => {
+    setIsCreateModalOpen(false);
+    // Forçar uma atualização adicional após fechar o modal
+    setTimeout(() => {
+      refreshTutorials();
+    }, 100);
   };
 
   const groupedTutorials = tutorials.reduce((acc, tutorial) => {
@@ -48,7 +63,7 @@ const TutorialsSection = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" key={`tutorials-${tutorialsCount}`}>
       {/* Header da Seção */}
       <div className="text-center pb-6 border-b border-white/10">
         <div className="flex items-center justify-center space-x-3 mb-4">
@@ -59,6 +74,11 @@ const TutorialsSection = () => {
         </div>
         <p className="text-gray-400 text-lg">
           Aprenda a usar todas as funcionalidades do sistema
+          {tutorialsCount > 0 && (
+            <span className="block mt-2 text-purple-accent">
+              {tutorialsCount} tutorial(s) disponível(is)
+            </span>
+          )}
         </p>
         
         {isAdmin && (
@@ -76,7 +96,7 @@ const TutorialsSection = () => {
 
       {/* Tutoriais por Categoria */}
       {Object.entries(groupedTutorials).map(([category, categoryTutorials]) => (
-        <div key={category} className="card-glass p-6">
+        <div key={`${category}-${categoryTutorials.length}`} className="card-glass p-6">
           <div className="flex items-center space-x-3 mb-6">
             <div className="w-10 h-10 bg-purple-accent/20 rounded-lg flex items-center justify-center">
               <BookOpen className="w-5 h-5 text-purple-accent" />
@@ -91,7 +111,7 @@ const TutorialsSection = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {categoryTutorials.map((tutorial) => (
-              <Card key={tutorial.id} className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-all duration-200">
+              <Card key={`${tutorial.id}-${tutorial.updatedAt}`} className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-all duration-200">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-3 mb-2">
@@ -193,7 +213,7 @@ const TutorialsSection = () => {
       {/* Modais */}
       <CreateTutorialModal
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        onClose={handleCreateModalClose}
       />
       
       <TutorialViewModal

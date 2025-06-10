@@ -16,6 +16,7 @@ export const useTutorials = () => {
       const data = await tutorialService.getTutorials();
       console.log('📚 Tutoriais carregados:', data.length);
       setTutorials(data);
+      return data;
     } catch (error) {
       console.error('❌ Erro ao buscar tutoriais:', error);
       toast({
@@ -23,6 +24,7 @@ export const useTutorials = () => {
         description: "Não foi possível carregar os tutoriais",
         variant: "destructive"
       });
+      return [];
     } finally {
       setLoading(false);
     }
@@ -68,10 +70,18 @@ export const useTutorials = () => {
       
       const newTutorial = await tutorialService.createTutorial(data);
       
-      console.log('✅ Tutorial criado, atualizando lista...');
+      console.log('✅ Tutorial criado, atualizando lista imediatamente...');
       
-      // Recarregar a lista para garantir sincronização
-      await fetchTutorials();
+      // Atualizar estado imediatamente com o novo tutorial
+      setTutorials(prevTutorials => {
+        const filtered = prevTutorials.filter(t => t.id !== newTutorial.id);
+        return [...filtered, newTutorial];
+      });
+      
+      // Recarregar a lista completa em segundo plano para garantir sincronização
+      setTimeout(() => {
+        fetchTutorials();
+      }, 1000);
       
       toast({
         title: "Sucesso",
@@ -108,17 +118,30 @@ export const useTutorials = () => {
   const deleteTutorial = async (tutorialId: string): Promise<boolean> => {
     try {
       console.log('🗑️ Deletando tutorial:', tutorialId);
+      
+      // Atualizar estado imediatamente (otimistic update)
+      setTutorials(prevTutorials => prevTutorials.filter(t => t.id !== tutorialId));
+      
       const success = await tutorialService.deleteTutorial(tutorialId);
       if (success) {
-        await fetchTutorials(); // Recarregar lista
         toast({
           title: "Sucesso",
           description: "Tutorial deletado com sucesso"
         });
+        
+        // Recarregar em segundo plano para garantir sincronização
+        setTimeout(() => {
+          fetchTutorials();
+        }, 500);
+      } else {
+        // Se falhou, recarregar a lista para reverter a mudança otimista
+        await fetchTutorials();
       }
       return success;
     } catch (error) {
       console.error('❌ Erro ao deletar tutorial:', error);
+      // Recarregar a lista para reverter a mudança otimista
+      await fetchTutorials();
       toast({
         title: "Erro",
         description: "Não foi possível deletar o tutorial",
