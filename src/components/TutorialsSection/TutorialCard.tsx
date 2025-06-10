@@ -2,17 +2,18 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Video, FileText, Trash2, Play, Image } from 'lucide-react';
+import { Video, FileText, Trash2, Play, Image, Edit } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { TutorialData } from '@/services/tutorialService';
 
 interface TutorialCardProps {
   tutorial: TutorialData;
   onView: (tutorial: TutorialData) => void;
+  onEdit: (tutorial: TutorialData) => void;
   onDelete: (tutorialId: string) => void;
 }
 
-const TutorialCard = ({ tutorial, onView, onDelete }: TutorialCardProps) => {
+const TutorialCard = ({ tutorial, onView, onEdit, onDelete }: TutorialCardProps) => {
   const { user } = useAuth();
   const isAdmin = user?.Email === 'kona@admin.com';
 
@@ -50,6 +51,14 @@ const TutorialCard = ({ tutorial, onView, onDelete }: TutorialCardProps) => {
           
           {isAdmin && (
             <div className="flex space-x-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onEdit(tutorial)}
+                className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+              >
+                <Edit className="w-4 h-4" />
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"

@@ -1,4 +1,3 @@
-
 import { nocodbService } from '../nocodb';
 import { TutorialData } from './types';
 import { tutorialLocalStorageService } from './localStorageService';
@@ -120,6 +119,82 @@ class TutorialMetadataService {
       console.log('Salvando no localStorage como fallback...');
       tutorialLocalStorageService.saveTutorial(tutorial);
       console.log('Tutorial salvo no localStorage como fallback');
+    }
+  }
+
+  async updateTutorial(tutorial: TutorialData): Promise<void> {
+    try {
+      console.log('Atualizando metadata do tutorial no NocoDB:', tutorial.id);
+      
+      const targetBaseId = nocodbService.getTargetBaseId();
+      if (!targetBaseId) {
+        throw new Error('Base do NocoDB não encontrada');
+      }
+
+      const tableId = await nocodbService.getTableId(targetBaseId, this.TUTORIALS_TABLE);
+      if (!tableId) {
+        throw new Error('Tabela de tutoriais não encontrada');
+      }
+
+      // Primeiro, encontrar o registro pelo ID customizado
+      const searchResponse = await fetch(
+        `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}?where=(id,eq,${tutorial.id})`,
+        {
+          method: 'GET',
+          headers: nocodbService.headers,
+        }
+      );
+
+      if (searchResponse.ok) {
+        const searchData = await searchResponse.json();
+        const records = searchData.list || [];
+        
+        if (records.length > 0) {
+          const recordId = records[0].Id; // ID interno do NocoDB
+          
+          const tutorialData = {
+            title: tutorial.title,
+            description: tutorial.description,
+            videoUrl: tutorial.videoUrl || null,
+            documentUrls: JSON.stringify(tutorial.documentUrls),
+            coverImageUrl: tutorial.coverImageUrl || null,
+            category: tutorial.category,
+            updatedAt: tutorial.updatedAt
+          };
+
+          // Atualizar o registro
+          const updateResponse = await fetch(
+            `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}/${recordId}`,
+            {
+              method: 'PATCH',
+              headers: {
+                ...nocodbService.headers,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(tutorialData),
+            }
+          );
+
+          if (updateResponse.ok) {
+            console.log('✅ Tutorial atualizado no NocoDB com sucesso!');
+            // Atualizar também no localStorage como backup
+            tutorialLocalStorageService.saveTutorial(tutorial);
+          } else {
+            const errorText = await updateResponse.text();
+            console.error('❌ Erro ao atualizar no NocoDB:', updateResponse.status, errorText);
+            throw new Error(`Erro ao atualizar tutorial no NocoDB: ${updateResponse.status}`);
+          }
+        } else {
+          throw new Error('Tutorial não encontrado para atualização');
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar metadata no NocoDB:', error);
+      
+      // Fallback para localStorage
+      console.log('Salvando no localStorage como fallback...');
+      tutorialLocalStorageService.saveTutorial(tutorial);
+      console.log('Tutorial atualizado no localStorage como fallback');
     }
   }
 

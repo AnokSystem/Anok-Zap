@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { BookOpen } from 'lucide-react';
 import { useTutorials } from '@/hooks/useTutorials';
 import { TutorialData } from '@/services/tutorialService';
 import CreateTutorialModal from './TutorialsSection/CreateTutorialModal';
+import EditTutorialModal from './TutorialsSection/EditTutorialModal';
 import TutorialViewModal from './TutorialsSection/TutorialViewModal';
 import TutorialsSectionHeader from './TutorialsSection/TutorialsSectionHeader';
 import TutorialCategorySection from './TutorialsSection/TutorialCategorySection';
@@ -13,6 +13,7 @@ const TutorialsSection = () => {
   const { tutorials, loading, deleteTutorial, refreshTutorials } = useTutorials();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedTutorial, setSelectedTutorial] = useState<TutorialData | null>(null);
+  const [editingTutorial, setEditingTutorial] = useState<TutorialData | null>(null);
   const [tutorialsCount, setTutorialsCount] = useState(0);
 
   // Forçar re-renderização quando a lista de tutoriais mudar
@@ -29,6 +30,18 @@ const TutorialsSection = () => {
 
   const handleCreateModalClose = () => {
     setIsCreateModalOpen(false);
+    // Forçar uma atualização adicional após fechar o modal
+    setTimeout(() => {
+      refreshTutorials();
+    }, 100);
+  };
+
+  const handleEditTutorial = (tutorial: TutorialData) => {
+    setEditingTutorial(tutorial);
+  };
+
+  const handleEditModalClose = () => {
+    setEditingTutorial(null);
     // Forçar uma atualização adicional após fechar o modal
     setTimeout(() => {
       refreshTutorials();
@@ -74,6 +87,7 @@ const TutorialsSection = () => {
           category={category}
           tutorials={categoryTutorials}
           onViewTutorial={setSelectedTutorial}
+          onEditTutorial={handleEditTutorial}
           onDeleteTutorial={handleDeleteTutorial}
         />
       ))}
@@ -89,6 +103,12 @@ const TutorialsSection = () => {
       <CreateTutorialModal
         isOpen={isCreateModalOpen}
         onClose={handleCreateModalClose}
+      />
+
+      <EditTutorialModal
+        tutorial={editingTutorial}
+        isOpen={!!editingTutorial}
+        onClose={handleEditModalClose}
       />
       
       <TutorialViewModal

@@ -1,31 +1,39 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
+import { Upload } from 'lucide-react';
 
 interface FormActionsProps {
   onClose: () => void;
   uploading: boolean;
   isFormValid: boolean;
+  submitText?: string;
 }
 
-const FormActions = ({ onClose, uploading, isFormValid }: FormActionsProps) => {
+const FormActions = ({ onClose, uploading, isFormValid, submitText = "Criar Tutorial" }: FormActionsProps) => {
   return (
-    <div className="flex justify-end space-x-3 pt-6">
+    <div className="flex justify-end space-x-3 pt-6 border-t border-gray-700">
       <Button
         type="button"
         variant="outline"
         onClick={onClose}
         disabled={uploading}
-        className="border-gray-600"
       >
         Cancelar
       </Button>
       <Button
         type="submit"
-        disabled={uploading || !isFormValid}
+        disabled={!isFormValid || uploading}
         className="btn-primary"
       >
-        {uploading ? 'Criando...' : 'Criar Tutorial'}
+        {uploading ? (
+          <>
+            <Upload className="w-4 h-4 mr-2 animate-spin" />
+            {submitText.includes("Atualizar") ? "Atualizando..." : "Criando..."}
+          </>
+        ) : (
+          submitText
+        )}
       </Button>
     </div>
   );

@@ -1,4 +1,3 @@
-
 import { TutorialData, CreateTutorialData } from './types';
 import { tutorialFileUploadService } from './fileUploadService';
 import { tutorialMetadataService } from './metadataService';
@@ -42,6 +41,51 @@ class TutorialService {
       return tutorial;
     } catch (error) {
       console.error('Erro ao criar tutorial:', error);
+      throw error;
+    }
+  }
+
+  async updateTutorial(tutorialId: string, data: CreateTutorialData): Promise<TutorialData> {
+    try {
+      console.log('Atualizando tutorial:', tutorialId, 'com dados:', data.title);
+
+      // Buscar tutorial existente
+      const existingTutorials = await this.getTutorials();
+      const existingTutorial = existingTutorials.find(t => t.id === tutorialId);
+      
+      if (!existingTutorial) {
+        throw new Error('Tutorial não encontrado');
+      }
+
+      console.log('Verificando necessidade de upload de novos arquivos...');
+
+      // Upload dos novos arquivos se fornecidos
+      const uploadResult = await tutorialFileUploadService.uploadTutorialFiles(
+        tutorialId,
+        data.videoFile,
+        data.documentFiles,
+        data.coverImageFile
+      );
+
+      // Criar tutorial atualizado mantendo URLs existentes se não há novos uploads
+      const updatedTutorial: TutorialData = {
+        ...existingTutorial,
+        title: data.title,
+        description: data.description,
+        category: data.category,
+        videoUrl: uploadResult.videoUrl || existingTutorial.videoUrl,
+        documentUrls: uploadResult.documentUrls.length > 0 ? uploadResult.documentUrls : existingTutorial.documentUrls,
+        coverImageUrl: uploadResult.coverImageUrl || existingTutorial.coverImageUrl,
+        updatedAt: new Date().toISOString()
+      };
+
+      // Salvar metadata atualizada
+      await tutorialMetadataService.updateTutorial(updatedTutorial);
+
+      console.log('Tutorial atualizado com sucesso:', updatedTutorial);
+      return updatedTutorial;
+    } catch (error) {
+      console.error('Erro ao atualizar tutorial:', error);
       throw error;
     }
   }
