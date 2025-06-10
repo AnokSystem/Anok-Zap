@@ -14,3 +14,8 @@ export interface CampaignData {
   delay: number;
   notificationPhone: string;
 }
+
+export interface ContactData {
+  name: string;
+  phoneNumber: string;
+}
