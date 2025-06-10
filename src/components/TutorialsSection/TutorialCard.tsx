@@ -17,6 +17,12 @@ const TutorialCard = ({ tutorial, onView, onEdit, onDelete }: TutorialCardProps)
   const { user } = useAuth();
   const isAdmin = user?.Email === 'kona@admin.com';
 
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('🗑️ Botão de deletar clicado para tutorial:', tutorial.id);
+    onDelete(tutorial.id);
+  };
+
   return (
     <Card className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-all duration-200 overflow-hidden">
       {/* Imagem de Capa */}
@@ -62,7 +68,7 @@ const TutorialCard = ({ tutorial, onView, onEdit, onDelete }: TutorialCardProps)
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onDelete(tutorial.id)}
+                onClick={handleDelete}
                 className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
               >
                 <Trash2 className="w-4 h-4" />

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { BookOpen } from 'lucide-react';
 import { useTutorials } from '@/hooks/useTutorials';
@@ -23,8 +24,20 @@ const TutorialsSection = () => {
   }, [tutorials]);
 
   const handleDeleteTutorial = async (tutorialId: string) => {
+    console.log('🗑️ Tentativa de deletar tutorial:', tutorialId);
+    
     if (window.confirm('Tem certeza que deseja deletar este tutorial?')) {
-      await deleteTutorial(tutorialId);
+      console.log('✅ Confirmação de delete aceita');
+      const success = await deleteTutorial(tutorialId);
+      console.log('🔄 Resultado da exclusão:', success);
+      
+      if (success) {
+        console.log('✅ Tutorial deletado com sucesso');
+      } else {
+        console.log('❌ Falha ao deletar tutorial');
+      }
+    } else {
+      console.log('❌ Confirmação de delete cancelada');
     }
   };
 
