@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Settings, Users, Bell, MessageSquare, Zap, Server, LogOut, User, Activity } from 'lucide-react';
@@ -118,13 +119,19 @@ const Index = () => {
               </div>
             </div>
 
-            {/* User info and logout */}
+            {/* User info and logout - Redesigned */}
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3 px-4 py-2 bg-gray-800/50 rounded-lg border border-gray-600/50">
-                <User className="w-5 h-5 text-purple-accent" />
-                <div className="text-right">
-                  <p className="text-sm font-medium text-gray-200">{user?.Nome}</p>
-                  <p className="text-xs text-gray-400">{user?.Email}</p>
+              <div className="card-modern flex items-center space-x-4 px-6 py-3 gradient-subtle border border-purple-light/20 backdrop-blur-lg">
+                <div className="w-10 h-10 gradient-primary rounded-full flex items-center justify-center shadow-purple">
+                  <User className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold text-primary-contrast">
+                    {user?.Nome}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    {user?.Email}
+                  </span>
                 </div>
               </div>
               
@@ -132,7 +139,7 @@ const Index = () => {
                 onClick={handleLogout}
                 variant="outline"
                 size="sm"
-                className="bg-gray-700/50 border-gray-600 text-gray-200 hover:bg-gray-600/50"
+                className="card-modern border-purple-light/30 hover:border-purple-light/50 bg-gray-800/50 text-primary-contrast hover:bg-gradient-primary hover:text-white transition-all duration-300 shadow-purple hover:shadow-purple-lg"
               >
                 <LogOut className="w-4 h-4 mr-2" />
                 Sair
