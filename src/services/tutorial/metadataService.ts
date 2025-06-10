@@ -382,5 +382,3 @@ class TutorialMetadataService {
 }
 
 export const tutorialMetadataService = new TutorialMetadataService();
-
-}
