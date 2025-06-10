@@ -13,7 +13,7 @@ export const useTutorials = () => {
   const fetchTutorials = async () => {
     try {
       setLoading(true);
-      console.log('🔍 Iniciando busca de tutoriais com verificação de tabela...');
+      console.log('🔍 Iniciando busca de tutoriais...');
       
       // Garantir que a tabela existe antes de buscar
       await tutorialMetadataService.ensureTutorialsTable();
@@ -71,22 +71,17 @@ export const useTutorials = () => {
         }
       }
 
-      console.log('📁 Criando tutorial com estrutura de pastas...');
+      console.log('📁 Criando tutorial...');
       
       const newTutorial = await tutorialService.createTutorial(data);
       
-      console.log('✅ Tutorial criado, atualizando lista imediatamente...');
+      console.log('✅ Tutorial criado, atualizando lista...');
       
       // Atualizar estado imediatamente com o novo tutorial
       setTutorials(prevTutorials => {
         const filtered = prevTutorials.filter(t => t.id !== newTutorial.id);
         return [...filtered, newTutorial];
       });
-      
-      // Recarregar a lista completa em segundo plano para garantir sincronização
-      setTimeout(() => {
-        fetchTutorials();
-      }, 1000);
       
       toast({
         title: "Sucesso",
@@ -165,11 +160,6 @@ export const useTutorials = () => {
         prevTutorials.map(t => t.id === tutorialId ? updatedTutorial : t)
       );
       
-      // Recarregar a lista completa em segundo plano para garantir sincronização
-      setTimeout(() => {
-        fetchTutorials();
-      }, 1000);
-      
       toast({
         title: "Sucesso",
         description: `Tutorial "${updatedTutorial.title}" atualizado com sucesso`,
@@ -206,48 +196,60 @@ export const useTutorials = () => {
     try {
       console.log('🗑️ Iniciando exclusão do tutorial:', tutorialId);
       
-      // Armazenar a lista atual para restaurar em caso de erro
-      const currentTutorials = [...tutorials];
-      
-      // Encontrar o tutorial que será deletado para mostrar no toast
+      // Encontrar o tutorial que será deletado
       const tutorialToDelete = tutorials.find(t => t.id === tutorialId);
-      const tutorialTitle = tutorialToDelete?.title || 'Tutorial';
-      
-      console.log('📝 Tutorial a ser deletado:', tutorialTitle);
-      
-      // Remover imediatamente da interface (optimistic update)
-      setTutorials(prevTutorials => {
-        const filtered = prevTutorials.filter(t => t.id !== tutorialId);
-        console.log('🔄 Lista atualizada, restam:', filtered.length, 'tutoriais');
-        return filtered;
-      });
-      
-      // Tentar deletar no backend
-      console.log('⏳ Executando exclusão no backend...');
-      const success = await tutorialService.deleteTutorial(tutorialId);
-      
-      if (success) {
-        console.log('✅ Tutorial deletado com sucesso no backend');
-        toast({
-          title: "Sucesso",
-          description: `Tutorial "${tutorialTitle}" foi excluído com sucesso`,
-          variant: "default"
-        });
-        
-        // Recarregar a lista completa para garantir sincronização
-        setTimeout(() => {
-          console.log('🔄 Recarregando lista após exclusão bem-sucedida...');
-          fetchTutorials();
-        }, 500);
-        
-        return true;
-      } else {
-        console.log('❌ Falha na exclusão do backend, revertendo mudanças...');
-        // Reverter as mudanças se a exclusão falhou
-        setTutorials(currentTutorials);
+      if (!tutorialToDelete) {
+        console.error('❌ Tutorial não encontrado na lista local');
         toast({
           title: "Erro",
-          description: `Não foi possível excluir o tutorial "${tutorialTitle}"`,
+          description: "Tutorial não encontrado",
+          variant: "destructive"
+        });
+        return false;
+      }
+      
+      const tutorialTitle = tutorialToDelete.title;
+      console.log('📝 Tutorial a ser deletado:', tutorialTitle);
+      
+      // Verificar conexão com NocoDB antes de tentar deletar
+      console.log('🔌 Verificando conexão com NocoDB...');
+      
+      try {
+        // Tentar deletar no backend primeiro
+        console.log('⏳ Executando exclusão no backend...');
+        const success = await tutorialService.deleteTutorial(tutorialId);
+        
+        if (success) {
+          console.log('✅ Tutorial deletado com sucesso no backend');
+          
+          // Remover da interface após confirmação do backend
+          setTutorials(prevTutorials => {
+            const filtered = prevTutorials.filter(t => t.id !== tutorialId);
+            console.log('🔄 Lista atualizada, restam:', filtered.length, 'tutoriais');
+            return filtered;
+          });
+          
+          toast({
+            title: "Sucesso",
+            description: `Tutorial "${tutorialTitle}" foi excluído com sucesso`,
+            variant: "default"
+          });
+          
+          return true;
+        } else {
+          console.log('❌ Falha na exclusão do backend');
+          toast({
+            title: "Erro",
+            description: `Não foi possível excluir o tutorial "${tutorialTitle}". Verifique a conexão com o NocoDB.`,
+            variant: "destructive"
+          });
+          return false;
+        }
+      } catch (backendError) {
+        console.error('❌ Erro de conexão com backend:', backendError);
+        toast({
+          title: "Erro de Conexão",
+          description: "Falha na conexão com o NocoDB. Verifique sua conexão de internet.",
           variant: "destructive"
         });
         return false;
@@ -255,13 +257,9 @@ export const useTutorials = () => {
     } catch (error) {
       console.error('❌ Erro durante exclusão do tutorial:', error);
       
-      // Recarregar a lista completa para garantir que está sincronizada
-      console.log('🔄 Recarregando lista após erro...');
-      await fetchTutorials();
-      
       toast({
         title: "Erro",
-        description: "Ocorreu um erro ao tentar excluir o tutorial",
+        description: "Ocorreu um erro inesperado ao tentar excluir o tutorial",
         variant: "destructive"
       });
       return false;
@@ -269,7 +267,7 @@ export const useTutorials = () => {
   };
 
   useEffect(() => {
-    console.log('🔧 Hook useTutorials montado, verificando tabela e carregando tutoriais...');
+    console.log('🔧 Hook useTutorials montado, carregando tutoriais...');
     fetchTutorials();
   }, []);
 
