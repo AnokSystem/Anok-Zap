@@ -65,19 +65,7 @@ export const useTutorials = () => {
         }
       }
 
-      // Testar conexão MinIO primeiro
-      console.log('Testando conexão MinIO...');
-      const isConnected = await tutorialService.testMinioConnection();
-      if (!isConnected) {
-        toast({
-          title: "Erro de Conexão",
-          description: "Não foi possível conectar ao servidor de arquivos. Tente novamente.",
-          variant: "destructive"
-        });
-        return false;
-      }
-
-      console.log('Conexão OK, criando tutorial...');
+      console.log('Criando tutorial...');
       
       const newTutorial = await tutorialService.createTutorial(data);
       
@@ -152,29 +140,6 @@ export const useTutorials = () => {
     }
   };
 
-  const testConnection = async (): Promise<boolean> => {
-    try {
-      console.log('Testando conexão com MinIO...');
-      const isConnected = await tutorialService.testMinioConnection();
-      toast({
-        title: isConnected ? "Conexão OK" : "Erro de Conexão",
-        description: isConnected 
-          ? "Conexão com MinIO funcionando corretamente" 
-          : "Problema na conexão com o servidor de arquivos",
-        variant: isConnected ? "default" : "destructive"
-      });
-      return isConnected;
-    } catch (error) {
-      console.error('Erro no teste de conexão:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível testar a conexão",
-        variant: "destructive"
-      });
-      return false;
-    }
-  };
-
   useEffect(() => {
     console.log('Hook useTutorials montado, carregando tutoriais...');
     fetchTutorials();
@@ -186,7 +151,6 @@ export const useTutorials = () => {
     uploading,
     createTutorial,
     deleteTutorial,
-    refreshTutorials: fetchTutorials,
-    testConnection
+    refreshTutorials: fetchTutorials
   };
 };
