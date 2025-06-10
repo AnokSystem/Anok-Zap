@@ -82,7 +82,10 @@ export const useMassMessaging = () => {
         ...message,
         content: message.type === 'text' 
           ? VariableProcessor.processMessage(message.content, contactData)
-          : message.content
+          : message.content,
+        // Preservar fileUrl para todos os tipos de mensagem
+        fileUrl: message.fileUrl || '',
+        file: message.file
       }));
       
       return {
@@ -131,10 +134,14 @@ export const useMassMessaging = () => {
       // Processar mensagens com variáveis para cada contato
       const processedCampaigns = processMessagesWithVariables(messages, recipientList);
       
-      // Preparar dados da campanha para o webhook
+      // Preparar dados da campanha para o webhook com fileUrl preservado
       const campaignData: CampaignData = {
         instance: selectedInstance,
-        messages: messages, // Mensagens originais com variáveis
+        messages: messages.map(msg => ({
+          ...msg,
+          // Garantir que fileUrl seja enviado
+          fileUrl: msg.fileUrl || ''
+        })),
         recipients: recipientList,
         delay: delay[0],
         notificationPhone
@@ -148,6 +155,8 @@ export const useMassMessaging = () => {
           msg.type === 'text' && VariableProcessor.getAvailableVariables().some(v => msg.content.includes(v))
         )
       };
+
+      console.log('Dados enviados para webhook:', enhancedCampaignData);
 
       // Enviar para webhook n8n
       const response = await fetch('https://webhook.novahagencia.com.br/webhook/bb39433b-a53b-484c-8721-f9a66d54f821', {
