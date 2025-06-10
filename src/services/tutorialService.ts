@@ -21,7 +21,8 @@ export interface CreateTutorialData {
 }
 
 class TutorialService {
-  private readonly TUTORIALS_BASE_FOLDER = 'tutorials';
+  private readonly TUTORIALS_FOLDER = 'tutoriais';
+  private readonly METADATA_KEY = 'tutoriais_metadata';
 
   async uploadTutorialFiles(tutorialId: string, videoFile?: File, documentFiles: File[] = []): Promise<{ videoUrl?: string; documentUrls: string[] }> {
     const results = {
@@ -36,12 +37,10 @@ class TutorialService {
       if (videoFile) {
         console.log('Fazendo upload do vídeo...');
         try {
-          // Criar nome simples e limpo para o arquivo
           const timestamp = Date.now();
-          const cleanFileName = videoFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-          const videoFileName = `${this.TUTORIALS_BASE_FOLDER}/${tutorialId}/video_${timestamp}_${cleanFileName}`;
+          const fileExtension = videoFile.name.split('.').pop() || 'mp4';
+          const videoFileName = `${this.TUTORIALS_FOLDER}/${tutorialId}/video/video_${timestamp}.${fileExtension}`;
           
-          // Criar um novo arquivo com o nome correto
           const renamedVideoFile = new File([videoFile], videoFileName, { type: videoFile.type });
           
           results.videoUrl = await minioService.uploadFile(renamedVideoFile);
@@ -59,8 +58,8 @@ class TutorialService {
           const file = documentFiles[i];
           try {
             const timestamp = Date.now();
-            const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-            const docFileName = `${this.TUTORIALS_BASE_FOLDER}/${tutorialId}/doc_${i + 1}_${timestamp}_${cleanFileName}`;
+            const fileExtension = file.name.split('.').pop() || 'pdf';
+            const docFileName = `${this.TUTORIALS_FOLDER}/${tutorialId}/documentos/doc_${i + 1}_${timestamp}.${fileExtension}`;
             
             const renamedDocFile = new File([file], docFileName, { type: file.type });
             
@@ -84,16 +83,10 @@ class TutorialService {
 
   async createTutorial(data: CreateTutorialData): Promise<TutorialData> {
     try {
-      const tutorialId = `tutorial_${Date.now()}`;
+      const tutorialId = `tutorial_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       console.log('Criando tutorial:', tutorialId, 'com dados:', data.title);
 
-      // Testar conexão com MinIO antes de continuar
-      const isConnected = await minioService.testConnection();
-      if (!isConnected) {
-        throw new Error('Não foi possível conectar ao MinIO');
-      }
-
-      console.log('Conexão MinIO OK, iniciando uploads...');
+      console.log('Iniciando uploads dos arquivos...');
 
       // Upload dos arquivos
       const { videoUrl, documentUrls } = await this.uploadTutorialFiles(
@@ -131,12 +124,22 @@ class TutorialService {
     try {
       console.log('Buscando tutoriais...');
       
-      // Buscar do localStorage
-      const stored = localStorage.getItem('tutorials');
+      const stored = localStorage.getItem(this.METADATA_KEY);
       if (stored) {
         const tutorials = JSON.parse(stored);
         console.log('Tutoriais carregados do localStorage:', tutorials.length, 'itens');
-        return tutorials;
+        
+        // Validar estrutura dos dados
+        const validTutorials = tutorials.filter((tutorial: any) => 
+          tutorial.id && tutorial.title && tutorial.description && tutorial.category
+        );
+        
+        if (validTutorials.length !== tutorials.length) {
+          console.warn('Alguns tutoriais tinham dados inválidos e foram filtrados');
+          localStorage.setItem(this.METADATA_KEY, JSON.stringify(validTutorials));
+        }
+        
+        return validTutorials;
       }
 
       console.log('Nenhum tutorial salvo, retornando array vazio');
@@ -151,7 +154,6 @@ class TutorialService {
     try {
       console.log('Deletando tutorial:', tutorialId);
       
-      // Buscar tutorial para obter URLs dos arquivos
       const tutorials = await this.getTutorials();
       const tutorial = tutorials.find(t => t.id === tutorialId);
       
@@ -178,7 +180,7 @@ class TutorialService {
         
         // Remover da lista local
         const updatedTutorials = tutorials.filter(t => t.id !== tutorialId);
-        localStorage.setItem('tutorials', JSON.stringify(updatedTutorials));
+        localStorage.setItem(this.METADATA_KEY, JSON.stringify(updatedTutorials));
         console.log('Tutorial removido do localStorage');
       }
       
@@ -194,22 +196,30 @@ class TutorialService {
     try {
       console.log('Salvando metadata do tutorial:', tutorial.id);
       
-      // Buscar tutoriais existentes
       const existing = await this.getTutorials();
       console.log('Tutoriais existentes:', existing.length);
       
-      // Adicionar o novo tutorial
-      const updated = [...existing.filter(t => t.id !== tutorial.id), tutorial];
+      // Remover tutorial existente com mesmo ID e adicionar o novo
+      const filtered = existing.filter(t => t.id !== tutorial.id);
+      const updated = [...filtered, tutorial];
       
-      // Salvar no localStorage
-      localStorage.setItem('tutorials', JSON.stringify(updated));
-      console.log('Metadata do tutorial salva no localStorage. Total de tutoriais:', updated.length);
+      // Salvar no localStorage com nova chave
+      localStorage.setItem(this.METADATA_KEY, JSON.stringify(updated));
+      console.log('Metadata do tutorial salva. Total de tutoriais:', updated.length);
       
       // Verificar se foi salvo corretamente
-      const verification = localStorage.getItem('tutorials');
+      const verification = localStorage.getItem(this.METADATA_KEY);
       if (verification) {
         const parsed = JSON.parse(verification);
-        console.log('Verificação: tutorial salvo com sucesso. Total:', parsed.length);
+        const savedTutorial = parsed.find((t: TutorialData) => t.id === tutorial.id);
+        if (savedTutorial) {
+          console.log('✅ Tutorial salvo e verificado com sucesso!');
+        } else {
+          console.error('❌ Erro: Tutorial não encontrado após salvamento');
+          throw new Error('Tutorial não foi salvo corretamente');
+        }
+      } else {
+        throw new Error('Erro ao verificar salvamento no localStorage');
       }
     } catch (error) {
       console.error('Erro ao salvar metadata:', error);
@@ -217,14 +227,12 @@ class TutorialService {
     }
   }
 
-  async testMinioConnection(): Promise<boolean> {
+  async clearAllTutorials(): Promise<void> {
     try {
-      const isConnected = await minioService.testConnection();
-      console.log('Teste de conexão MinIO:', isConnected ? 'Sucesso' : 'Falha');
-      return isConnected;
+      localStorage.removeItem(this.METADATA_KEY);
+      console.log('Todos os tutoriais foram removidos');
     } catch (error) {
-      console.error('Erro no teste de conexão MinIO:', error);
-      return false;
+      console.error('Erro ao limpar tutoriais:', error);
     }
   }
 }

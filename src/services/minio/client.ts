@@ -1,4 +1,3 @@
-
 import { MinioConfig, UploadOptions, MinioHeaders } from './types';
 import { MinioAuth } from './auth';
 
@@ -60,11 +59,8 @@ export class MinioClient {
     try {
       console.log('Iniciando upload para MinIO...', file.name);
       
-      // Simplificar o nome do arquivo
-      const timestamp = Date.now();
-      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const fileName = `${timestamp}-${cleanFileName}`;
-      const filePath = `uploads/${fileName}`;
+      // Usar o nome do arquivo que já vem com o caminho da pasta
+      const filePath = file.name;
       
       const url = new URL(this.config.serverUrl);
       const path = `/${this.config.bucketName}/${filePath}`;
@@ -85,8 +81,8 @@ export class MinioClient {
         'Content-Length': file.size.toString()
       };
 
+      console.log('Upload para caminho:', filePath);
       console.log('Headers de upload:', headers);
-      console.log('Payload hash:', payloadHash);
 
       const authorization = await this.auth.createSignature(
         'PUT', 
@@ -98,8 +94,6 @@ export class MinioClient {
         this.config.secretKey,
         this.config.region
       );
-      
-      console.log('Authorization header:', authorization);
       
       const fullUrl = `${this.config.serverUrl}${path}`;
       console.log('URL de upload:', fullUrl);
@@ -116,17 +110,16 @@ export class MinioClient {
       console.log(`Status do upload MinIO: ${response.status}`);
       
       if (response.ok) {
-        const fileUrl = fullUrl;
-        console.log('Upload realizado com sucesso no MinIO:', fileUrl);
-        return fileUrl;
+        console.log('✅ Upload realizado com sucesso no MinIO:', fullUrl);
+        return fullUrl;
       } else {
         const errorText = await response.text().catch(() => '');
-        console.error('Erro no upload MinIO:', response.status, errorText);
+        console.error('❌ Erro no upload MinIO:', response.status, errorText);
         console.error('Response headers:', Object.fromEntries(response.headers.entries()));
         throw new Error(`Upload falhou: ${response.status} - ${errorText}`);
       }
     } catch (error) {
-      console.error('Erro geral no upload:', error);
+      console.error('❌ Erro geral no upload:', error);
       throw error;
     }
   }
