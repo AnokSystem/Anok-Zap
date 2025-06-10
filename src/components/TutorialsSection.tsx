@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Video, FileText, Plus, Edit, Trash2, Play } from 'lucide-react';
+import { BookOpen, Video, FileText, Plus, Trash2, Play, Wifi, Settings } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTutorials } from '@/hooks/useTutorials';
 import { TutorialData } from '@/services/tutorialService';
@@ -11,7 +11,7 @@ import TutorialViewModal from './TutorialsSection/TutorialViewModal';
 
 const TutorialsSection = () => {
   const { user } = useAuth();
-  const { tutorials, loading, deleteTutorial } = useTutorials();
+  const { tutorials, loading, deleteTutorial, testConnection } = useTutorials();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedTutorial, setSelectedTutorial] = useState<TutorialData | null>(null);
 
@@ -61,18 +61,54 @@ const TutorialsSection = () => {
           Aprenda a usar todas as funcionalidades do sistema
         </p>
         
-        {isAdmin && (
-          <div className="mt-6">
+        <div className="mt-6 flex justify-center space-x-4">
+          {isAdmin && (
+            <>
+              <Button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="btn-primary"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Criar Novo Tutorial
+              </Button>
+              <Button
+                onClick={testConnection}
+                variant="outline"
+                className="border-gray-600"
+              >
+                <Wifi className="w-4 h-4 mr-2" />
+                Testar Conexão MinIO
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Status da Conexão */}
+      {isAdmin && (
+        <div className="card-glass p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Settings className="w-5 h-5 text-blue-400" />
+              <div>
+                <h4 className="font-semibold text-gray-200">Status do Sistema</h4>
+                <p className="text-sm text-gray-400">
+                  Verifique a conexão com o servidor de arquivos antes de criar tutoriais
+                </p>
+              </div>
+            </div>
             <Button
-              onClick={() => setIsCreateModalOpen(true)}
-              className="btn-primary"
+              onClick={testConnection}
+              variant="outline"
+              size="sm"
+              className="border-gray-600"
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Criar Novo Tutorial
+              <Wifi className="w-4 h-4 mr-2" />
+              Verificar
             </Button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Tutoriais por Categoria */}
       {Object.entries(groupedTutorials).map(([category, categoryTutorials]) => (
@@ -179,13 +215,23 @@ const TutorialsSection = () => {
             }
           </p>
           {isAdmin && (
-            <Button
-              onClick={() => setIsCreateModalOpen(true)}
-              className="btn-primary"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Criar Primeiro Tutorial
-            </Button>
+            <div className="space-y-4">
+              <Button
+                onClick={testConnection}
+                variant="outline"
+                className="border-gray-600 mr-4"
+              >
+                <Wifi className="w-4 h-4 mr-2" />
+                Testar Conexão
+              </Button>
+              <Button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="btn-primary"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Criar Primeiro Tutorial
+              </Button>
+            </div>
           )}
         </div>
       )}

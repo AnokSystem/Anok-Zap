@@ -21,8 +21,7 @@ export interface CreateTutorialData {
 }
 
 class TutorialService {
-  private readonly TUTORIALS_FOLDER = 'tutorials';
-  private readonly METADATA_FILE = 'tutorials/metadata.json';
+  private readonly TUTORIALS_BASE_FOLDER = 'tutorials';
 
   async uploadTutorialFiles(tutorialId: string, videoFile?: File, documentFiles: File[] = []): Promise<{ videoUrl?: string; documentUrls: string[] }> {
     const results = {
@@ -31,28 +30,48 @@ class TutorialService {
     };
 
     try {
+      console.log(`Iniciando upload de arquivos para tutorial: ${tutorialId}`);
+
       // Upload video se fornecido
       if (videoFile) {
         console.log('Fazendo upload do vídeo...');
-        const videoPath = `${this.TUTORIALS_FOLDER}/${tutorialId}/video/${videoFile.name}`;
-        results.videoUrl = await minioService.uploadFile(videoFile);
-        console.log('Vídeo enviado:', results.videoUrl);
+        try {
+          // Criar um arquivo com nome organizado para a pasta de tutoriais
+          const videoFileName = `${this.TUTORIALS_BASE_FOLDER}/${tutorialId}/video_${Date.now()}_${videoFile.name}`;
+          const renamedVideoFile = new File([videoFile], videoFileName, { type: videoFile.type });
+          
+          results.videoUrl = await minioService.uploadFile(renamedVideoFile);
+          console.log('Vídeo enviado com sucesso:', results.videoUrl);
+        } catch (error) {
+          console.error('Erro no upload do vídeo:', error);
+          throw new Error('Falha no upload do vídeo');
+        }
       }
 
       // Upload documentos
       if (documentFiles.length > 0) {
-        console.log('Fazendo upload dos documentos...');
-        for (const file of documentFiles) {
-          const docPath = `${this.TUTORIALS_FOLDER}/${tutorialId}/documents/${file.name}`;
-          const docUrl = await minioService.uploadFile(file);
-          results.documentUrls.push(docUrl);
+        console.log(`Fazendo upload de ${documentFiles.length} documentos...`);
+        for (let i = 0; i < documentFiles.length; i++) {
+          const file = documentFiles[i];
+          try {
+            // Criar um arquivo com nome organizado para a pasta de tutoriais
+            const docFileName = `${this.TUTORIALS_BASE_FOLDER}/${tutorialId}/doc_${i + 1}_${Date.now()}_${file.name}`;
+            const renamedDocFile = new File([file], docFileName, { type: file.type });
+            
+            const docUrl = await minioService.uploadFile(renamedDocFile);
+            results.documentUrls.push(docUrl);
+            console.log(`Documento ${i + 1} enviado:`, docUrl);
+          } catch (error) {
+            console.error(`Erro no upload do documento ${i + 1}:`, error);
+            throw new Error(`Falha no upload do documento: ${file.name}`);
+          }
         }
-        console.log('Documentos enviados:', results.documentUrls);
+        console.log('Todos os documentos enviados com sucesso');
       }
 
       return results;
     } catch (error) {
-      console.error('Erro no upload dos arquivos do tutorial:', error);
+      console.error('Erro geral no upload dos arquivos do tutorial:', error);
       throw error;
     }
   }
@@ -61,6 +80,12 @@ class TutorialService {
     try {
       const tutorialId = `tutorial_${Date.now()}`;
       console.log('Criando tutorial:', tutorialId);
+
+      // Testar conexão com MinIO antes de continuar
+      const isConnected = await minioService.testConnection();
+      if (!isConnected) {
+        throw new Error('Não foi possível conectar ao MinIO');
+      }
 
       // Upload dos arquivos
       const { videoUrl, documentUrls } = await this.uploadTutorialFiles(
@@ -81,7 +106,7 @@ class TutorialService {
         updatedAt: new Date().toISOString()
       };
 
-      // Salvar metadata
+      // Salvar metadata (por enquanto só no localStorage, depois implementaremos no MinIO)
       await this.saveTutorialMetadata(tutorial);
 
       console.log('Tutorial criado com sucesso:', tutorial);
@@ -96,7 +121,15 @@ class TutorialService {
     try {
       console.log('Buscando tutoriais...');
       
-      // Por enquanto, retornamos dados mock até implementarmos o storage de metadata
+      // Tentar buscar do localStorage primeiro
+      const stored = localStorage.getItem('tutorials');
+      if (stored) {
+        const tutorials = JSON.parse(stored);
+        console.log('Tutoriais carregados do localStorage:', tutorials);
+        return tutorials;
+      }
+
+      // Retornar dados mock se não houver tutoriais salvos
       const mockTutorials: TutorialData[] = [
         {
           id: 'tutorial_1',
@@ -129,8 +162,35 @@ class TutorialService {
     try {
       console.log('Deletando tutorial:', tutorialId);
       
-      // Aqui implementaríamos a lógica para deletar arquivos do MinIO
-      // e remover da metadata
+      // Buscar tutorial para obter URLs dos arquivos
+      const tutorials = await this.getTutorials();
+      const tutorial = tutorials.find(t => t.id === tutorialId);
+      
+      if (tutorial) {
+        // Deletar vídeo se existir
+        if (tutorial.videoUrl) {
+          try {
+            await minioService.deleteFile(tutorial.videoUrl);
+            console.log('Vídeo deletado do MinIO');
+          } catch (error) {
+            console.error('Erro ao deletar vídeo:', error);
+          }
+        }
+        
+        // Deletar documentos se existirem
+        for (const docUrl of tutorial.documentUrls) {
+          try {
+            await minioService.deleteFile(docUrl);
+            console.log('Documento deletado do MinIO');
+          } catch (error) {
+            console.error('Erro ao deletar documento:', error);
+          }
+        }
+        
+        // Remover da lista local
+        const updatedTutorials = tutorials.filter(t => t.id !== tutorialId);
+        localStorage.setItem('tutorials', JSON.stringify(updatedTutorials));
+      }
       
       console.log('Tutorial deletado com sucesso');
       return true;
@@ -142,9 +202,11 @@ class TutorialService {
 
   private async saveTutorialMetadata(tutorial: TutorialData): Promise<void> {
     try {
-      // Por enquanto, só logamos. Em uma implementação completa,
-      // salvaríamos a metadata em um arquivo JSON no MinIO
-      console.log('Salvando metadata do tutorial:', tutorial);
+      // Salvar no localStorage por enquanto
+      const existing = await this.getTutorials();
+      const updated = [...existing.filter(t => t.id !== tutorial.id), tutorial];
+      localStorage.setItem('tutorials', JSON.stringify(updated));
+      console.log('Metadata do tutorial salva no localStorage');
     } catch (error) {
       console.error('Erro ao salvar metadata:', error);
       throw error;
@@ -152,7 +214,14 @@ class TutorialService {
   }
 
   async testMinioConnection(): Promise<boolean> {
-    return await minioService.testConnection();
+    try {
+      const isConnected = await minioService.testConnection();
+      console.log('Teste de conexão MinIO:', isConnected ? 'Sucesso' : 'Falha');
+      return isConnected;
+    } catch (error) {
+      console.error('Erro no teste de conexão MinIO:', error);
+      return false;
+    }
   }
 }
 

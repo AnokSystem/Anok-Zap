@@ -29,6 +29,30 @@ export const useTutorials = () => {
   const createTutorial = async (data: CreateTutorialData): Promise<boolean> => {
     try {
       setUploading(true);
+      
+      // Validar arquivos antes do upload
+      if (data.videoFile && data.videoFile.size > 100 * 1024 * 1024) { // 100MB
+        toast({
+          title: "Erro",
+          description: "O vídeo deve ter no máximo 100MB",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      // Testar conexão MinIO primeiro
+      const isConnected = await tutorialService.testMinioConnection();
+      if (!isConnected) {
+        toast({
+          title: "Erro de Conexão",
+          description: "Não foi possível conectar ao servidor de arquivos. Tente novamente.",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      console.log('Iniciando criação do tutorial:', data.title);
+      
       const newTutorial = await tutorialService.createTutorial(data);
       setTutorials(prev => [...prev, newTutorial]);
       
@@ -40,9 +64,21 @@ export const useTutorials = () => {
       return true;
     } catch (error) {
       console.error('Erro ao criar tutorial:', error);
+      
+      let errorMessage = "Não foi possível criar o tutorial";
+      if (error instanceof Error) {
+        if (error.message.includes('MinIO')) {
+          errorMessage = "Erro na conexão com o servidor de arquivos";
+        } else if (error.message.includes('upload')) {
+          errorMessage = "Erro no upload dos arquivos";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: "Erro",
-        description: "Não foi possível criar o tutorial",
+        description: errorMessage,
         variant: "destructive"
       });
       return false;
@@ -73,6 +109,28 @@ export const useTutorials = () => {
     }
   };
 
+  const testConnection = async (): Promise<boolean> => {
+    try {
+      const isConnected = await tutorialService.testMinioConnection();
+      toast({
+        title: isConnected ? "Conexão OK" : "Erro de Conexão",
+        description: isConnected 
+          ? "Conexão com MinIO funcionando corretamente" 
+          : "Problema na conexão com o servidor de arquivos",
+        variant: isConnected ? "default" : "destructive"
+      });
+      return isConnected;
+    } catch (error) {
+      console.error('Erro no teste de conexão:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível testar a conexão",
+        variant: "destructive"
+      });
+      return false;
+    }
+  };
+
   useEffect(() => {
     fetchTutorials();
   }, []);
@@ -83,6 +141,7 @@ export const useTutorials = () => {
     uploading,
     createTutorial,
     deleteTutorial,
-    refreshTutorials: fetchTutorials
+    refreshTutorials: fetchTutorials,
+    testConnection
   };
 };

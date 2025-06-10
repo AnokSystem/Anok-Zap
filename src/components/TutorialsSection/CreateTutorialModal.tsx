@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, Video, FileText, X } from 'lucide-react';
+import { Upload, Video, FileText, X, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useTutorials } from '@/hooks/useTutorials';
 import { CreateTutorialData } from '@/services/tutorialService';
 
@@ -16,7 +16,7 @@ interface CreateTutorialModalProps {
 }
 
 const CreateTutorialModal = ({ isOpen, onClose }: CreateTutorialModalProps) => {
-  const { createTutorial, uploading } = useTutorials();
+  const { createTutorial, uploading, testConnection } = useTutorials();
   const [formData, setFormData] = useState<CreateTutorialData>({
     title: '',
     description: '',
@@ -24,6 +24,7 @@ const CreateTutorialModal = ({ isOpen, onClose }: CreateTutorialModalProps) => {
     documentFiles: []
   });
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [connectionTested, setConnectionTested] = useState<boolean | null>(null);
 
   const categories = [
     'Primeiros Passos',
@@ -31,6 +32,11 @@ const CreateTutorialModal = ({ isOpen, onClose }: CreateTutorialModalProps) => {
     'Suporte',
     'Recursos Extras'
   ];
+
+  const handleTestConnection = async () => {
+    const result = await testConnection();
+    setConnectionTested(result);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,6 +61,7 @@ const CreateTutorialModal = ({ isOpen, onClose }: CreateTutorialModalProps) => {
         documentFiles: []
       });
       setVideoFile(null);
+      setConnectionTested(null);
       onClose();
     }
   };
@@ -62,15 +69,30 @@ const CreateTutorialModal = ({ isOpen, onClose }: CreateTutorialModalProps) => {
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Validar tamanho do arquivo (100MB)
+      if (file.size > 100 * 1024 * 1024) {
+        alert('O vídeo deve ter no máximo 100MB');
+        return;
+      }
       setVideoFile(file);
     }
   };
 
   const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+    
+    // Validar cada arquivo (10MB por documento)
+    const validFiles = files.filter(file => {
+      if (file.size > 10 * 1024 * 1024) {
+        alert(`O documento ${file.name} deve ter no máximo 10MB`);
+        return false;
+      }
+      return true;
+    });
+    
     setFormData(prev => ({
       ...prev,
-      documentFiles: [...prev.documentFiles, ...files]
+      documentFiles: [...prev.documentFiles, ...validFiles]
     }));
   };
 
@@ -85,12 +107,51 @@ const CreateTutorialModal = ({ isOpen, onClose }: CreateTutorialModalProps) => {
     setVideoFile(null);
   };
 
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] bg-gray-900 border-gray-700">
+      <DialogContent className="sm:max-w-[600px] bg-gray-900 border-gray-700 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-primary-contrast">Criar Novo Tutorial</DialogTitle>
         </DialogHeader>
+
+        {/* Teste de Conexão */}
+        <div className="mb-4 p-4 bg-gray-800/50 rounded-lg border border-gray-600">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              {connectionTested === null && (
+                <AlertTriangle className="w-5 h-5 text-yellow-400" />
+              )}
+              {connectionTested === true && (
+                <CheckCircle className="w-5 h-5 text-green-400" />
+              )}
+              {connectionTested === false && (
+                <X className="w-5 h-5 text-red-400" />
+              )}
+              <span className="text-gray-300">
+                {connectionTested === null && 'Teste a conexão antes de continuar'}
+                {connectionTested === true && 'Conexão com servidor OK'}
+                {connectionTested === false && 'Erro na conexão com servidor'}
+              </span>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleTestConnection}
+              className="border-gray-600"
+            >
+              Testar Conexão
+            </Button>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Informações Básicas */}
@@ -138,7 +199,7 @@ const CreateTutorialModal = ({ isOpen, onClose }: CreateTutorialModalProps) => {
 
           {/* Upload de Vídeo */}
           <div className="space-y-4">
-            <Label className="text-gray-300">Vídeo (Opcional)</Label>
+            <Label className="text-gray-300">Vídeo (Opcional) - Máximo 100MB</Label>
             
             {videoFile ? (
               <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-600">
@@ -148,7 +209,7 @@ const CreateTutorialModal = ({ isOpen, onClose }: CreateTutorialModalProps) => {
                     <div>
                       <p className="text-gray-200 font-medium">{videoFile.name}</p>
                       <p className="text-xs text-gray-400">
-                        {(videoFile.size / 1024 / 1024).toFixed(2)} MB
+                        {formatFileSize(videoFile.size)}
                       </p>
                     </div>
                   </div>
@@ -186,7 +247,7 @@ const CreateTutorialModal = ({ isOpen, onClose }: CreateTutorialModalProps) => {
 
           {/* Upload de Documentos */}
           <div className="space-y-4">
-            <Label className="text-gray-300">Documentos (Opcional)</Label>
+            <Label className="text-gray-300">Documentos (Opcional) - Máximo 10MB cada</Label>
             
             {formData.documentFiles.length > 0 && (
               <div className="space-y-2">
@@ -198,7 +259,7 @@ const CreateTutorialModal = ({ isOpen, onClose }: CreateTutorialModalProps) => {
                         <div>
                           <p className="text-gray-200 text-sm font-medium">{file.name}</p>
                           <p className="text-xs text-gray-400">
-                            {(file.size / 1024).toFixed(2)} KB
+                            {formatFileSize(file.size)}
                           </p>
                         </div>
                       </div>
@@ -250,7 +311,7 @@ const CreateTutorialModal = ({ isOpen, onClose }: CreateTutorialModalProps) => {
             </Button>
             <Button
               type="submit"
-              disabled={uploading || !formData.title || !formData.description || !formData.category}
+              disabled={uploading || !formData.title || !formData.description || !formData.category || connectionTested !== true}
               className="btn-primary"
             >
               {uploading ? 'Criando...' : 'Criar Tutorial'}
