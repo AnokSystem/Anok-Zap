@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Users, UserPlus, UserMinus, BookOpen, PlayCircle, FileText, HelpCircle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import TutorialsSection from './TutorialsSection';
+import GroupManagement from './GroupManagement';
 
 const ExtrasSection = () => {
   const { toast } = useToast();
@@ -110,49 +111,8 @@ const ExtrasSection = () => {
       {/* Seção de Tutoriais Completa */}
       <TutorialsSection />
 
-      {/* Seção de Estatísticas dos Grupos */}
-      <div className="card-glass p-6">
-        <div className="flex items-center space-x-3 mb-6">
-          <div className="w-10 h-10 bg-purple-accent/20 rounded-lg flex items-center justify-center">
-            <Users className="w-5 h-5 text-purple-accent" />
-          </div>
-          <div>
-            <h4 className="font-semibold text-primary-contrast text-lg">Gerenciamento de Grupos</h4>
-            <p className="text-sm text-gray-400 mt-1">
-              Resumo das suas ações em grupos
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-blue-500/10 p-4 rounded-lg border border-blue-500/20">
-            <div className="flex items-center space-x-2 mb-2">
-              <Users className="w-5 h-5 text-blue-400" />
-              <span className="font-medium text-blue-400">Grupos Criados</span>
-            </div>
-            <p className="text-2xl font-bold text-primary-contrast">0</p>
-            <p className="text-xs text-gray-400">Este mês</p>
-          </div>
-          
-          <div className="bg-green-500/10 p-4 rounded-lg border border-green-500/20">
-            <div className="flex items-center space-x-2 mb-2">
-              <UserPlus className="w-5 h-5 text-green-400" />
-              <span className="font-medium text-green-400">Membros Adicionados</span>
-            </div>
-            <p className="text-2xl font-bold text-primary-contrast">0</p>
-            <p className="text-xs text-gray-400">Este mês</p>
-          </div>
-          
-          <div className="bg-red-500/10 p-4 rounded-lg border border-red-500/20">
-            <div className="flex items-center space-x-2 mb-2">
-              <UserMinus className="w-5 h-5 text-red-400" />
-              <span className="font-medium text-red-400">Membros Removidos</span>
-            </div>
-            <p className="text-2xl font-bold text-primary-contrast">0</p>
-            <p className="text-xs text-gray-400">Este mês</p>
-          </div>
-        </div>
-      </div>
+      {/* Seção de Gerenciamento de Grupos Renovada */}
+      <GroupManagement />
     </div>
   );
 };
