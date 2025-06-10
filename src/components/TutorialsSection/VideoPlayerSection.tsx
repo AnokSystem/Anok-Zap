@@ -21,6 +21,18 @@ const VideoPlayerSection = ({ videoUrl }: VideoPlayerSectionProps) => {
     }
   };
 
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    return false;
+  };
+
+  const handleVideoLoad = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = e.currentTarget;
+    // Desabilitar seleção de texto no vídeo
+    video.style.userSelect = 'none';
+    video.style.webkitUserSelect = 'none';
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
@@ -46,13 +58,28 @@ const VideoPlayerSection = ({ videoUrl }: VideoPlayerSectionProps) => {
             className="w-full aspect-video rounded-lg bg-black"
             controls
             preload="metadata"
-            controlsList="nodownload"
+            controlsList="nodownload nofullscreen noremoteplayback"
+            disablePictureInPicture
+            onContextMenu={handleContextMenu}
+            onLoadedData={handleVideoLoad}
+            style={{
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+              pointerEvents: 'auto'
+            }}
           >
             <source src={videoUrl} type="video/mp4" />
             <source src={videoUrl} type="video/webm" />
             <source src={videoUrl} type="video/ogg" />
             Seu navegador não suporta a reprodução de vídeo.
           </video>
+          
+          {/* Overlay invisível para capturar cliques direitos */}
+          <div 
+            className="absolute inset-0 pointer-events-none"
+            onContextMenu={handleContextMenu}
+            style={{ zIndex: 1 }}
+          />
         </div>
       </div>
 
@@ -65,7 +92,7 @@ const VideoPlayerSection = ({ videoUrl }: VideoPlayerSectionProps) => {
           </div>
           <div className="flex items-center space-x-2">
             <Video className="w-4 h-4 text-blue-400" />
-            <span className="text-blue-400">Controles disponíveis</span>
+            <span className="text-blue-400">Controles limitados</span>
           </div>
         </div>
       </div>
