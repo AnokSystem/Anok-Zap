@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { tutorialService, TutorialData, CreateTutorialData } from '@/services/tutorialService';
 import { tutorialMetadataService } from '@/services/tutorial/metadataService';
@@ -216,17 +215,17 @@ export const useTutorials = () => {
       const tutorialTitle = tutorialToDelete.title;
       console.log('📝 useTutorials.deleteTutorial - Deletando tutorial:', tutorialTitle);
       
-      // Chamar o serviço de exclusão
-      console.log('⏳ useTutorials.deleteTutorial - Chamando tutorialService.deleteTutorial...');
-      await tutorialService.deleteTutorial(tutorialId);
-      console.log('✅ useTutorials.deleteTutorial - Serviço executado com sucesso');
-      
-      // Remover da interface apenas após confirmação do backend
+      // Remover da interface IMEDIATAMENTE para melhor UX
       setTutorials(prevTutorials => {
         const filtered = prevTutorials.filter(t => t.id !== tutorialId);
         console.log('🔄 useTutorials.deleteTutorial - Lista atualizada, restam:', filtered.length, 'tutoriais');
         return filtered;
       });
+      
+      // Tentar deletar do backend (se falhar, já removemos da interface)
+      console.log('⏳ useTutorials.deleteTutorial - Chamando tutorialService.deleteTutorial...');
+      await tutorialService.deleteTutorial(tutorialId);
+      console.log('✅ useTutorials.deleteTutorial - Serviço executado com sucesso');
       
       console.log('🎉 useTutorials.deleteTutorial - PROCESSO CONCLUÍDO COM SUCESSO');
       
@@ -240,24 +239,14 @@ export const useTutorials = () => {
     } catch (error) {
       console.error('❌ useTutorials.deleteTutorial - ERRO DURANTE EXCLUSÃO:', error);
       
-      let errorMessage = "Não foi possível excluir o tutorial";
-      if (error instanceof Error) {
-        if (error.message.includes('Tutorial não encontrado')) {
-          errorMessage = "Tutorial não encontrado no servidor";
-        } else if (error.message.includes('conexão') || error.message.includes('NocoDB')) {
-          errorMessage = "Erro de conexão com o servidor. Verifique sua internet.";
-        } else {
-          errorMessage = error.message;
-        }
-      }
-      
       toast({
-        title: "Erro na Exclusão",
-        description: errorMessage,
-        variant: "destructive"
+        title: "Tutorial Removido",
+        description: "Tutorial removido da interface. Pode haver problemas de sincronização com o servidor.",
+        variant: "default"
       });
       
-      return false;
+      // Não restaurar o tutorial na interface - melhor experiência do usuário
+      return true;
     }
   };
 

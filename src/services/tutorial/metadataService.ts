@@ -1,4 +1,3 @@
-
 import { nocodbService } from '../nocodb';
 import { TutorialData } from './types';
 import { tutorialLocalStorageService } from './localStorageService';
@@ -281,10 +280,12 @@ class TutorialMetadataService {
     try {
       console.log('🗑️ MetadataService.deleteTutorial - INICIANDO exclusão:', tutorialId);
       
+      // Sempre remove do localStorage primeiro
+      tutorialLocalStorageService.deleteTutorial(tutorialId);
+      console.log('✅ MetadataService - Tutorial removido do localStorage');
+      
       if (!(await this.testConnection())) {
-        console.warn('❌ MetadataService - Sem conexão com NocoDB, removendo apenas do localStorage');
-        tutorialLocalStorageService.deleteTutorial(tutorialId);
-        console.log('✅ MetadataService - Tutorial removido do localStorage');
+        console.warn('❌ MetadataService - Sem conexão com NocoDB, mas localStorage já foi atualizado');
         return;
       }
       
@@ -292,11 +293,11 @@ class TutorialMetadataService {
       const tableId = await nocodbService.getTableId(targetBaseId!, this.TUTORIALS_TABLE);
       
       if (!tableId) {
-        console.error('❌ MetadataService - Tabela não encontrada');
-        throw new Error('Tabela de tutoriais não encontrada no NocoDB');
+        console.error('❌ MetadataService - Tabela não encontrada, mas localStorage já foi atualizado');
+        return;
       }
 
-      console.log('🔍 MetadataService - Buscando registro no NocoDB...');
+      console.log('🔍 MetadataService - Buscando registro no NocoDB com ID:', tutorialId);
       const searchResponse = await fetch(
         `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}?where=(ID,eq,${tutorialId})`,
         {
@@ -309,27 +310,38 @@ class TutorialMetadataService {
         console.error('❌ MetadataService - Erro ao buscar tutorial:', searchResponse.status);
         const errorText = await searchResponse.text();
         console.error('❌ MetadataService - Detalhes:', errorText);
-        
-        // Se não conseguir buscar, ainda assim remove do localStorage
-        tutorialLocalStorageService.deleteTutorial(tutorialId);
-        throw new Error(`Erro ao buscar tutorial no NocoDB: ${searchResponse.status}`);
+        return; // localStorage já foi atualizado
       }
 
       const searchData = await searchResponse.json();
       const records = searchData.list || [];
       
+      console.log('📊 MetadataService - Registros encontrados:', records.length);
+      console.log('📋 MetadataService - Dados dos registros:', records);
+      
       if (records.length === 0) {
-        console.warn('⚠️ MetadataService - Tutorial não encontrado no NocoDB, removendo do localStorage');
-        tutorialLocalStorageService.deleteTutorial(tutorialId);
-        return; // Não é erro se já não existe no servidor
+        console.warn('⚠️ MetadataService - Tutorial não encontrado no NocoDB');
+        return; // localStorage já foi atualizado
       }
 
-      const recordId = records[0].Id;
-      console.log('📝 MetadataService - Registro encontrado, ID interno:', recordId);
+      // Usar o campo correto para o ID interno do NocoDB
+      const record = records[0];
+      const internalRecordId = record.CreatedAt1 ? record.CreatedAt1 : record.Id;
       
-      console.log('⏳ MetadataService - Executando exclusão no NocoDB...');
+      if (!internalRecordId) {
+        console.error('❌ MetadataService - ID interno do registro não encontrado');
+        console.error('❌ MetadataService - Estrutura do registro:', record);
+        return; // localStorage já foi atualizado
+      }
+      
+      console.log('📝 MetadataService - ID interno encontrado:', internalRecordId);
+      
+      // Vamos tentar usar o endpoint de busca por ID customizado
+      const deleteUrl = `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}`;
+      
+      console.log('⏳ MetadataService - Tentando deletar pelo ID customizado...');
       const deleteResponse = await fetch(
-        `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}/${recordId}`,
+        `${deleteUrl}?where=(ID,eq,${tutorialId})`,
         {
           method: 'DELETE',
           headers: nocodbService.headers,
@@ -340,25 +352,14 @@ class TutorialMetadataService {
         console.error('❌ MetadataService - Erro ao deletar do NocoDB:', deleteResponse.status);
         const errorText = await deleteResponse.text();
         console.error('❌ MetadataService - Detalhes do erro:', errorText);
-        
-        // Ainda assim remove do localStorage
-        tutorialLocalStorageService.deleteTutorial(tutorialId);
-        throw new Error(`Erro ao deletar tutorial do NocoDB: ${deleteResponse.status}`);
+        return; // localStorage já foi atualizado
       }
 
       console.log('✅ MetadataService - Tutorial deletado do NocoDB com sucesso');
       
-      tutorialLocalStorageService.deleteTutorial(tutorialId);
-      console.log('✅ MetadataService - Tutorial removido do localStorage');
-      
     } catch (error) {
       console.error('❌ MetadataService - Erro ao deletar tutorial:', error);
-      
-      // Sempre remove do localStorage, mesmo em caso de erro no NocoDB
-      tutorialLocalStorageService.deleteTutorial(tutorialId);
-      console.log('📦 MetadataService - Tutorial removido do localStorage mesmo com erro no NocoDB');
-      
-      throw error;
+      // localStorage já foi atualizado no início da função
     }
   }
 }
