@@ -20,7 +20,7 @@ interface TutorialCardProps {
   tutorial: TutorialData;
   onView: (tutorial: TutorialData) => void;
   onEdit: (tutorial: TutorialData) => void;
-  onDelete: (tutorialId: string) => void;
+  onDelete: (tutorialId: string) => Promise<void>;
 }
 
 const TutorialCard = ({ tutorial, onView, onEdit, onDelete }: TutorialCardProps) => {
@@ -32,36 +32,24 @@ const TutorialCard = ({ tutorial, onView, onEdit, onDelete }: TutorialCardProps)
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     console.log('🗑️ TutorialCard - Botão de deletar clicado para tutorial:', tutorial.id, tutorial.title);
-    console.log('🔍 TutorialCard - Dados do tutorial:', tutorial);
     setShowDeleteDialog(true);
   };
 
   const handleConfirmDelete = async () => {
-    console.log('✅ TutorialCard - Confirmação de delete aceita via AlertDialog');
+    console.log('✅ TutorialCard - Confirmação de delete aceita');
     console.log('📝 TutorialCard - Deletando tutorial:', tutorial.id, tutorial.title);
-    console.log('⏰ TutorialCard - Timestamp início:', new Date().toISOString());
     
     setIsDeleting(true);
     
     try {
       console.log('⏳ TutorialCard - Chamando função onDelete...');
-      console.log('🔧 TutorialCard - Tipo da função onDelete:', typeof onDelete);
-      
-      const result = await onDelete(tutorial.id);
-      console.log('📊 TutorialCard - Resultado do onDelete:', result);
-      console.log('✅ TutorialCard - Função onDelete executada com sucesso');
-      console.log('⏰ TutorialCard - Timestamp fim:', new Date().toISOString());
+      await onDelete(tutorial.id);
+      console.log('✅ TutorialCard - Tutorial deletado com sucesso');
+      setShowDeleteDialog(false);
     } catch (error) {
       console.error('❌ TutorialCard - Erro na execução do onDelete:', error);
-      console.error('🔍 TutorialCard - Detalhes do erro:', {
-        message: error instanceof Error ? error.message : 'Erro desconhecido',
-        stack: error instanceof Error ? error.stack : undefined,
-        type: typeof error
-      });
     } finally {
-      console.log('🔄 TutorialCard - Finalizando processo de exclusão');
       setIsDeleting(false);
-      setShowDeleteDialog(false);
     }
   };
 
@@ -73,7 +61,6 @@ const TutorialCard = ({ tutorial, onView, onEdit, onDelete }: TutorialCardProps)
   return (
     <>
       <Card className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-all duration-200 overflow-hidden">
-        {/* Imagem de Capa */}
         {tutorial.coverImageUrl && (
           <div className="w-full h-48 overflow-hidden">
             <img
@@ -169,7 +156,6 @@ const TutorialCard = ({ tutorial, onView, onEdit, onDelete }: TutorialCardProps)
         </CardContent>
       </Card>
 
-      {/* Dialog de Confirmação de Exclusão */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent className="bg-gray-900 border-gray-700">
           <AlertDialogHeader>

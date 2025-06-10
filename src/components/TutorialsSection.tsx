@@ -23,38 +23,41 @@ const TutorialsSection = () => {
     setTutorialsCount(tutorials.length);
   }, [tutorials]);
 
-  // Force refresh on component mount and periodically
   useEffect(() => {
     console.log('🔄 TutorialsSection montado, forçando refresh...');
-    
-    // Refresh imediato
     refreshTutorials();
     
-    // Refresh periódico para garantir sincronização
     const interval = setInterval(() => {
       console.log('⏰ Refresh automático de tutoriais...');
       refreshTutorials();
-    }, 30000); // A cada 30 segundos
+    }, 30000);
     
     return () => clearInterval(interval);
   }, []);
 
-  const handleDeleteTutorial = async (tutorialId: string) => {
-    console.log('🗑️ Tentativa de deletar tutorial:', tutorialId);
+  const handleDeleteTutorial = async (tutorialId: string): Promise<void> => {
+    console.log('🗑️ TutorialsSection.handleDeleteTutorial - INICIANDO:', tutorialId);
     
-    const success = await deleteTutorial(tutorialId);
-    console.log('🔄 Resultado da exclusão:', success);
-    
-    if (success) {
-      console.log('✅ Tutorial deletado com sucesso');
-    } else {
-      console.log('❌ Falha ao deletar tutorial');
+    try {
+      const success = await deleteTutorial(tutorialId);
+      console.log('🔄 TutorialsSection.handleDeleteTutorial - Resultado:', success);
+      
+      if (success) {
+        console.log('✅ TutorialsSection.handleDeleteTutorial - Sucesso, forçando refresh...');
+        // Forçar refresh imediato
+        await refreshTutorials();
+      } else {
+        console.log('❌ TutorialsSection.handleDeleteTutorial - Falha na exclusão');
+        throw new Error('Falha na exclusão do tutorial');
+      }
+    } catch (error) {
+      console.error('❌ TutorialsSection.handleDeleteTutorial - ERRO:', error);
+      throw error;
     }
   };
 
   const handleCreateModalClose = () => {
     setIsCreateModalOpen(false);
-    // Forçar uma atualização adicional após fechar o modal
     setTimeout(() => {
       refreshTutorials();
     }, 100);
@@ -66,7 +69,6 @@ const TutorialsSection = () => {
 
   const handleEditModalClose = () => {
     setEditingTutorial(null);
-    // Forçar uma atualização adicional após fechar o modal
     setTimeout(() => {
       refreshTutorials();
     }, 100);
@@ -100,13 +102,11 @@ const TutorialsSection = () => {
 
   return (
     <div className="space-y-8" key={`tutorials-${tutorialsCount}-${Date.now()}`}>
-      {/* Header da Seção */}
       <TutorialsSectionHeader
         tutorialsCount={tutorialsCount}
         onCreateClick={() => setIsCreateModalOpen(true)}
       />
 
-      {/* Debug Info Melhorado */}
       <div className="text-xs text-gray-500 p-3 bg-gray-800/20 rounded">
         <div>Debug: {tutorialsCount} tutoriais carregados | Última atualização: {new Date().toLocaleTimeString()}</div>
         <div className="mt-1">Status: {loading ? 'Carregando...' : 'Pronto'}</div>
@@ -115,7 +115,6 @@ const TutorialsSection = () => {
         )}
       </div>
 
-      {/* Tutoriais por Categoria */}
       {Object.entries(groupedTutorials).map(([category, categoryTutorials]) => (
         <TutorialCategorySection
           key={`${category}-${categoryTutorials.length}-${Date.now()}`}
@@ -127,14 +126,12 @@ const TutorialsSection = () => {
         />
       ))}
 
-      {/* Estado Vazio */}
       {tutorials.length === 0 && (
         <EmptyTutorialsState
           onCreateClick={() => setIsCreateModalOpen(true)}
         />
       )}
 
-      {/* Modais */}
       <CreateTutorialModal
         isOpen={isCreateModalOpen}
         onClose={handleCreateModalClose}

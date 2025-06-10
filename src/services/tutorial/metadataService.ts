@@ -1,3 +1,4 @@
+
 import { nocodbService } from '../nocodb';
 import { TutorialData } from './types';
 import { tutorialLocalStorageService } from './localStorageService';
@@ -31,7 +32,6 @@ class TutorialMetadataService {
         return false;
       }
 
-      // Fazer uma requisição simples para testar conectividade
       const response = await fetch(`${nocodbService.config.baseUrl}/api/v1/db/meta/projects/${targetBaseId}/tables`, {
         method: 'GET',
         headers: nocodbService.headers,
@@ -67,7 +67,6 @@ class TutorialMetadataService {
         return;
       }
       
-      // Garantir que a tabela existe
       await nocodbService.ensureTableExists(this.TUTORIALS_TABLE);
       console.log('✅ Tabela de tutoriais verificada/criada');
       
@@ -80,7 +79,6 @@ class TutorialMetadataService {
     try {
       console.log('🔍 Buscando tutoriais...');
       
-      // Forçar um novo teste de conexão
       this.connectionTested = false;
       
       if (!(await this.testConnection())) {
@@ -88,7 +86,6 @@ class TutorialMetadataService {
         return tutorialLocalStorageService.getTutorials();
       }
       
-      // Garantir que a tabela existe primeiro
       await this.ensureTutorialsTable();
       
       const targetBaseId = nocodbService.getTargetBaseId();
@@ -116,7 +113,7 @@ class TutorialMetadataService {
         const tutorials = (data.list || []).map((item: any) => {
           console.log('🔄 Processando item:', item);
           return {
-            id: item.ID || item.id, // Tentar ambas as variações
+            id: item.ID || item.id,
             title: item.Title || item.title,
             description: item.Description || item.description,
             videoUrl: item.VideoUrl || item.videoUrl || undefined,
@@ -131,7 +128,6 @@ class TutorialMetadataService {
         console.log('✅ Tutoriais processados:', tutorials.length, 'itens');
         console.log('📋 Tutoriais processados:', tutorials);
         
-        // Sincronizar com localStorage como backup
         tutorials.forEach(tutorial => {
           tutorialLocalStorageService.saveTutorial(tutorial);
         });
@@ -159,7 +155,6 @@ class TutorialMetadataService {
         return;
       }
       
-      // Garantir que a tabela existe
       await this.ensureTutorialsTable();
       
       const targetBaseId = nocodbService.getTargetBaseId();
@@ -192,7 +187,6 @@ class TutorialMetadataService {
 
       if (response.ok) {
         console.log('✅ Tutorial salvo no NocoDB com sucesso!');
-        // Salvar também no localStorage como backup
         tutorialLocalStorageService.saveTutorial(tutorial);
       } else {
         const errorText = await response.text();
@@ -202,7 +196,6 @@ class TutorialMetadataService {
     } catch (error) {
       console.error('❌ Erro ao salvar metadata no NocoDB:', error);
       
-      // Fallback para localStorage
       console.log('📦 Salvando no localStorage como fallback...');
       tutorialLocalStorageService.saveTutorial(tutorial);
       console.log('✅ Tutorial salvo no localStorage como fallback');
@@ -226,7 +219,6 @@ class TutorialMetadataService {
         throw new Error('Tabela de tutoriais não encontrada');
       }
 
-      // Primeiro, encontrar o registro pelo ID customizado usando o nome correto da coluna
       const searchResponse = await fetch(
         `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}?where=(ID,eq,${tutorial.id})`,
         {
@@ -240,7 +232,7 @@ class TutorialMetadataService {
         const records = searchData.list || [];
         
         if (records.length > 0) {
-          const recordId = records[0].Id; // ID interno do NocoDB (auto-increment)
+          const recordId = records[0].Id;
           
           const tutorialData = {
             Title: tutorial.title,
@@ -252,7 +244,6 @@ class TutorialMetadataService {
             UpdatedAt: tutorial.updatedAt
           };
 
-          // Atualizar o registro
           const updateResponse = await fetch(
             `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}/${recordId}`,
             {
@@ -267,7 +258,6 @@ class TutorialMetadataService {
 
           if (updateResponse.ok) {
             console.log('✅ Tutorial atualizado no NocoDB com sucesso!');
-            // Atualizar também no localStorage como backup
             tutorialLocalStorageService.saveTutorial(tutorial);
           } else {
             const errorText = await updateResponse.text();
@@ -281,7 +271,6 @@ class TutorialMetadataService {
     } catch (error) {
       console.error('❌ Erro ao atualizar metadata no NocoDB:', error);
       
-      // Fallback para localStorage
       console.log('📦 Salvando no localStorage como fallback...');
       tutorialLocalStorageService.saveTutorial(tutorial);
       console.log('✅ Tutorial atualizado no localStorage como fallback');
@@ -290,11 +279,13 @@ class TutorialMetadataService {
 
   async deleteTutorial(tutorialId: string): Promise<void> {
     try {
-      console.log('🗑️ MetadataService - Deletando tutorial:', tutorialId);
+      console.log('🗑️ MetadataService.deleteTutorial - INICIANDO exclusão:', tutorialId);
       
       if (!(await this.testConnection())) {
-        console.warn('❌ MetadataService - Sem conexão com NocoDB');
-        throw new Error('Falha na conexão com o NocoDB. Verifique sua conexão de internet.');
+        console.warn('❌ MetadataService - Sem conexão com NocoDB, removendo apenas do localStorage');
+        tutorialLocalStorageService.deleteTutorial(tutorialId);
+        console.log('✅ MetadataService - Tutorial removido do localStorage');
+        return;
       }
       
       const targetBaseId = nocodbService.getTargetBaseId();
@@ -305,7 +296,6 @@ class TutorialMetadataService {
         throw new Error('Tabela de tutoriais não encontrada no NocoDB');
       }
 
-      // Primeiro, encontrar o registro pelo ID customizado usando o nome correto da coluna
       console.log('🔍 MetadataService - Buscando registro no NocoDB...');
       const searchResponse = await fetch(
         `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}?where=(ID,eq,${tutorialId})`,
@@ -317,6 +307,11 @@ class TutorialMetadataService {
 
       if (!searchResponse.ok) {
         console.error('❌ MetadataService - Erro ao buscar tutorial:', searchResponse.status);
+        const errorText = await searchResponse.text();
+        console.error('❌ MetadataService - Detalhes:', errorText);
+        
+        // Se não conseguir buscar, ainda assim remove do localStorage
+        tutorialLocalStorageService.deleteTutorial(tutorialId);
         throw new Error(`Erro ao buscar tutorial no NocoDB: ${searchResponse.status}`);
       }
 
@@ -324,16 +319,14 @@ class TutorialMetadataService {
       const records = searchData.list || [];
       
       if (records.length === 0) {
-        console.warn('⚠️ MetadataService - Tutorial não encontrado no NocoDB');
-        // Remover do localStorage mesmo que não esteja no NocoDB
+        console.warn('⚠️ MetadataService - Tutorial não encontrado no NocoDB, removendo do localStorage');
         tutorialLocalStorageService.deleteTutorial(tutorialId);
-        throw new Error('Tutorial não encontrado no servidor');
+        return; // Não é erro se já não existe no servidor
       }
 
-      const recordId = records[0].Id; // ID interno do NocoDB (auto-increment)
+      const recordId = records[0].Id;
       console.log('📝 MetadataService - Registro encontrado, ID interno:', recordId);
       
-      // Deletar o registro
       console.log('⏳ MetadataService - Executando exclusão no NocoDB...');
       const deleteResponse = await fetch(
         `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}/${recordId}`,
@@ -347,18 +340,25 @@ class TutorialMetadataService {
         console.error('❌ MetadataService - Erro ao deletar do NocoDB:', deleteResponse.status);
         const errorText = await deleteResponse.text();
         console.error('❌ MetadataService - Detalhes do erro:', errorText);
+        
+        // Ainda assim remove do localStorage
+        tutorialLocalStorageService.deleteTutorial(tutorialId);
         throw new Error(`Erro ao deletar tutorial do NocoDB: ${deleteResponse.status}`);
       }
 
       console.log('✅ MetadataService - Tutorial deletado do NocoDB com sucesso');
       
-      // Remover do localStorage também
       tutorialLocalStorageService.deleteTutorial(tutorialId);
       console.log('✅ MetadataService - Tutorial removido do localStorage');
       
     } catch (error) {
       console.error('❌ MetadataService - Erro ao deletar tutorial:', error);
-      throw error; // Re-lançar para que o serviço principal possa tratar
+      
+      // Sempre remove do localStorage, mesmo em caso de erro no NocoDB
+      tutorialLocalStorageService.deleteTutorial(tutorialId);
+      console.log('📦 MetadataService - Tutorial removido do localStorage mesmo com erro no NocoDB');
+      
+      throw error;
     }
   }
 }
