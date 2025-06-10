@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Video, FileText, Trash2, Play } from 'lucide-react';
+import { Video, FileText, Trash2, Play, Image } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { TutorialData } from '@/services/tutorialService';
 
@@ -17,12 +17,25 @@ const TutorialCard = ({ tutorial, onView, onDelete }: TutorialCardProps) => {
   const isAdmin = user?.Email === 'kona@admin.com';
 
   return (
-    <Card className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-all duration-200">
+    <Card className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-all duration-200 overflow-hidden">
+      {/* Imagem de Capa */}
+      {tutorial.coverImageUrl && (
+        <div className="w-full h-48 overflow-hidden">
+          <img
+            src={tutorial.coverImageUrl}
+            alt={tutorial.title}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
+      
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-3 mb-2">
             <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-              {tutorial.videoUrl ? (
+              {tutorial.coverImageUrl ? (
+                <Image className="w-5 h-5 text-blue-400" />
+              ) : tutorial.videoUrl ? (
                 <Video className="w-5 h-5 text-blue-400" />
               ) : (
                 <FileText className="w-5 h-5 text-blue-400" />
@@ -70,6 +83,12 @@ const TutorialCard = ({ tutorial, onView, onDelete }: TutorialCardProps) => {
               <div className="flex items-center space-x-1">
                 <FileText className="w-3 h-3" />
                 <span>{tutorial.documentUrls.length} doc(s)</span>
+              </div>
+            )}
+            {tutorial.coverImageUrl && (
+              <div className="flex items-center space-x-1">
+                <Image className="w-3 h-3" />
+                <span>Capa</span>
               </div>
             )}
           </div>

@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useTutorials } from '@/hooks/useTutorials';
 import { CreateTutorialData } from '@/services/tutorialService';
 import BasicInfoForm from './CreateTutorialModal/BasicInfoForm';
+import CoverImageUploadSection from './CreateTutorialModal/CoverImageUploadSection';
 import VideoUploadSection from './CreateTutorialModal/VideoUploadSection';
 import DocumentUploadSection from './CreateTutorialModal/DocumentUploadSection';
 import FormActions from './CreateTutorialModal/FormActions';
@@ -22,6 +23,7 @@ const CreateTutorialModal = ({ isOpen, onClose }: CreateTutorialModalProps) => {
     documentFiles: []
   });
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +34,8 @@ const CreateTutorialModal = ({ isOpen, onClose }: CreateTutorialModalProps) => {
 
     const tutorialData: CreateTutorialData = {
       ...formData,
-      videoFile: videoFile || undefined
+      videoFile: videoFile || undefined,
+      coverImageFile: coverImageFile || undefined
     };
 
     const success = await createTutorial(tutorialData);
@@ -46,6 +49,7 @@ const CreateTutorialModal = ({ isOpen, onClose }: CreateTutorialModalProps) => {
         documentFiles: []
       });
       setVideoFile(null);
+      setCoverImageFile(null);
       onClose();
     }
   };
@@ -75,6 +79,12 @@ const CreateTutorialModal = ({ isOpen, onClose }: CreateTutorialModalProps) => {
             onTitleChange={(title) => setFormData(prev => ({ ...prev, title }))}
             onDescriptionChange={(description) => setFormData(prev => ({ ...prev, description }))}
             onCategoryChange={(category) => setFormData(prev => ({ ...prev, category }))}
+          />
+
+          <CoverImageUploadSection
+            coverImageFile={coverImageFile}
+            onCoverImageChange={setCoverImageFile}
+            formatFileSize={formatFileSize}
           />
 
           <VideoUploadSection

@@ -47,6 +47,7 @@ class TutorialMetadataService {
           description: item.description || item.Description,
           videoUrl: item.videoUrl || item.VideoUrl || undefined,
           documentUrls: this.parseDocumentUrls(item.documentUrls || item.DocumentUrls || ''),
+          coverImageUrl: item.coverImageUrl || item.CoverImageUrl || undefined,
           category: item.category || item.Category,
           createdAt: item.createdAt || item.CreatedAt,
           updatedAt: item.updatedAt || item.UpdatedAt
@@ -88,6 +89,7 @@ class TutorialMetadataService {
         description: tutorial.description,
         videoUrl: tutorial.videoUrl || null,
         documentUrls: JSON.stringify(tutorial.documentUrls),
+        coverImageUrl: tutorial.coverImageUrl || null,
         category: tutorial.category,
         createdAt: tutorial.createdAt,
         updatedAt: tutorial.updatedAt

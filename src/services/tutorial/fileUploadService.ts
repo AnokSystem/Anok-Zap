@@ -5,14 +5,33 @@ import { UploadResult } from './types';
 class TutorialFileUploadService {
   private readonly TUTORIALS_FOLDER = 'tutoriais';
 
-  async uploadTutorialFiles(tutorialId: string, videoFile?: File, documentFiles: File[] = []): Promise<UploadResult> {
+  async uploadTutorialFiles(tutorialId: string, videoFile?: File, documentFiles: File[] = [], coverImageFile?: File): Promise<UploadResult> {
     const results: UploadResult = {
       videoUrl: undefined,
-      documentUrls: []
+      documentUrls: [],
+      coverImageUrl: undefined
     };
 
     try {
       console.log(`Iniciando upload de arquivos para tutorial: ${tutorialId}`);
+
+      // Upload da imagem de capa se fornecida
+      if (coverImageFile) {
+        console.log('Fazendo upload da imagem de capa...');
+        try {
+          const timestamp = Date.now();
+          const fileExtension = coverImageFile.name.split('.').pop() || 'jpg';
+          const coverImageFileName = `${this.TUTORIALS_FOLDER}/${tutorialId}/capa/cover_${timestamp}.${fileExtension}`;
+          
+          const renamedCoverFile = new File([coverImageFile], coverImageFileName, { type: coverImageFile.type });
+          
+          results.coverImageUrl = await minioService.uploadFile(renamedCoverFile);
+          console.log('Imagem de capa enviada com sucesso:', results.coverImageUrl);
+        } catch (error) {
+          console.error('Erro no upload da imagem de capa:', error);
+          throw new Error('Falha no upload da imagem de capa');
+        }
+      }
 
       // Upload video se fornecido
       if (videoFile) {
@@ -62,7 +81,17 @@ class TutorialFileUploadService {
     }
   }
 
-  async deleteFiles(videoUrl?: string, documentUrls: string[] = []): Promise<void> {
+  async deleteFiles(videoUrl?: string, documentUrls: string[] = [], coverImageUrl?: string): Promise<void> {
+    // Deletar imagem de capa se existir
+    if (coverImageUrl) {
+      try {
+        await minioService.deleteFile(coverImageUrl);
+        console.log('Imagem de capa deletada do MinIO');
+      } catch (error) {
+        console.error('Erro ao deletar imagem de capa:', error);
+      }
+    }
+
     // Deletar vídeo se existir
     if (videoUrl) {
       try {

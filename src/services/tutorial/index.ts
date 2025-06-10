@@ -13,10 +13,11 @@ class TutorialService {
       console.log('Iniciando uploads dos arquivos...');
 
       // Upload dos arquivos
-      const { videoUrl, documentUrls } = await tutorialFileUploadService.uploadTutorialFiles(
+      const { videoUrl, documentUrls, coverImageUrl } = await tutorialFileUploadService.uploadTutorialFiles(
         tutorialId,
         data.videoFile,
-        data.documentFiles
+        data.documentFiles,
+        data.coverImageFile
       );
 
       console.log('Uploads concluídos, criando metadata...');
@@ -28,6 +29,7 @@ class TutorialService {
         description: data.description,
         videoUrl,
         documentUrls,
+        coverImageUrl,
         category: data.category,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -57,7 +59,7 @@ class TutorialService {
       
       if (tutorial) {
         // Deletar arquivos do MinIO
-        await tutorialFileUploadService.deleteFiles(tutorial.videoUrl, tutorial.documentUrls);
+        await tutorialFileUploadService.deleteFiles(tutorial.videoUrl, tutorial.documentUrls, tutorial.coverImageUrl);
         
         // Deletar metadata
         await tutorialMetadataService.deleteTutorial(tutorialId);

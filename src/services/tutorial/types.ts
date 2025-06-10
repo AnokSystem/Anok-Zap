@@ -6,6 +6,7 @@ export interface TutorialData {
   videoUrl?: string;
   documentUrls: string[];
   category: string;
+  coverImageUrl?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -16,9 +17,11 @@ export interface CreateTutorialData {
   category: string;
   videoFile?: File;
   documentFiles: File[];
+  coverImageFile?: File;
 }
 
 export interface UploadResult {
   videoUrl?: string;
   documentUrls: string[];
+  coverImageUrl?: string;
 }
