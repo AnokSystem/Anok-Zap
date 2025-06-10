@@ -1,5 +1,6 @@
 
 import { minioService } from './minio';
+import { nocodbService } from './nocodb';
 
 export interface TutorialData {
   id: string;
@@ -22,7 +23,7 @@ export interface CreateTutorialData {
 
 class TutorialService {
   private readonly TUTORIALS_FOLDER = 'tutoriais';
-  private readonly METADATA_KEY = 'tutoriais_metadata';
+  private readonly TUTORIALS_TABLE = 'Tutoriais';
 
   async uploadTutorialFiles(tutorialId: string, videoFile?: File, documentFiles: File[] = []): Promise<{ videoUrl?: string; documentUrls: string[] }> {
     const results = {
@@ -109,7 +110,7 @@ class TutorialService {
         updatedAt: new Date().toISOString()
       };
 
-      // Salvar metadata
+      // Salvar metadata no NocoDB
       await this.saveTutorialMetadata(tutorial);
 
       console.log('Tutorial criado com sucesso:', tutorial);
@@ -122,9 +123,57 @@ class TutorialService {
 
   async getTutorials(): Promise<TutorialData[]> {
     try {
-      console.log('Buscando tutoriais...');
+      console.log('Buscando tutoriais do NocoDB...');
       
-      const stored = localStorage.getItem(this.METADATA_KEY);
+      // Garantir que a tabela existe
+      await nocodbService.ensureTableExists(this.TUTORIALS_TABLE);
+      
+      const targetBaseId = nocodbService.getTargetBaseId();
+      if (!targetBaseId) {
+        console.warn('Base do NocoDB não encontrada, usando localStorage como fallback');
+        return this.getTutorialsFromLocalStorage();
+      }
+
+      const tableId = await nocodbService.getTableId(targetBaseId, this.TUTORIALS_TABLE);
+      if (!tableId) {
+        console.warn('Tabela de tutoriais não encontrada, usando localStorage como fallback');
+        return this.getTutorialsFromLocalStorage();
+      }
+
+      const response = await fetch(`${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}`, {
+        method: 'GET',
+        headers: nocodbService.headers,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const tutorials = (data.list || []).map((item: any) => ({
+          id: item.id || item.Id,
+          title: item.title || item.Title,
+          description: item.description || item.Description,
+          videoUrl: item.videoUrl || item.VideoUrl || undefined,
+          documentUrls: this.parseDocumentUrls(item.documentUrls || item.DocumentUrls || ''),
+          category: item.category || item.Category,
+          createdAt: item.createdAt || item.CreatedAt,
+          updatedAt: item.updatedAt || item.UpdatedAt
+        }));
+        
+        console.log('Tutoriais carregados do NocoDB:', tutorials.length, 'itens');
+        return tutorials;
+      } else {
+        console.warn('Erro ao buscar tutoriais do NocoDB, usando localStorage como fallback');
+        return this.getTutorialsFromLocalStorage();
+      }
+    } catch (error) {
+      console.error('Erro ao buscar tutoriais do NocoDB:', error);
+      console.log('Usando localStorage como fallback');
+      return this.getTutorialsFromLocalStorage();
+    }
+  }
+
+  private getTutorialsFromLocalStorage(): TutorialData[] {
+    try {
+      const stored = localStorage.getItem('tutoriais_metadata');
       if (stored) {
         const tutorials = JSON.parse(stored);
         console.log('Tutoriais carregados do localStorage:', tutorials.length, 'itens');
@@ -134,18 +183,20 @@ class TutorialService {
           tutorial.id && tutorial.title && tutorial.description && tutorial.category
         );
         
-        if (validTutorials.length !== tutorials.length) {
-          console.warn('Alguns tutoriais tinham dados inválidos e foram filtrados');
-          localStorage.setItem(this.METADATA_KEY, JSON.stringify(validTutorials));
-        }
-        
         return validTutorials;
       }
-
-      console.log('Nenhum tutorial salvo, retornando array vazio');
       return [];
     } catch (error) {
-      console.error('Erro ao buscar tutoriais:', error);
+      console.error('Erro ao buscar tutoriais do localStorage:', error);
+      return [];
+    }
+  }
+
+  private parseDocumentUrls(documentUrls: string): string[] {
+    if (!documentUrls) return [];
+    try {
+      return JSON.parse(documentUrls);
+    } catch {
       return [];
     }
   }
@@ -178,10 +229,13 @@ class TutorialService {
           }
         }
         
-        // Remover da lista local
-        const updatedTutorials = tutorials.filter(t => t.id !== tutorialId);
-        localStorage.setItem(this.METADATA_KEY, JSON.stringify(updatedTutorials));
-        console.log('Tutorial removido do localStorage');
+        // Deletar do NocoDB
+        await this.deleteTutorialFromNocoDB(tutorialId);
+        
+        // Remover do localStorage também (fallback)
+        const storedTutorials = this.getTutorialsFromLocalStorage();
+        const updatedTutorials = storedTutorials.filter(t => t.id !== tutorialId);
+        localStorage.setItem('tutoriais_metadata', JSON.stringify(updatedTutorials));
       }
       
       console.log('Tutorial deletado com sucesso');
@@ -192,45 +246,116 @@ class TutorialService {
     }
   }
 
-  private async saveTutorialMetadata(tutorial: TutorialData): Promise<void> {
+  private async deleteTutorialFromNocoDB(tutorialId: string): Promise<void> {
     try {
-      console.log('Salvando metadata do tutorial:', tutorial.id);
-      
-      const existing = await this.getTutorials();
-      console.log('Tutoriais existentes:', existing.length);
-      
-      // Remover tutorial existente com mesmo ID e adicionar o novo
-      const filtered = existing.filter(t => t.id !== tutorial.id);
-      const updated = [...filtered, tutorial];
-      
-      // Salvar no localStorage com nova chave
-      localStorage.setItem(this.METADATA_KEY, JSON.stringify(updated));
-      console.log('Metadata do tutorial salva. Total de tutoriais:', updated.length);
-      
-      // Verificar se foi salvo corretamente
-      const verification = localStorage.getItem(this.METADATA_KEY);
-      if (verification) {
-        const parsed = JSON.parse(verification);
-        const savedTutorial = parsed.find((t: TutorialData) => t.id === tutorial.id);
-        if (savedTutorial) {
-          console.log('✅ Tutorial salvo e verificado com sucesso!');
-        } else {
-          console.error('❌ Erro: Tutorial não encontrado após salvamento');
-          throw new Error('Tutorial não foi salvo corretamente');
+      const targetBaseId = nocodbService.getTargetBaseId();
+      if (!targetBaseId) return;
+
+      const tableId = await nocodbService.getTableId(targetBaseId, this.TUTORIALS_TABLE);
+      if (!tableId) return;
+
+      // Primeiro, encontrar o registro pelo ID customizado
+      const searchResponse = await fetch(
+        `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}?where=(id,eq,${tutorialId})`,
+        {
+          method: 'GET',
+          headers: nocodbService.headers,
         }
-      } else {
-        throw new Error('Erro ao verificar salvamento no localStorage');
+      );
+
+      if (searchResponse.ok) {
+        const searchData = await searchResponse.json();
+        const records = searchData.list || [];
+        
+        if (records.length > 0) {
+          const recordId = records[0].Id; // ID interno do NocoDB
+          
+          // Deletar o registro
+          const deleteResponse = await fetch(
+            `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}/${recordId}`,
+            {
+              method: 'DELETE',
+              headers: nocodbService.headers,
+            }
+          );
+
+          if (deleteResponse.ok) {
+            console.log('Tutorial deletado do NocoDB');
+          }
+        }
       }
     } catch (error) {
-      console.error('Erro ao salvar metadata:', error);
-      throw error;
+      console.error('Erro ao deletar tutorial do NocoDB:', error);
+    }
+  }
+
+  private async saveTutorialMetadata(tutorial: TutorialData): Promise<void> {
+    try {
+      console.log('Salvando metadata do tutorial no NocoDB:', tutorial.id);
+      
+      // Garantir que a tabela existe
+      await nocodbService.ensureTableExists(this.TUTORIALS_TABLE);
+      
+      const targetBaseId = nocodbService.getTargetBaseId();
+      if (!targetBaseId) {
+        throw new Error('Base do NocoDB não encontrada');
+      }
+
+      const tableId = await nocodbService.getTableId(targetBaseId, this.TUTORIALS_TABLE);
+      if (!tableId) {
+        throw new Error('Tabela de tutoriais não encontrada');
+      }
+
+      const tutorialData = {
+        id: tutorial.id,
+        title: tutorial.title,
+        description: tutorial.description,
+        videoUrl: tutorial.videoUrl || null,
+        documentUrls: JSON.stringify(tutorial.documentUrls),
+        category: tutorial.category,
+        createdAt: tutorial.createdAt,
+        updatedAt: tutorial.updatedAt
+      };
+
+      const response = await fetch(`${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}`, {
+        method: 'POST',
+        headers: {
+          ...nocodbService.headers,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(tutorialData),
+      });
+
+      if (response.ok) {
+        console.log('✅ Tutorial salvo no NocoDB com sucesso!');
+        
+        // Salvar também no localStorage como backup
+        const existing = this.getTutorialsFromLocalStorage();
+        const filtered = existing.filter(t => t.id !== tutorial.id);
+        const updated = [...filtered, tutorial];
+        localStorage.setItem('tutoriais_metadata', JSON.stringify(updated));
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Erro ao salvar no NocoDB:', response.status, errorText);
+        throw new Error(`Erro ao salvar tutorial no NocoDB: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Erro ao salvar metadata no NocoDB:', error);
+      
+      // Fallback para localStorage
+      console.log('Salvando no localStorage como fallback...');
+      const existing = this.getTutorialsFromLocalStorage();
+      const filtered = existing.filter(t => t.id !== tutorial.id);
+      const updated = [...filtered, tutorial];
+      localStorage.setItem('tutoriais_metadata', JSON.stringify(updated));
+      console.log('Tutorial salvo no localStorage como fallback');
     }
   }
 
   async clearAllTutorials(): Promise<void> {
     try {
-      localStorage.removeItem(this.METADATA_KEY);
-      console.log('Todos os tutoriais foram removidos');
+      localStorage.removeItem('tutoriais_metadata');
+      console.log('Todos os tutoriais foram removidos do localStorage');
     } catch (error) {
       console.error('Erro ao limpar tutoriais:', error);
     }
