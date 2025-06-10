@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, Video, FileText, X, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Upload, Video, FileText, X } from 'lucide-react';
 import { useTutorials } from '@/hooks/useTutorials';
 import { CreateTutorialData } from '@/services/tutorialService';
 
@@ -16,7 +16,7 @@ interface CreateTutorialModalProps {
 }
 
 const CreateTutorialModal = ({ isOpen, onClose }: CreateTutorialModalProps) => {
-  const { createTutorial, uploading, testConnection } = useTutorials();
+  const { createTutorial, uploading } = useTutorials();
   const [formData, setFormData] = useState<CreateTutorialData>({
     title: '',
     description: '',
@@ -24,7 +24,6 @@ const CreateTutorialModal = ({ isOpen, onClose }: CreateTutorialModalProps) => {
     documentFiles: []
   });
   const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [connectionTested, setConnectionTested] = useState<boolean | null>(null);
 
   const categories = [
     'Primeiros Passos',
@@ -32,11 +31,6 @@ const CreateTutorialModal = ({ isOpen, onClose }: CreateTutorialModalProps) => {
     'Suporte',
     'Recursos Extras'
   ];
-
-  const handleTestConnection = async () => {
-    const result = await testConnection();
-    setConnectionTested(result);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,7 +55,6 @@ const CreateTutorialModal = ({ isOpen, onClose }: CreateTutorialModalProps) => {
         documentFiles: []
       });
       setVideoFile(null);
-      setConnectionTested(null);
       onClose();
     }
   };
@@ -135,37 +128,6 @@ const CreateTutorialModal = ({ isOpen, onClose }: CreateTutorialModalProps) => {
         <DialogHeader>
           <DialogTitle className="text-primary-contrast">Criar Novo Tutorial</DialogTitle>
         </DialogHeader>
-
-        {/* Teste de Conexão */}
-        <div className="mb-4 p-4 bg-gray-800/50 rounded-lg border border-gray-600">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              {connectionTested === null && (
-                <AlertTriangle className="w-5 h-5 text-yellow-400" />
-              )}
-              {connectionTested === true && (
-                <CheckCircle className="w-5 h-5 text-green-400" />
-              )}
-              {connectionTested === false && (
-                <X className="w-5 h-5 text-red-400" />
-              )}
-              <span className="text-gray-300">
-                {connectionTested === null && 'Teste a conexão antes de continuar'}
-                {connectionTested === true && 'Conexão com servidor OK'}
-                {connectionTested === false && 'Erro na conexão com servidor'}
-              </span>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleTestConnection}
-              className="border-gray-600"
-            >
-              Testar Conexão
-            </Button>
-          </div>
-        </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Informações Básicas */}
@@ -331,7 +293,7 @@ const CreateTutorialModal = ({ isOpen, onClose }: CreateTutorialModalProps) => {
             </Button>
             <Button
               type="submit"
-              disabled={uploading || !formData.title || !formData.description || !formData.category || connectionTested !== true}
+              disabled={uploading || !formData.title || !formData.description || !formData.category}
               className="btn-primary"
             >
               {uploading ? 'Criando...' : 'Criar Tutorial'}
