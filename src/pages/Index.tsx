@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Settings, Users, Bell, MessageSquare, Zap, Server, LogOut, User, Activity } from 'lucide-react';
+import { Settings, Users, Bell, MessageSquare, Zap, LogOut, User, BookOpen } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/hooks/useAuth';
@@ -9,7 +9,7 @@ import MassMessaging from '@/components/MassMessaging';
 import ContactManagement from '@/components/ContactManagement';
 import IntelligentNotifications from '@/components/IntelligentNotifications';
 import InstanceManagement from '@/components/InstanceManagement';
-import IntegrationStatus from '@/components/IntegrationStatus';
+import ExtrasSection from '@/components/ExtrasSection';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -75,12 +75,12 @@ const Index = () => {
       active: activeTab === 'instance-management'
     },
     {
-      id: 'integration-status',
-      title: 'Status',
-      subtitle: 'Status das integrações',
-      icon: Activity,
+      id: 'extras',
+      title: 'Extras',
+      subtitle: 'Funções adicionais e tutoriais',
+      icon: BookOpen,
       gradient: 'gradient-primary',
-      active: activeTab === 'integration-status'
+      active: activeTab === 'extras'
     }
   ];
 
@@ -94,8 +94,8 @@ const Index = () => {
         return <IntelligentNotifications />;
       case 'instance-management':
         return <InstanceManagement />;
-      case 'integration-status':
-        return <IntegrationStatus />;
+      case 'extras':
+        return <ExtrasSection />;
       default:
         return <MassMessaging />;
     }
