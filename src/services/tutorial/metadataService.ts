@@ -15,12 +15,66 @@ class TutorialMetadataService {
     }
   }
 
-  async getTutorials(): Promise<TutorialData[]> {
+  async ensureTutorialsTable(): Promise<void> {
     try {
-      console.log('🔍 Buscando TODOS os tutoriais do NocoDB (sem filtro de usuário)...');
+      console.log('🔧 Garantindo que a tabela de tutoriais existe...');
       
       // Garantir que a tabela existe
       await nocodbService.ensureTableExists(this.TUTORIALS_TABLE);
+      
+      const targetBaseId = nocodbService.getTargetBaseId();
+      if (!targetBaseId) {
+        console.warn('Base do NocoDB não encontrada');
+        return;
+      }
+
+      const tableId = await nocodbService.getTableId(targetBaseId, this.TUTORIALS_TABLE);
+      if (!tableId) {
+        console.warn('Tabela de tutoriais não encontrada, tentando criar...');
+        
+        // Criar a tabela com as colunas necessárias
+        const createTableResponse = await fetch(`${nocodbService.config.baseUrl}/api/v1/db/meta/projects/${targetBaseId}/tables`, {
+          method: 'POST',
+          headers: {
+            ...nocodbService.headers,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            table_name: this.TUTORIALS_TABLE,
+            title: this.TUTORIALS_TABLE,
+            columns: [
+              { column_name: 'id', title: 'ID', uidt: 'SingleLineText', pk: true },
+              { column_name: 'title', title: 'Title', uidt: 'SingleLineText' },
+              { column_name: 'description', title: 'Description', uidt: 'LongText' },
+              { column_name: 'videoUrl', title: 'VideoUrl', uidt: 'URL' },
+              { column_name: 'documentUrls', title: 'DocumentUrls', uidt: 'LongText' },
+              { column_name: 'coverImageUrl', title: 'CoverImageUrl', uidt: 'URL' },
+              { column_name: 'category', title: 'Category', uidt: 'SingleLineText' },
+              { column_name: 'createdAt', title: 'CreatedAt', uidt: 'DateTime' },
+              { column_name: 'updatedAt', title: 'UpdatedAt', uidt: 'DateTime' }
+            ]
+          }),
+        });
+
+        if (createTableResponse.ok) {
+          console.log('✅ Tabela de tutoriais criada com sucesso');
+        } else {
+          console.error('❌ Erro ao criar tabela de tutoriais:', await createTableResponse.text());
+        }
+      } else {
+        console.log('✅ Tabela de tutoriais já existe');
+      }
+    } catch (error) {
+      console.error('❌ Erro ao garantir tabela de tutoriais:', error);
+    }
+  }
+
+  async getTutorials(): Promise<TutorialData[]> {
+    try {
+      console.log('🔍 Buscando TODOS os tutoriais do NocoDB...');
+      
+      // Garantir que a tabela existe primeiro
+      await this.ensureTutorialsTable();
       
       const targetBaseId = nocodbService.getTargetBaseId();
       if (!targetBaseId) {
@@ -34,9 +88,8 @@ class TutorialMetadataService {
         return tutorialLocalStorageService.getTutorials();
       }
 
-      // CORREÇÃO: Buscar TODOS os tutoriais sem filtro de usuário
       console.log('📋 Fazendo busca geral de todos os tutoriais...');
-      const response = await fetch(`${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}`, {
+      const response = await fetch(`${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}?limit=1000`, {
         method: 'GET',
         headers: nocodbService.headers,
       });
@@ -55,7 +108,13 @@ class TutorialMetadataService {
           updatedAt: item.updatedAt || item.UpdatedAt
         }));
         
-        console.log('✅ Tutoriais carregados do NocoDB (TODOS os usuários):', tutorials.length, 'itens');
+        console.log('✅ Tutoriais carregados do NocoDB:', tutorials.length, 'itens');
+        
+        // Sincronizar com localStorage como backup
+        tutorials.forEach(tutorial => {
+          tutorialLocalStorageService.saveTutorial(tutorial);
+        });
+        
         return tutorials;
       } else {
         console.warn('Erro ao buscar tutoriais do NocoDB, usando localStorage como fallback');

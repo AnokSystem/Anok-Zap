@@ -16,11 +16,21 @@ const TutorialsSection = () => {
   const [editingTutorial, setEditingTutorial] = useState<TutorialData | null>(null);
   const [tutorialsCount, setTutorialsCount] = useState(0);
 
-  // Forçar re-renderização quando a lista de tutoriais mudar
   useEffect(() => {
-    console.log('📊 Lista de tutoriais atualizada:', tutorials.length, 'tutoriais');
+    console.log('📊 TutorialsSection - Lista de tutoriais atualizada:', tutorials.length, 'tutoriais');
+    console.log('📋 TutorialsSection - Tutoriais:', tutorials.map(t => ({ id: t.id, title: t.title })));
     setTutorialsCount(tutorials.length);
   }, [tutorials]);
+
+  // Force refresh on component mount
+  useEffect(() => {
+    console.log('🔄 TutorialsSection montado, forçando refresh...');
+    const timer = setTimeout(() => {
+      refreshTutorials();
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleDeleteTutorial = async (tutorialId: string) => {
     console.log('🗑️ Tentativa de deletar tutorial:', tutorialId);
@@ -79,18 +89,25 @@ const TutorialsSection = () => {
     );
   }
 
+  console.log('🎨 TutorialsSection - Renderizando com', tutorialsCount, 'tutoriais');
+
   return (
-    <div className="space-y-8" key={`tutorials-${tutorialsCount}`}>
+    <div className="space-y-8" key={`tutorials-${tutorialsCount}-${Date.now()}`}>
       {/* Header da Seção */}
       <TutorialsSectionHeader
         tutorialsCount={tutorialsCount}
         onCreateClick={() => setIsCreateModalOpen(true)}
       />
 
+      {/* Debug Info */}
+      <div className="text-xs text-gray-500 p-2 bg-gray-800/20 rounded">
+        Debug: {tutorialsCount} tutoriais carregados | Última atualização: {new Date().toLocaleTimeString()}
+      </div>
+
       {/* Tutoriais por Categoria */}
       {Object.entries(groupedTutorials).map(([category, categoryTutorials]) => (
         <TutorialCategorySection
-          key={`${category}-${categoryTutorials.length}`}
+          key={`${category}-${categoryTutorials.length}-${Date.now()}`}
           category={category}
           tutorials={categoryTutorials}
           onViewTutorial={setSelectedTutorial}

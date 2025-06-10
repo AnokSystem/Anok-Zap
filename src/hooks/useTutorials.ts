@@ -1,5 +1,7 @@
+
 import { useState, useEffect } from 'react';
 import { tutorialService, TutorialData, CreateTutorialData } from '@/services/tutorialService';
+import { tutorialMetadataService } from '@/services/tutorial/metadataService';
 import { useToast } from '@/hooks/use-toast';
 
 export const useTutorials = () => {
@@ -11,7 +13,11 @@ export const useTutorials = () => {
   const fetchTutorials = async () => {
     try {
       setLoading(true);
-      console.log('🔍 Iniciando busca de tutoriais...');
+      console.log('🔍 Iniciando busca de tutoriais com verificação de tabela...');
+      
+      // Garantir que a tabela existe antes de buscar
+      await tutorialMetadataService.ensureTutorialsTable();
+      
       const data = await tutorialService.getTutorials();
       console.log('📚 Tutoriais carregados:', data.length);
       setTutorials(data);
@@ -233,7 +239,7 @@ export const useTutorials = () => {
   };
 
   useEffect(() => {
-    console.log('🔧 Hook useTutorials montado, carregando tutoriais...');
+    console.log('🔧 Hook useTutorials montado, verificando tabela e carregando tutoriais...');
     fetchTutorials();
   }, []);
 
