@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Users, UserPlus, UserMinus, BookOpen, PlayCircle, FileText, HelpCircle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import TutorialsSection from './TutorialsSection';
 
 const ExtrasSection = () => {
   const { toast } = useToast();
@@ -26,13 +27,6 @@ const ExtrasSection = () => {
     toast({
       title: "Em desenvolvimento",
       description: "Funcionalidade de remover membros será implementada em breve", 
-    });
-  };
-
-  const handleTutorials = () => {
-    toast({
-      title: "Em desenvolvimento",
-      description: "Página de tutoriais será implementada em breve",
     });
   };
 
@@ -60,35 +54,6 @@ const ExtrasSection = () => {
       icon: UserMinus,
       action: handleRemoveMembers,
       color: 'bg-red-500/20 text-red-400 border-red-500/30'
-    },
-    {
-      id: 'tutorials',
-      title: 'Tutoriais',
-      description: 'Acesse guias e tutoriais para usar o sistema',
-      icon: BookOpen,
-      action: handleTutorials,
-      color: 'bg-purple-500/20 text-purple-400 border-purple-500/30'
-    }
-  ];
-
-  const tutorialCategories = [
-    {
-      title: 'Primeiros Passos',
-      description: 'Como configurar e conectar suas instâncias',
-      icon: PlayCircle,
-      items: ['Conectar WhatsApp', 'Configurar Instâncias', 'Importar Contatos']
-    },
-    {
-      title: 'Guias Avançados',
-      description: 'Funcionalidades avançadas e automações',
-      icon: FileText,
-      items: ['Disparos em Massa', 'Notificações Inteligentes', 'Gerenciar Grupos']
-    },
-    {
-      title: 'Suporte',
-      description: 'Ajuda e resolução de problemas',
-      icon: HelpCircle,
-      items: ['FAQ', 'Solucionar Problemas', 'Contato Suporte']
     }
   ];
 
@@ -108,7 +73,7 @@ const ExtrasSection = () => {
       </div>
 
       {/* Cards de Funcionalidades */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {extraFeatures.map((feature) => {
           const IconComponent = feature.icon;
           return (
@@ -142,57 +107,8 @@ const ExtrasSection = () => {
         })}
       </div>
 
-      {/* Seção de Tutoriais */}
-      <div className="card-glass p-6">
-        <div className="flex items-center space-x-3 mb-6">
-          <div className="w-10 h-10 bg-purple-accent/20 rounded-lg flex items-center justify-center">
-            <BookOpen className="w-5 h-5 text-purple-accent" />
-          </div>
-          <div>
-            <h4 className="font-semibold text-primary-contrast text-lg">Central de Tutoriais</h4>
-            <p className="text-sm text-gray-400 mt-1">
-              Aprenda a usar todas as funcionalidades do sistema
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {tutorialCategories.map((category, index) => {
-            const IconComponent = category.icon;
-            return (
-              <div key={index} className="bg-gray-700/30 p-4 rounded-lg border border-gray-600/50">
-                <div className="flex items-center space-x-3 mb-3">
-                  <div className="w-8 h-8 bg-purple-accent/20 rounded-lg flex items-center justify-center">
-                    <IconComponent className="w-4 h-4 text-purple-accent" />
-                  </div>
-                  <div>
-                    <h5 className="font-medium text-primary-contrast">{category.title}</h5>
-                  </div>
-                </div>
-                <p className="text-sm text-gray-400 mb-3">{category.description}</p>
-                <ul className="space-y-1">
-                  {category.items.map((item, itemIndex) => (
-                    <li key={itemIndex} className="text-xs text-gray-500 flex items-center">
-                      <div className="w-1 h-1 bg-purple-accent rounded-full mr-2"></div>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="mt-6 text-center">
-          <Button
-            onClick={handleTutorials}
-            className="btn-primary"
-          >
-            <BookOpen className="w-4 h-4 mr-2" />
-            Ver Todos os Tutoriais
-          </Button>
-        </div>
-      </div>
+      {/* Seção de Tutoriais Completa */}
+      <TutorialsSection />
 
       {/* Seção de Estatísticas dos Grupos */}
       <div className="card-glass p-6">
