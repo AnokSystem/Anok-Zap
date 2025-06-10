@@ -10,7 +10,6 @@ import { Upload, Plus, Trash2, Wand2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { minioService } from '@/services/minio';
 import { Message } from '../types';
-import { VariableSelector } from './VariableSelector';
 import { VariableProcessor } from '../utils/variableProcessor';
 
 interface MessageEditorProps {
@@ -28,6 +27,15 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
 }) => {
   const { toast } = useToast();
   const textareaRefs = useRef<{ [key: string]: HTMLTextAreaElement | null }>({});
+
+  const variables = [
+    { name: '{nome}', label: 'Nome' },
+    { name: '{telefone}', label: 'Telefone' },
+    { name: '{primeiroNome}', label: 'Primeiro Nome' },
+    { name: '{dataAtual}', label: 'Data Atual' },
+    { name: '{horaAtual}', label: 'Hora Atual' },
+    { name: '{diaSemana}', label: 'Dia da Semana' }
+  ];
 
   const addMessage = () => {
     if (messages.length < 5) {
@@ -75,6 +83,11 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
         }, 0);
       }
     }
+
+    toast({
+      title: "Variável inserida",
+      description: `${variable} foi adicionada à mensagem`,
+    });
   };
 
   const validateMessageVariables = (content: string) => {
@@ -110,17 +123,6 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Seletor de Variáveis */}
-      <VariableSelector
-        onVariableInsert={(variable) => {
-          // Inserir na primeira mensagem de texto ou na primeira mensagem disponível
-          const firstTextMessage = messages.find(msg => msg.type === 'text');
-          if (firstTextMessage) {
-            handleVariableInsert(firstTextMessage.id, variable);
-          }
-        }}
-      />
-
       {/* Editor de Mensagens */}
       <div className="space-y-6 p-4 bg-gray-700/30 rounded-lg border border-gray-600">
         <div className="flex items-center justify-between">
@@ -206,16 +208,21 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <Label className="text-white font-medium text-sm">Conteúdo da Mensagem</Label>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleVariableInsert(message.id, '{nome}')}
-                      className="text-purple-400 hover:text-purple-300 hover:bg-purple-900/20"
-                    >
-                      <Wand2 className="w-4 h-4 mr-1" />
-                      Inserir {'{nome}'}
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                      {variables.map((variable) => (
+                        <Button
+                          key={variable.name}
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleVariableInsert(message.id, variable.name)}
+                          className="text-purple-400 hover:text-purple-300 hover:bg-purple-900/20 text-xs px-2 py-1 h-auto"
+                        >
+                          <Wand2 className="w-3 h-3 mr-1" />
+                          {variable.label}
+                        </Button>
+                      ))}
+                    </div>
                   </div>
                   <Textarea
                     ref={(el) => textareaRefs.current[message.id] = el}
