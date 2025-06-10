@@ -36,8 +36,12 @@ class TutorialService {
       if (videoFile) {
         console.log('Fazendo upload do vídeo...');
         try {
-          // Criar um arquivo com nome organizado para a pasta de tutoriais
-          const videoFileName = `${this.TUTORIALS_BASE_FOLDER}/${tutorialId}/video_${Date.now()}_${videoFile.name}`;
+          // Criar nome simples e limpo para o arquivo
+          const timestamp = Date.now();
+          const cleanFileName = videoFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+          const videoFileName = `${this.TUTORIALS_BASE_FOLDER}/${tutorialId}/video_${timestamp}_${cleanFileName}`;
+          
+          // Criar um novo arquivo com o nome correto
           const renamedVideoFile = new File([videoFile], videoFileName, { type: videoFile.type });
           
           results.videoUrl = await minioService.uploadFile(renamedVideoFile);
@@ -54,8 +58,10 @@ class TutorialService {
         for (let i = 0; i < documentFiles.length; i++) {
           const file = documentFiles[i];
           try {
-            // Criar um arquivo com nome organizado para a pasta de tutoriais
-            const docFileName = `${this.TUTORIALS_BASE_FOLDER}/${tutorialId}/doc_${i + 1}_${Date.now()}_${file.name}`;
+            const timestamp = Date.now();
+            const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+            const docFileName = `${this.TUTORIALS_BASE_FOLDER}/${tutorialId}/doc_${i + 1}_${timestamp}_${cleanFileName}`;
+            
             const renamedDocFile = new File([file], docFileName, { type: file.type });
             
             const docUrl = await minioService.uploadFile(renamedDocFile);
@@ -79,7 +85,7 @@ class TutorialService {
   async createTutorial(data: CreateTutorialData): Promise<TutorialData> {
     try {
       const tutorialId = `tutorial_${Date.now()}`;
-      console.log('Criando tutorial:', tutorialId);
+      console.log('Criando tutorial:', tutorialId, 'com dados:', data.title);
 
       // Testar conexão com MinIO antes de continuar
       const isConnected = await minioService.testConnection();
@@ -87,12 +93,16 @@ class TutorialService {
         throw new Error('Não foi possível conectar ao MinIO');
       }
 
+      console.log('Conexão MinIO OK, iniciando uploads...');
+
       // Upload dos arquivos
       const { videoUrl, documentUrls } = await this.uploadTutorialFiles(
         tutorialId,
         data.videoFile,
         data.documentFiles
       );
+
+      console.log('Uploads concluídos, criando metadata...');
 
       // Criar metadata do tutorial
       const tutorial: TutorialData = {
@@ -106,7 +116,7 @@ class TutorialService {
         updatedAt: new Date().toISOString()
       };
 
-      // Salvar metadata (por enquanto só no localStorage, depois implementaremos no MinIO)
+      // Salvar metadata
       await this.saveTutorialMetadata(tutorial);
 
       console.log('Tutorial criado com sucesso:', tutorial);
@@ -121,37 +131,16 @@ class TutorialService {
     try {
       console.log('Buscando tutoriais...');
       
-      // Tentar buscar do localStorage primeiro
+      // Buscar do localStorage
       const stored = localStorage.getItem('tutorials');
       if (stored) {
         const tutorials = JSON.parse(stored);
-        console.log('Tutoriais carregados do localStorage:', tutorials);
+        console.log('Tutoriais carregados do localStorage:', tutorials.length, 'itens');
         return tutorials;
       }
 
-      // Retornar dados mock se não houver tutoriais salvos
-      const mockTutorials: TutorialData[] = [
-        {
-          id: 'tutorial_1',
-          title: 'Como Conectar WhatsApp',
-          description: 'Aprenda a conectar sua instância do WhatsApp ao sistema',
-          category: 'Primeiros Passos',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          documentUrls: []
-        },
-        {
-          id: 'tutorial_2',
-          title: 'Configurar Disparos em Massa',
-          description: 'Tutorial completo sobre como configurar e executar disparos em massa',
-          category: 'Guias Avançados',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          documentUrls: []
-        }
-      ];
-
-      return mockTutorials;
+      console.log('Nenhum tutorial salvo, retornando array vazio');
+      return [];
     } catch (error) {
       console.error('Erro ao buscar tutoriais:', error);
       return [];
@@ -190,6 +179,7 @@ class TutorialService {
         // Remover da lista local
         const updatedTutorials = tutorials.filter(t => t.id !== tutorialId);
         localStorage.setItem('tutorials', JSON.stringify(updatedTutorials));
+        console.log('Tutorial removido do localStorage');
       }
       
       console.log('Tutorial deletado com sucesso');
@@ -202,11 +192,25 @@ class TutorialService {
 
   private async saveTutorialMetadata(tutorial: TutorialData): Promise<void> {
     try {
-      // Salvar no localStorage por enquanto
+      console.log('Salvando metadata do tutorial:', tutorial.id);
+      
+      // Buscar tutoriais existentes
       const existing = await this.getTutorials();
+      console.log('Tutoriais existentes:', existing.length);
+      
+      // Adicionar o novo tutorial
       const updated = [...existing.filter(t => t.id !== tutorial.id), tutorial];
+      
+      // Salvar no localStorage
       localStorage.setItem('tutorials', JSON.stringify(updated));
-      console.log('Metadata do tutorial salva no localStorage');
+      console.log('Metadata do tutorial salva no localStorage. Total de tutoriais:', updated.length);
+      
+      // Verificar se foi salvo corretamente
+      const verification = localStorage.getItem('tutorials');
+      if (verification) {
+        const parsed = JSON.parse(verification);
+        console.log('Verificação: tutorial salvo com sucesso. Total:', parsed.length);
+      }
     } catch (error) {
       console.error('Erro ao salvar metadata:', error);
       throw error;

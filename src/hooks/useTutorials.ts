@@ -12,7 +12,9 @@ export const useTutorials = () => {
   const fetchTutorials = async () => {
     try {
       setLoading(true);
+      console.log('Iniciando busca de tutoriais...');
       const data = await tutorialService.getTutorials();
+      console.log('Tutoriais carregados:', data.length);
       setTutorials(data);
     } catch (error) {
       console.error('Erro ao buscar tutoriais:', error);
@@ -29,7 +31,18 @@ export const useTutorials = () => {
   const createTutorial = async (data: CreateTutorialData): Promise<boolean> => {
     try {
       setUploading(true);
+      console.log('Iniciando criação de tutorial:', data.title);
       
+      // Validar dados obrigatórios
+      if (!data.title || !data.description || !data.category) {
+        toast({
+          title: "Erro",
+          description: "Título, descrição e categoria são obrigatórios",
+          variant: "destructive"
+        });
+        return false;
+      }
+
       // Validar arquivos antes do upload
       if (data.videoFile && data.videoFile.size > 100 * 1024 * 1024) { // 100MB
         toast({
@@ -40,7 +53,20 @@ export const useTutorials = () => {
         return false;
       }
 
+      // Validar documentos
+      for (const doc of data.documentFiles) {
+        if (doc.size > 10 * 1024 * 1024) { // 10MB
+          toast({
+            title: "Erro",
+            description: `O documento ${doc.name} deve ter no máximo 10MB`,
+            variant: "destructive"
+          });
+          return false;
+        }
+      }
+
       // Testar conexão MinIO primeiro
+      console.log('Testando conexão MinIO...');
       const isConnected = await tutorialService.testMinioConnection();
       if (!isConnected) {
         toast({
@@ -51,15 +77,27 @@ export const useTutorials = () => {
         return false;
       }
 
-      console.log('Iniciando criação do tutorial:', data.title);
+      console.log('Conexão OK, criando tutorial...');
       
       const newTutorial = await tutorialService.createTutorial(data);
-      setTutorials(prev => [...prev, newTutorial]);
+      
+      console.log('Tutorial criado, atualizando lista...');
+      
+      // Atualizar a lista local imediatamente
+      setTutorials(prev => {
+        const updated = [...prev, newTutorial];
+        console.log('Lista de tutoriais atualizada. Total:', updated.length);
+        return updated;
+      });
       
       toast({
         title: "Sucesso",
-        description: "Tutorial criado com sucesso"
+        description: "Tutorial criado com sucesso",
+        variant: "default"
       });
+      
+      // Recarregar a lista para garantir sincronização
+      await fetchTutorials();
       
       return true;
     } catch (error) {
@@ -89,9 +127,14 @@ export const useTutorials = () => {
 
   const deleteTutorial = async (tutorialId: string): Promise<boolean> => {
     try {
+      console.log('Deletando tutorial:', tutorialId);
       const success = await tutorialService.deleteTutorial(tutorialId);
       if (success) {
-        setTutorials(prev => prev.filter(t => t.id !== tutorialId));
+        setTutorials(prev => {
+          const updated = prev.filter(t => t.id !== tutorialId);
+          console.log('Tutorial removido da lista. Total restante:', updated.length);
+          return updated;
+        });
         toast({
           title: "Sucesso",
           description: "Tutorial deletado com sucesso"
@@ -111,6 +154,7 @@ export const useTutorials = () => {
 
   const testConnection = async (): Promise<boolean> => {
     try {
+      console.log('Testando conexão com MinIO...');
       const isConnected = await tutorialService.testMinioConnection();
       toast({
         title: isConnected ? "Conexão OK" : "Erro de Conexão",
@@ -132,6 +176,7 @@ export const useTutorials = () => {
   };
 
   useEffect(() => {
+    console.log('Hook useTutorials montado, carregando tutoriais...');
     fetchTutorials();
   }, []);
 
