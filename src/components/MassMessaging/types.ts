@@ -1,10 +1,10 @@
-
 export interface Message {
   id: string;
   type: 'text' | 'audio' | 'video' | 'image' | 'document';
   content: string;
   file?: File;
   fileUrl?: string;
+  caption?: string; // Nova propriedade para descrição de arquivos
 }
 
 export interface CampaignData {

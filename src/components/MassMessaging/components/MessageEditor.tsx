@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +26,7 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
 }) => {
   const { toast } = useToast();
   const textareaRefs = useRef<{ [key: string]: HTMLTextAreaElement | null }>({});
+  const captionRefs = useRef<{ [key: string]: HTMLTextAreaElement | null }>({});
 
   const variables = [
     { name: '{nome}', label: 'Nome' },
@@ -59,20 +59,25 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
     ));
   };
 
-  const handleVariableInsert = (messageId: string, variable: string) => {
-    const textarea = textareaRefs.current[messageId];
+  const handleVariableInsert = (messageId: string, variable: string, isCaption = false) => {
+    const textarea = isCaption ? captionRefs.current[messageId] : textareaRefs.current[messageId];
     if (textarea) {
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
       const message = messages.find(msg => msg.id === messageId);
       
       if (message) {
+        const currentContent = isCaption ? (message.caption || '') : message.content;
         const newContent = 
-          message.content.substring(0, start) + 
+          currentContent.substring(0, start) + 
           variable + 
-          message.content.substring(end);
+          currentContent.substring(end);
         
-        updateMessage(messageId, { content: newContent });
+        if (isCaption) {
+          updateMessage(messageId, { caption: newContent });
+        } else {
+          updateMessage(messageId, { content: newContent });
+        }
         
         // Reposicionar cursor após a variável inserida
         setTimeout(() => {
@@ -86,7 +91,7 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
 
     toast({
       title: "Variável inserida",
-      description: `${variable} foi adicionada à mensagem`,
+      description: `${variable} foi adicionada à ${isCaption ? 'descrição' : 'mensagem'}`,
     });
   };
 
@@ -237,6 +242,48 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
                       {message.content.length} caracteres
                     </p>
                     {message.content.includes('{') && (
+                      <p className="text-xs text-purple-400">
+                        ✨ Variáveis detectadas - serão personalizadas para cada contato
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Campo de descrição para arquivos de mídia */}
+              {message.type !== 'text' && message.type !== 'audio' && message.fileUrl && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="text-white font-medium text-sm">Descrição do Arquivo (Opcional)</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {variables.map((variable) => (
+                        <Button
+                          key={variable.name}
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleVariableInsert(message.id, variable.name, true)}
+                          className="text-purple-400 hover:text-purple-300 hover:bg-purple-900/20 text-xs px-2 py-1 h-auto"
+                        >
+                          <Wand2 className="w-3 h-3 mr-1" />
+                          {variable.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  <Textarea
+                    ref={(el) => captionRefs.current[message.id] = el}
+                    value={message.caption || ''}
+                    onChange={(e) => updateMessage(message.id, { caption: e.target.value })}
+                    onBlur={() => message.caption && validateMessageVariables(message.caption)}
+                    placeholder="Digite uma descrição para acompanhar o arquivo... Use variáveis como {nome}, {primeiroNome}, {telefone}, etc."
+                    className="min-h-[80px]"
+                  />
+                  <div className="flex items-center justify-between mt-2">
+                    <p className="text-sm text-gray-400">
+                      {(message.caption || '').length} caracteres
+                    </p>
+                    {message.caption && message.caption.includes('{') && (
                       <p className="text-xs text-purple-400">
                         ✨ Variáveis detectadas - serão personalizadas para cada contato
                       </p>

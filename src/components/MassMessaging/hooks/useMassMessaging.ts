@@ -83,6 +83,10 @@ export const useMassMessaging = () => {
         content: message.type === 'text' 
           ? VariableProcessor.processMessage(message.content, contactData)
           : message.content,
+        // Processar descrição do arquivo se existir
+        caption: message.caption 
+          ? VariableProcessor.processMessage(message.caption, contactData)
+          : message.caption,
         // Preservar fileUrl para todos os tipos de mensagem
         fileUrl: message.fileUrl || '',
         file: message.file
@@ -103,6 +107,19 @@ export const useMassMessaging = () => {
           toast({
             title: "Erro de Validação",
             description: `Mensagem ${messages.indexOf(message) + 1}: ${validation.errors.join(', ')}`,
+            variant: "destructive",
+          });
+          return false;
+        }
+      }
+      
+      // Validar descrição do arquivo se existir
+      if (message.caption) {
+        const captionValidation = VariableProcessor.validateMessage(message.caption);
+        if (!captionValidation.isValid) {
+          toast({
+            title: "Erro de Validação",
+            description: `Descrição da mensagem ${messages.indexOf(message) + 1}: ${captionValidation.errors.join(', ')}`,
             variant: "destructive",
           });
           return false;
@@ -134,13 +151,15 @@ export const useMassMessaging = () => {
       // Processar mensagens com variáveis para cada contato
       const processedCampaigns = processMessagesWithVariables(messages, recipientList);
       
-      // Preparar dados da campanha para o webhook com fileUrl preservado
+      // Preparar dados da campanha para o webhook com fileUrl e caption preservados
       const campaignData: CampaignData = {
         instance: selectedInstance,
         messages: messages.map(msg => ({
           ...msg,
           // Garantir que fileUrl seja enviado
-          fileUrl: msg.fileUrl || ''
+          fileUrl: msg.fileUrl || '',
+          // Garantir que caption seja enviado
+          caption: msg.caption || ''
         })),
         recipients: recipientList,
         delay: delay[0],
@@ -152,7 +171,8 @@ export const useMassMessaging = () => {
         ...campaignData,
         processedCampaigns: processedCampaigns,
         variablesUsed: messages.some(msg => 
-          msg.type === 'text' && VariableProcessor.getAvailableVariables().some(v => msg.content.includes(v))
+          (msg.type === 'text' && VariableProcessor.getAvailableVariables().some(v => msg.content.includes(v))) ||
+          (msg.caption && VariableProcessor.getAvailableVariables().some(v => msg.caption.includes(v)))
         )
       };
 
