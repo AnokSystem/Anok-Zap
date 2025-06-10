@@ -2,10 +2,9 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, UserPlus, UserMinus, BookOpen, PlayCircle, FileText, HelpCircle } from 'lucide-react';
+import { Users, UserPlus, UserMinus, BookOpen } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import TutorialsSection from './TutorialsSection';
-import GroupManagement from './GroupManagement';
 
 const ExtrasSection = () => {
   const { toast } = useToast();
@@ -110,9 +109,6 @@ const ExtrasSection = () => {
 
       {/* Seção de Tutoriais Completa */}
       <TutorialsSection />
-
-      {/* Seção de Gerenciamento de Grupos Renovada */}
-      <GroupManagement />
     </div>
   );
 };
