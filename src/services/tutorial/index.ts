@@ -1,3 +1,4 @@
+
 import { TutorialData, CreateTutorialData } from './types';
 import { tutorialFileUploadService } from './fileUploadService';
 import { tutorialMetadataService } from './metadataService';
@@ -96,24 +97,37 @@ class TutorialService {
 
   async deleteTutorial(tutorialId: string): Promise<boolean> {
     try {
-      console.log('Deletando tutorial:', tutorialId);
+      console.log('🗑️ TutorialService - Iniciando exclusão do tutorial:', tutorialId);
       
       const tutorials = await this.getTutorials();
       const tutorial = tutorials.find(t => t.id === tutorialId);
       
-      if (tutorial) {
-        // Deletar arquivos do MinIO
-        await tutorialFileUploadService.deleteFiles(tutorial.videoUrl, tutorial.documentUrls, tutorial.coverImageUrl);
-        
-        // Deletar metadata
-        await tutorialMetadataService.deleteTutorial(tutorialId);
+      if (!tutorial) {
+        console.error('❌ TutorialService - Tutorial não encontrado:', tutorialId);
+        throw new Error('Tutorial não encontrado');
       }
       
-      console.log('Tutorial deletado com sucesso');
+      console.log('📝 TutorialService - Tutorial encontrado:', tutorial.title);
+      
+      // Tentar deletar metadata primeiro (mais crítico)
+      console.log('🔄 TutorialService - Deletando metadata...');
+      await tutorialMetadataService.deleteTutorial(tutorialId);
+      console.log('✅ TutorialService - Metadata deletado com sucesso');
+      
+      // Deletar arquivos do MinIO (menos crítico, não deve falhar a operação)
+      try {
+        console.log('🔄 TutorialService - Deletando arquivos do MinIO...');
+        await tutorialFileUploadService.deleteFiles(tutorial.videoUrl, tutorial.documentUrls, tutorial.coverImageUrl);
+        console.log('✅ TutorialService - Arquivos do MinIO deletados');
+      } catch (minioError) {
+        console.warn('⚠️ TutorialService - Falha ao deletar arquivos do MinIO (não crítico):', minioError);
+      }
+      
+      console.log('✅ TutorialService - Tutorial deletado completamente');
       return true;
     } catch (error) {
-      console.error('Erro ao deletar tutorial:', error);
-      return false;
+      console.error('❌ TutorialService - Erro ao deletar tutorial:', error);
+      throw error; // Re-lançar o erro para que o hook possa tratá-lo
     }
   }
 

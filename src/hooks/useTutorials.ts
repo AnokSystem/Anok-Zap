@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { tutorialService, TutorialData, CreateTutorialData } from '@/services/tutorialService';
 import { tutorialMetadataService } from '@/services/tutorial/metadataService';
@@ -194,74 +193,53 @@ export const useTutorials = () => {
 
   const deleteTutorial = async (tutorialId: string): Promise<boolean> => {
     try {
-      console.log('🗑️ Iniciando exclusão do tutorial:', tutorialId);
+      console.log('🗑️ useTutorials - Iniciando exclusão do tutorial:', tutorialId);
       
-      // Encontrar o tutorial que será deletado
+      // Encontrar o tutorial que será deletado para mostrar o nome
       const tutorialToDelete = tutorials.find(t => t.id === tutorialId);
-      if (!tutorialToDelete) {
-        console.error('❌ Tutorial não encontrado na lista local');
-        toast({
-          title: "Erro",
-          description: "Tutorial não encontrado",
-          variant: "destructive"
-        });
-        return false;
-      }
+      const tutorialTitle = tutorialToDelete?.title || 'Tutorial';
       
-      const tutorialTitle = tutorialToDelete.title;
-      console.log('📝 Tutorial a ser deletado:', tutorialTitle);
+      console.log('📝 useTutorials - Deletando tutorial:', tutorialTitle);
       
-      // Verificar conexão com NocoDB antes de tentar deletar
-      console.log('🔌 Verificando conexão com NocoDB...');
+      // Chamar o serviço de exclusão (que agora lança erro se falhar)
+      await tutorialService.deleteTutorial(tutorialId);
       
-      try {
-        // Tentar deletar no backend primeiro
-        console.log('⏳ Executando exclusão no backend...');
-        const success = await tutorialService.deleteTutorial(tutorialId);
-        
-        if (success) {
-          console.log('✅ Tutorial deletado com sucesso no backend');
-          
-          // Remover da interface após confirmação do backend
-          setTutorials(prevTutorials => {
-            const filtered = prevTutorials.filter(t => t.id !== tutorialId);
-            console.log('🔄 Lista atualizada, restam:', filtered.length, 'tutoriais');
-            return filtered;
-          });
-          
-          toast({
-            title: "Sucesso",
-            description: `Tutorial "${tutorialTitle}" foi excluído com sucesso`,
-            variant: "default"
-          });
-          
-          return true;
-        } else {
-          console.log('❌ Falha na exclusão do backend');
-          toast({
-            title: "Erro",
-            description: `Não foi possível excluir o tutorial "${tutorialTitle}". Verifique a conexão com o NocoDB.`,
-            variant: "destructive"
-          });
-          return false;
-        }
-      } catch (backendError) {
-        console.error('❌ Erro de conexão com backend:', backendError);
-        toast({
-          title: "Erro de Conexão",
-          description: "Falha na conexão com o NocoDB. Verifique sua conexão de internet.",
-          variant: "destructive"
-        });
-        return false;
-      }
-    } catch (error) {
-      console.error('❌ Erro durante exclusão do tutorial:', error);
+      console.log('✅ useTutorials - Tutorial deletado no backend, atualizando interface...');
+      
+      // Remover da interface apenas após confirmação do backend
+      setTutorials(prevTutorials => {
+        const filtered = prevTutorials.filter(t => t.id !== tutorialId);
+        console.log('🔄 useTutorials - Lista atualizada, restam:', filtered.length, 'tutoriais');
+        return filtered;
+      });
       
       toast({
-        title: "Erro",
-        description: "Ocorreu um erro inesperado ao tentar excluir o tutorial",
+        title: "Sucesso",
+        description: `Tutorial "${tutorialTitle}" foi excluído com sucesso`,
+        variant: "default"
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('❌ useTutorials - Erro durante exclusão:', error);
+      
+      let errorMessage = "Não foi possível excluir o tutorial";
+      if (error instanceof Error) {
+        if (error.message.includes('Tutorial não encontrado')) {
+          errorMessage = "Tutorial não encontrado";
+        } else if (error.message.includes('conexão') || error.message.includes('NocoDB')) {
+          errorMessage = "Erro de conexão com o servidor. Verifique sua internet.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      toast({
+        title: "Erro na Exclusão",
+        description: errorMessage,
         variant: "destructive"
       });
+      
       return false;
     }
   };
