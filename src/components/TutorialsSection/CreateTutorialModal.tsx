@@ -115,6 +115,20 @@ const CreateTutorialModal = ({ isOpen, onClose }: CreateTutorialModalProps) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const triggerVideoUpload = () => {
+    const input = document.getElementById('video-upload') as HTMLInputElement;
+    if (input) {
+      input.click();
+    }
+  };
+
+  const triggerDocumentUpload = () => {
+    const input = document.getElementById('document-upload') as HTMLInputElement;
+    if (input) {
+      input.click();
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] bg-gray-900 border-gray-700 max-h-[90vh] overflow-y-auto">
@@ -232,15 +246,18 @@ const CreateTutorialModal = ({ isOpen, onClose }: CreateTutorialModalProps) => {
                   type="file"
                   accept="video/*"
                   onChange={handleVideoChange}
-                  className="hidden"
+                  style={{ display: 'none' }}
                   id="video-upload"
                 />
-                <Label htmlFor="video-upload" className="cursor-pointer">
-                  <Button type="button" variant="outline" className="border-gray-600">
-                    <Upload className="w-4 h-4 mr-2" />
-                    Selecionar Vídeo
-                  </Button>
-                </Label>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="border-gray-600"
+                  onClick={triggerVideoUpload}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Selecionar Vídeo
+                </Button>
               </div>
             )}
           </div>
@@ -286,15 +303,18 @@ const CreateTutorialModal = ({ isOpen, onClose }: CreateTutorialModalProps) => {
                 accept=".pdf,.doc,.docx,.txt"
                 multiple
                 onChange={handleDocumentChange}
-                className="hidden"
+                style={{ display: 'none' }}
                 id="document-upload"
               />
-              <Label htmlFor="document-upload" className="cursor-pointer">
-                <Button type="button" variant="outline" className="border-gray-600">
-                  <Upload className="w-4 h-4 mr-2" />
-                  Selecionar Documentos
-                </Button>
-              </Label>
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="border-gray-600"
+                onClick={triggerDocumentUpload}
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Selecionar Documentos
+              </Button>
             </div>
           </div>
 
