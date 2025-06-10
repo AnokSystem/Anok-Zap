@@ -192,26 +192,52 @@ export const useTutorials = () => {
   };
 
   const deleteTutorial = async (tutorialId: string): Promise<boolean> => {
+    console.log('🚀 useTutorials.deleteTutorial - INICIANDO PROCESSO DE EXCLUSÃO');
+    console.log('📝 useTutorials.deleteTutorial - Tutorial ID:', tutorialId);
+    console.log('📋 useTutorials.deleteTutorial - Lista atual de tutoriais:', tutorials.map(t => ({ id: t.id, title: t.title })));
+    
     try {
-      console.log('🗑️ useTutorials - Iniciando exclusão do tutorial:', tutorialId);
-      
       // Encontrar o tutorial que será deletado para mostrar o nome
       const tutorialToDelete = tutorials.find(t => t.id === tutorialId);
-      const tutorialTitle = tutorialToDelete?.title || 'Tutorial';
+      console.log('🔍 useTutorials.deleteTutorial - Tutorial encontrado:', tutorialToDelete);
       
-      console.log('📝 useTutorials - Deletando tutorial:', tutorialTitle);
+      if (!tutorialToDelete) {
+        console.error('❌ useTutorials.deleteTutorial - Tutorial não encontrado na lista local');
+        toast({
+          title: "Erro",
+          description: "Tutorial não encontrado",
+          variant: "destructive"
+        });
+        return false;
+      }
       
-      // Chamar o serviço de exclusão (que agora lança erro se falhar)
-      await tutorialService.deleteTutorial(tutorialId);
+      const tutorialTitle = tutorialToDelete.title;
+      console.log('📝 useTutorials.deleteTutorial - Deletando tutorial:', tutorialTitle);
       
-      console.log('✅ useTutorials - Tutorial deletado no backend, atualizando interface...');
+      // Chamar o serviço de exclusão
+      console.log('⏳ useTutorials.deleteTutorial - Chamando tutorialService.deleteTutorial...');
+      console.log('🔧 useTutorials.deleteTutorial - Tipo do tutorialService:', typeof tutorialService);
+      console.log('🔧 useTutorials.deleteTutorial - Função deleteTutorial existe:', typeof tutorialService.deleteTutorial);
+      
+      const serviceResult = await tutorialService.deleteTutorial(tutorialId);
+      console.log('📊 useTutorials.deleteTutorial - Resultado do serviço:', serviceResult);
+      
+      if (serviceResult !== true) {
+        console.error('❌ useTutorials.deleteTutorial - Serviço retornou falso');
+        throw new Error('Falha na exclusão pelo serviço');
+      }
+      
+      console.log('✅ useTutorials.deleteTutorial - Tutorial deletado no backend, atualizando interface...');
       
       // Remover da interface apenas após confirmação do backend
       setTutorials(prevTutorials => {
         const filtered = prevTutorials.filter(t => t.id !== tutorialId);
-        console.log('🔄 useTutorials - Lista atualizada, restam:', filtered.length, 'tutoriais');
+        console.log('🔄 useTutorials.deleteTutorial - Lista atualizada, restam:', filtered.length, 'tutoriais');
+        console.log('📋 useTutorials.deleteTutorial - Nova lista:', filtered.map(t => ({ id: t.id, title: t.title })));
         return filtered;
       });
+      
+      console.log('🎉 useTutorials.deleteTutorial - PROCESSO CONCLUÍDO COM SUCESSO');
       
       toast({
         title: "Sucesso",
@@ -221,7 +247,13 @@ export const useTutorials = () => {
       
       return true;
     } catch (error) {
-      console.error('❌ useTutorials - Erro durante exclusão:', error);
+      console.error('❌ useTutorials.deleteTutorial - ERRO DURANTE EXCLUSÃO:', error);
+      console.error('🔍 useTutorials.deleteTutorial - Detalhes do erro:', {
+        message: error instanceof Error ? error.message : 'Erro desconhecido',
+        stack: error instanceof Error ? error.stack : undefined,
+        type: typeof error,
+        tutorialId
+      });
       
       let errorMessage = "Não foi possível excluir o tutorial";
       if (error instanceof Error) {

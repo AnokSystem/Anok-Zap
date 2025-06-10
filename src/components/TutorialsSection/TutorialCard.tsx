@@ -32,22 +32,34 @@ const TutorialCard = ({ tutorial, onView, onEdit, onDelete }: TutorialCardProps)
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     console.log('🗑️ TutorialCard - Botão de deletar clicado para tutorial:', tutorial.id, tutorial.title);
+    console.log('🔍 TutorialCard - Dados do tutorial:', tutorial);
     setShowDeleteDialog(true);
   };
 
   const handleConfirmDelete = async () => {
     console.log('✅ TutorialCard - Confirmação de delete aceita via AlertDialog');
     console.log('📝 TutorialCard - Deletando tutorial:', tutorial.id, tutorial.title);
+    console.log('⏰ TutorialCard - Timestamp início:', new Date().toISOString());
     
     setIsDeleting(true);
     
     try {
       console.log('⏳ TutorialCard - Chamando função onDelete...');
-      await onDelete(tutorial.id);
-      console.log('✅ TutorialCard - Função onDelete executada');
+      console.log('🔧 TutorialCard - Tipo da função onDelete:', typeof onDelete);
+      
+      const result = await onDelete(tutorial.id);
+      console.log('📊 TutorialCard - Resultado do onDelete:', result);
+      console.log('✅ TutorialCard - Função onDelete executada com sucesso');
+      console.log('⏰ TutorialCard - Timestamp fim:', new Date().toISOString());
     } catch (error) {
       console.error('❌ TutorialCard - Erro na execução do onDelete:', error);
+      console.error('🔍 TutorialCard - Detalhes do erro:', {
+        message: error instanceof Error ? error.message : 'Erro desconhecido',
+        stack: error instanceof Error ? error.stack : undefined,
+        type: typeof error
+      });
     } finally {
+      console.log('🔄 TutorialCard - Finalizando processo de exclusão');
       setIsDeleting(false);
       setShowDeleteDialog(false);
     }

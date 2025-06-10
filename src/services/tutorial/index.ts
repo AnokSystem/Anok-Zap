@@ -96,37 +96,58 @@ class TutorialService {
   }
 
   async deleteTutorial(tutorialId: string): Promise<boolean> {
+    console.log('🚀 TutorialService.deleteTutorial - INICIANDO EXCLUSÃO');
+    console.log('📝 TutorialService.deleteTutorial - Tutorial ID:', tutorialId);
+    console.log('⏰ TutorialService.deleteTutorial - Timestamp:', new Date().toISOString());
+    
     try {
-      console.log('🗑️ TutorialService - Iniciando exclusão do tutorial:', tutorialId);
-      
+      console.log('🔍 TutorialService.deleteTutorial - Buscando tutorial na lista...');
       const tutorials = await this.getTutorials();
+      console.log('📋 TutorialService.deleteTutorial - Total de tutoriais encontrados:', tutorials.length);
+      
       const tutorial = tutorials.find(t => t.id === tutorialId);
+      console.log('🔍 TutorialService.deleteTutorial - Tutorial encontrado:', tutorial ? tutorial.title : 'NÃO ENCONTRADO');
       
       if (!tutorial) {
-        console.error('❌ TutorialService - Tutorial não encontrado:', tutorialId);
+        console.error('❌ TutorialService.deleteTutorial - Tutorial não encontrado:', tutorialId);
         throw new Error('Tutorial não encontrado');
       }
       
-      console.log('📝 TutorialService - Tutorial encontrado:', tutorial.title);
+      console.log('📝 TutorialService.deleteTutorial - Tutorial encontrado:', tutorial.title);
+      console.log('🔧 TutorialService.deleteTutorial - Dados do tutorial:', {
+        id: tutorial.id,
+        title: tutorial.title,
+        videoUrl: tutorial.videoUrl,
+        documentUrls: tutorial.documentUrls,
+        coverImageUrl: tutorial.coverImageUrl
+      });
       
       // Tentar deletar metadata primeiro (mais crítico)
-      console.log('🔄 TutorialService - Deletando metadata...');
+      console.log('🔄 TutorialService.deleteTutorial - Deletando metadata...');
+      console.log('🔧 TutorialService.deleteTutorial - Chamando tutorialMetadataService.deleteTutorial...');
+      
       await tutorialMetadataService.deleteTutorial(tutorialId);
-      console.log('✅ TutorialService - Metadata deletado com sucesso');
+      console.log('✅ TutorialService.deleteTutorial - Metadata deletado com sucesso');
       
       // Deletar arquivos do MinIO (menos crítico, não deve falhar a operação)
       try {
-        console.log('🔄 TutorialService - Deletando arquivos do MinIO...');
+        console.log('🔄 TutorialService.deleteTutorial - Deletando arquivos do MinIO...');
         await tutorialFileUploadService.deleteFiles(tutorial.videoUrl, tutorial.documentUrls, tutorial.coverImageUrl);
-        console.log('✅ TutorialService - Arquivos do MinIO deletados');
+        console.log('✅ TutorialService.deleteTutorial - Arquivos do MinIO deletados');
       } catch (minioError) {
-        console.warn('⚠️ TutorialService - Falha ao deletar arquivos do MinIO (não crítico):', minioError);
+        console.warn('⚠️ TutorialService.deleteTutorial - Falha ao deletar arquivos do MinIO (não crítico):', minioError);
       }
       
-      console.log('✅ TutorialService - Tutorial deletado completamente');
+      console.log('🎉 TutorialService.deleteTutorial - TUTORIAL DELETADO COMPLETAMENTE');
       return true;
     } catch (error) {
-      console.error('❌ TutorialService - Erro ao deletar tutorial:', error);
+      console.error('❌ TutorialService.deleteTutorial - ERRO CRÍTICO:', error);
+      console.error('🔍 TutorialService.deleteTutorial - Detalhes do erro:', {
+        message: error instanceof Error ? error.message : 'Erro desconhecido',
+        stack: error instanceof Error ? error.stack : undefined,
+        type: typeof error,
+        tutorialId
+      });
       throw error; // Re-lançar o erro para que o hook possa tratá-lo
     }
   }
