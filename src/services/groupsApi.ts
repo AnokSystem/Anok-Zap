@@ -633,5 +633,3 @@ class GroupsApiService {
 }
 
 export const groupsApiService = new GroupsApiService();
-
-}
