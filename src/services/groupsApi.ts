@@ -25,6 +25,56 @@ class GroupsApiService {
     return instanceName.includes(`user-${userId}`);
   }
 
+  // Buscar informações da própria instância para obter o número do WhatsApp
+  private async getInstanceInfo(instanceId: string) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/instance/fetchInstances`, {
+        headers: this.headers,
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Erro na API: ${response.status}`);
+      }
+      
+      const instances = await response.json();
+      const currentInstance = instances.find((inst: any) => 
+        (inst.name || inst.instanceName || inst.id) === instanceId
+      );
+      
+      if (currentInstance && currentInstance.ownerJid) {
+        // Extrair número do ownerJid (ex: "5573933005110@s.whatsapp.net" -> "5573933005110")
+        const phoneNumber = currentInstance.ownerJid.replace('@s.whatsapp.net', '').replace('@c.us', '');
+        console.log(`📱 Número da instância ${instanceId}: ${phoneNumber}`);
+        return phoneNumber;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('❌ Erro ao buscar info da instância:', error);
+      return null;
+    }
+  }
+
+  // Verificar se o participante é o usuário atual da instância
+  private isCurrentUser(participantId: string, instancePhoneNumber: string): boolean {
+    if (!participantId || !instancePhoneNumber) return false;
+    
+    const participantNumber = participantId
+      .replace('@s.whatsapp.net', '')
+      .replace('@c.us', '')
+      .replace('@g.us', '');
+    
+    console.log(`🔍 Comparando participante "${participantNumber}" com instância "${instancePhoneNumber}"`);
+    
+    const isMatch = participantNumber === instancePhoneNumber;
+    
+    if (isMatch) {
+      console.log(`✅ MATCH encontrado: "${participantNumber}" é o dono da instância`);
+    }
+    
+    return isMatch;
+  }
+
   // Extrair número da instância para comparação - versão mais flexível
   private extractNumberFromInstance(instanceId: string): string {
     // Remover prefixos e sufixos para obter apenas o número
@@ -34,7 +84,7 @@ class GroupsApiService {
   }
 
   // Verificar se o participante é o usuário atual - versão mais flexível
-  private isCurrentUser(participantId: string, myNumber: string): boolean {
+  private isCurrentUserOld(participantId: string, myNumber: string): boolean {
     const participantNumber = (participantId || '')
       .replace('@s.whatsapp.net', '')
       .replace('@c.us', '')
@@ -148,7 +198,14 @@ class GroupsApiService {
         return [];
       }
 
-      console.log('🔍 Buscando grupos onde sou ADMIN/SUPERADMIN para instância:', instanceId);
+      console.log('🔍 Buscando grupos onde sou SUPERADMIN para instância:', instanceId);
+      
+      // Primeiro, buscar informações da instância para obter o número do WhatsApp
+      const instancePhoneNumber = await this.getInstanceInfo(instanceId);
+      if (!instancePhoneNumber) {
+        console.log('❌ Não foi possível obter o número da instância');
+        return [];
+      }
       
       // Buscar grupos com participantes para verificar se sou superadmin
       const response = await fetch(`${API_BASE_URL}/group/fetchAllGroups/${instanceId}?getParticipants=true`, {
@@ -164,35 +221,41 @@ class GroupsApiService {
       
       console.log(`📊 Total de grupos encontrados: ${groups.length}`);
       
-      // Extrair o número da instância para comparação
-      const myNumber = this.extractNumberFromInstance(instanceId);
-      console.log(`📱 Meu número extraído da instância: ${myNumber}`);
-      
-      // Filtrar apenas grupos onde sou ADMIN/SUPERADMIN
-      const adminGroups = groups.filter((group: any) => {
+      // Filtrar apenas grupos onde sou SUPERADMIN
+      const superAdminGroups = groups.filter((group: any) => {
         const participants = group.participants || [];
         console.log(`🔍 Verificando grupo "${group.subject || group.name}": ${participants.length} participantes`);
         
         // Procurar por mim mesmo na lista de participantes
         const myParticipation = participants.find((participant: any) => {
-          const isMe = this.isCurrentUser(participant.id || participant.jid || '', myNumber);
+          const participantId = participant.id || participant.jid || '';
+          const isMe = this.isCurrentUser(participantId, instancePhoneNumber);
           
           if (isMe) {
-            const isAdmin = this.isSuperAdminUser(participant);
-            console.log(`👤 Encontrado no grupo "${group.subject || group.name}": Admin/SuperAdmin = ${isAdmin}`);
-            return isAdmin;
+            const isSuperAdmin = participant.admin === 'superadmin';
+            console.log(`👤 Encontrado no grupo "${group.subject || group.name}":`, {
+              participantId,
+              admin: participant.admin,
+              isSuperAdmin: isSuperAdmin
+            });
+            return isSuperAdmin;
           }
           
           return false;
         });
         
-        return !!myParticipation;
+        const hasAccess = !!myParticipation;
+        if (hasAccess) {
+          console.log(`✅ Grupo "${group.subject || group.name}" - Acesso confirmado como SUPERADMIN`);
+        }
+        
+        return hasAccess;
       });
       
-      console.log(`✅ Encontrados ${adminGroups.length} grupos onde sou ADMIN/SUPERADMIN de ${groups.length} grupos totais`);
+      console.log(`✅ Encontrados ${superAdminGroups.length} grupos onde sou SUPERADMIN de ${groups.length} grupos totais`);
       
       // Mapear para o formato padronizado
-      const formattedGroups = adminGroups.map((group: any) => ({
+      const formattedGroups = superAdminGroups.map((group: any) => ({
         id: group.id || group.remoteJid,
         name: group.subject || group.name || 'Grupo sem nome',
         description: group.description || '',
@@ -201,14 +264,14 @@ class GroupsApiService {
         creationTime: group.creationTime || '',
         isAnnounce: group.announce || false,
         isRestricted: group.restrict || false,
-        participants: group.participants || [] // Manter participantes para uso posterior
+        participants: group.participants || []
       }));
       
-      console.log(`📋 Grupos formatados para retorno: ${formattedGroups.length}`);
+      console.log(`📋 Grupos SUPERADMIN formatados para retorno: ${formattedGroups.length}`);
       return formattedGroups;
       
     } catch (error) {
-      console.error('❌ Erro ao buscar grupos onde sou ADMIN/SUPERADMIN:', error);
+      console.error('❌ Erro ao buscar grupos onde sou SUPERADMIN:', error);
       return [];
     }
   }
