@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +14,7 @@ const ProfileManagement = () => {
   const { toast } = useToast();
   const [instances, setInstances] = useState<any[]>([]);
   const [selectedInstance, setSelectedInstance] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
   const [profileData, setProfileData] = useState({
     name: '',
     status: '',
@@ -46,11 +46,41 @@ const ProfileManagement = () => {
   const loadProfileData = async () => {
     if (!selectedInstance) return;
     
-    // Simular carregamento dos dados do perfil
-    toast({
-      title: "Dados Carregados",
-      description: "Dados do perfil carregados com sucesso",
-    });
+    try {
+      console.log('Carregando dados do perfil para instância:', selectedInstance);
+      
+      // Implementar chamada real para buscar dados do perfil
+      const response = await fetch(`https://api.novahagencia.com.br/chat/fetchProfile/${selectedInstance}`, {
+        headers: {
+          'apikey': '26bda82495a95caeae71f96534841285',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Dados do perfil carregados:', data);
+        
+        setProfileData({
+          name: data.pushName || data.name || '',
+          status: data.status || '',
+          description: data.description || '',
+          profilePhoto: null,
+          profilePhotoUrl: data.profilePicUrl || ''
+        });
+
+        toast({
+          title: "Dados Carregados",
+          description: "Dados do perfil carregados com sucesso",
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados do perfil:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar dados do perfil",
+        variant: "destructive"
+      });
+    }
   };
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,7 +95,7 @@ const ProfileManagement = () => {
     }
   };
 
-  const handleUpdateName = () => {
+  const handleUpdateName = async () => {
     if (!selectedInstance) {
       toast({
         title: "Erro",
@@ -84,13 +114,43 @@ const ProfileManagement = () => {
       return;
     }
 
-    toast({
-      title: "Nome Atualizado",
-      description: `Nome alterado para "${profileData.name}"`,
-    });
+    setIsUpdating(true);
+
+    try {
+      console.log('Atualizando nome do perfil:', profileData.name);
+      
+      const response = await fetch(`https://api.novahagencia.com.br/chat/updateProfileName/${selectedInstance}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': '26bda82495a95caeae71f96534841285',
+        },
+        body: JSON.stringify({
+          name: profileData.name
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Nome Atualizado",
+          description: `Nome alterado para "${profileData.name}"`,
+        });
+      } else {
+        throw new Error('Falha na atualização');
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar nome:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar nome do perfil",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
-  const handleUpdateStatus = () => {
+  const handleUpdateStatus = async () => {
     if (!selectedInstance) {
       toast({
         title: "Erro",
@@ -100,13 +160,43 @@ const ProfileManagement = () => {
       return;
     }
 
-    toast({
-      title: "Status Atualizado",
-      description: "Status do perfil atualizado com sucesso",
-    });
+    setIsUpdating(true);
+
+    try {
+      console.log('Atualizando status do perfil:', profileData.status);
+      
+      const response = await fetch(`https://api.novahagencia.com.br/chat/updateProfileStatus/${selectedInstance}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': '26bda82495a95caeae71f96534841285',
+        },
+        body: JSON.stringify({
+          status: profileData.status
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Status Atualizado",
+          description: "Status do perfil atualizado com sucesso",
+        });
+      } else {
+        throw new Error('Falha na atualização');
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar status:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar status do perfil",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
-  const handleUpdateDescription = () => {
+  const handleUpdateDescription = async () => {
     if (!selectedInstance) {
       toast({
         title: "Erro",
@@ -116,13 +206,44 @@ const ProfileManagement = () => {
       return;
     }
 
-    toast({
-      title: "Descrição Atualizada",
-      description: "Descrição do perfil atualizada com sucesso",
-    });
+    setIsUpdating(true);
+
+    try {
+      console.log('Atualizando descrição do perfil:', profileData.description);
+      
+      // Nota: Endpoint pode variar dependendo da API da Evolution
+      const response = await fetch(`https://api.novahagencia.com.br/chat/updateProfileDescription/${selectedInstance}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': '26bda82495a95caeae71f96534841285',
+        },
+        body: JSON.stringify({
+          description: profileData.description
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Descrição Atualizada",
+          description: "Descrição do perfil atualizada com sucesso",
+        });
+      } else {
+        throw new Error('Falha na atualização');
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar descrição:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar descrição do perfil",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
-  const handleUpdatePhoto = () => {
+  const handleUpdatePhoto = async () => {
     if (!selectedInstance) {
       toast({
         title: "Erro",
@@ -141,13 +262,43 @@ const ProfileManagement = () => {
       return;
     }
 
-    toast({
-      title: "Foto Atualizada",
-      description: "Foto do perfil atualizada com sucesso",
-    });
+    setIsUpdating(true);
+
+    try {
+      console.log('Atualizando foto do perfil');
+      
+      const formData = new FormData();
+      formData.append('picture', profileData.profilePhoto);
+
+      const response = await fetch(`https://api.novahagencia.com.br/chat/updateProfilePicture/${selectedInstance}`, {
+        method: 'PUT',
+        headers: {
+          'apikey': '26bda82495a95caeae71f96534841285',
+        },
+        body: formData,
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Foto Atualizada",
+          description: "Foto do perfil atualizada com sucesso",
+        });
+      } else {
+        throw new Error('Falha na atualização');
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar foto:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar foto do perfil",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
-  const handleRemovePhoto = () => {
+  const handleRemovePhoto = async () => {
     if (!selectedInstance) {
       toast({
         title: "Erro",
@@ -157,14 +308,40 @@ const ProfileManagement = () => {
       return;
     }
 
-    setProfileData({ ...profileData, profilePhoto: null, profilePhotoUrl: '' });
-    toast({
-      title: "Foto Removida",
-      description: "Foto do perfil removida com sucesso",
-    });
+    setIsUpdating(true);
+
+    try {
+      console.log('Removendo foto do perfil');
+      
+      const response = await fetch(`https://api.novahagencia.com.br/chat/removeProfilePicture/${selectedInstance}`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': '26bda82495a95caeae71f96534841285',
+        },
+      });
+
+      if (response.ok) {
+        setProfileData({ ...profileData, profilePhoto: null, profilePhotoUrl: '' });
+        toast({
+          title: "Foto Removida",
+          description: "Foto do perfil removida com sucesso",
+        });
+      } else {
+        throw new Error('Falha na remoção');
+      }
+    } catch (error) {
+      console.error('Erro ao remover foto:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao remover foto do perfil",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
-  const handleUpdatePrivacy = () => {
+  const handleUpdatePrivacy = async () => {
     if (!selectedInstance) {
       toast({
         title: "Erro",
@@ -174,10 +351,38 @@ const ProfileManagement = () => {
       return;
     }
 
-    toast({
-      title: "Privacidade Atualizada",
-      description: "Configurações de privacidade atualizadas",
-    });
+    setIsUpdating(true);
+
+    try {
+      console.log('Atualizando configurações de privacidade:', privacySettings);
+      
+      const response = await fetch(`https://api.novahagencia.com.br/chat/updatePrivacySettings/${selectedInstance}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': '26bda82495a95caeae71f96534841285',
+        },
+        body: JSON.stringify(privacySettings),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Privacidade Atualizada",
+          description: "Configurações de privacidade atualizadas",
+        });
+      } else {
+        throw new Error('Falha na atualização');
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar privacidade:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar configurações de privacidade",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   return (
@@ -218,6 +423,7 @@ const ProfileManagement = () => {
               variant="outline" 
               onClick={loadProfileData}
               className="bg-gray-800 border-gray-600 mt-6"
+              disabled={!selectedInstance}
             >
               <RefreshCw className="w-4 h-4" />
             </Button>
@@ -254,14 +460,19 @@ const ProfileManagement = () => {
           </div>
           
           <div className="flex gap-3">
-            <Button onClick={handleUpdatePhoto} className="btn-primary flex-1">
+            <Button 
+              onClick={handleUpdatePhoto} 
+              className="btn-primary flex-1"
+              disabled={isUpdating || !selectedInstance}
+            >
               <Camera className="w-4 h-4 mr-2" />
-              Atualizar Foto
+              {isUpdating ? 'Atualizando...' : 'Atualizar Foto'}
             </Button>
             <Button 
               variant="destructive" 
               onClick={handleRemovePhoto}
               className="flex-1"
+              disabled={isUpdating || !selectedInstance}
             >
               <Trash2 className="w-4 h-4 mr-2" />
               Remover Foto
@@ -288,9 +499,13 @@ const ProfileManagement = () => {
                 placeholder="Digite seu nome"
                 className="bg-gray-800 border-gray-600 flex-1"
               />
-              <Button onClick={handleUpdateName} className="btn-primary">
+              <Button 
+                onClick={handleUpdateName} 
+                className="btn-primary"
+                disabled={isUpdating || !selectedInstance}
+              >
                 <Save className="w-4 h-4 mr-2" />
-                Salvar Nome
+                {isUpdating ? 'Salvando...' : 'Salvar Nome'}
               </Button>
             </div>
           </div>
@@ -304,9 +519,13 @@ const ProfileManagement = () => {
                 placeholder="Digite seu status"
                 className="bg-gray-800 border-gray-600 flex-1"
               />
-              <Button onClick={handleUpdateStatus} className="btn-primary">
+              <Button 
+                onClick={handleUpdateStatus} 
+                className="btn-primary"
+                disabled={isUpdating || !selectedInstance}
+              >
                 <Save className="w-4 h-4 mr-2" />
-                Salvar Status
+                {isUpdating ? 'Salvando...' : 'Salvar Status'}
               </Button>
             </div>
           </div>
@@ -321,9 +540,13 @@ const ProfileManagement = () => {
                 className="bg-gray-800 border-gray-600 text-gray-200"
                 rows={3}
               />
-              <Button onClick={handleUpdateDescription} className="btn-primary w-full">
+              <Button 
+                onClick={handleUpdateDescription} 
+                className="btn-primary w-full"
+                disabled={isUpdating || !selectedInstance}
+              >
                 <Save className="w-4 h-4 mr-2" />
-                Salvar Descrição
+                {isUpdating ? 'Salvando...' : 'Salvar Descrição'}
               </Button>
             </div>
           </div>
@@ -412,9 +635,13 @@ const ProfileManagement = () => {
             </div>
           </div>
 
-          <Button onClick={handleUpdatePrivacy} className="btn-primary w-full">
+          <Button 
+            onClick={handleUpdatePrivacy} 
+            className="btn-primary w-full"
+            disabled={isUpdating || !selectedInstance}
+          >
             <Shield className="w-4 h-4 mr-2" />
-            Salvar Configurações de Privacidade
+            {isUpdating ? 'Salvando...' : 'Salvar Configurações de Privacidade'}
           </Button>
         </CardContent>
       </Card>

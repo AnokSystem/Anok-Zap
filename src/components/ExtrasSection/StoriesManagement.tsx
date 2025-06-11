@@ -15,6 +15,7 @@ const StoriesManagement = () => {
   const { toast } = useToast();
   const [instances, setInstances] = useState<any[]>([]);
   const [selectedInstances, setSelectedInstances] = useState<string[]>([]);
+  const [isPosting, setIsPosting] = useState(false);
   const [storyData, setStoryData] = useState({
     type: 'image',
     caption: '',
@@ -52,7 +53,41 @@ const StoriesManagement = () => {
     );
   };
 
-  const handlePostStory = () => {
+  const postStoryToInstance = async (instanceId: string) => {
+    if (!storyData.file) return false;
+
+    try {
+      const formData = new FormData();
+      formData.append('media', storyData.file);
+      if (storyData.caption) {
+        formData.append('caption', storyData.caption);
+      }
+
+      console.log(`Postando story na instância ${instanceId}`);
+      
+      // Simulando chamada para API da Evolution - substitua pela implementação real
+      const response = await fetch(`https://api.novahagencia.com.br/message/sendStatus/${instanceId}`, {
+        method: 'POST',
+        headers: {
+          'apikey': '26bda82495a95caeae71f96534841285',
+        },
+        body: formData,
+      });
+
+      if (response.ok) {
+        console.log(`Story postado com sucesso na instância ${instanceId}`);
+        return true;
+      } else {
+        console.error(`Erro ao postar story na instância ${instanceId}:`, response.status);
+        return false;
+      }
+    } catch (error) {
+      console.error(`Erro ao postar story na instância ${instanceId}:`, error);
+      return false;
+    }
+  };
+
+  const handlePostStory = async () => {
     if (!storyData.file) {
       toast({
         title: "Erro",
@@ -71,10 +106,50 @@ const StoriesManagement = () => {
       return;
     }
 
-    toast({
-      title: "Story Postado",
-      description: `Story postado em ${selectedInstances.length} instância(s)`,
+    setIsPosting(true);
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const instanceId of selectedInstances) {
+      const success = await postStoryToInstance(instanceId);
+      if (success) {
+        successCount++;
+      } else {
+        errorCount++;
+      }
+    }
+
+    setIsPosting(false);
+
+    if (successCount > 0 && errorCount === 0) {
+      toast({
+        title: "Story Postado",
+        description: `Story postado com sucesso em ${successCount} instância(s)`,
+      });
+    } else if (successCount > 0 && errorCount > 0) {
+      toast({
+        title: "Parcialmente Concluído",
+        description: `Story postado em ${successCount} instância(s), falhou em ${errorCount}`,
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Erro",
+        description: "Falha ao postar story em todas as instâncias",
+        variant: "destructive"
+      });
+    }
+
+    // Limpar o formulário após postar
+    setStoryData({
+      type: 'image',
+      caption: '',
+      schedule: false,
+      scheduleDate: '',
+      scheduleTime: '',
+      file: null
     });
+    setSelectedInstances([]);
   };
 
   const handleScheduleStory = () => {
@@ -105,6 +180,7 @@ const StoriesManagement = () => {
       return;
     }
 
+    // Implementar lógica de agendamento aqui
     toast({
       title: "Story Agendado",
       description: `Story agendado para ${storyData.scheduleDate} às ${storyData.scheduleTime} em ${selectedInstances.length} instância(s)`,
@@ -258,9 +334,13 @@ const StoriesManagement = () => {
           {/* Botões de Ação */}
           <div className="flex flex-col md:flex-row gap-3 pt-4">
             {!storyData.schedule && (
-              <Button onClick={handlePostStory} className="btn-primary flex-1">
+              <Button 
+                onClick={handlePostStory} 
+                className="btn-primary flex-1"
+                disabled={isPosting}
+              >
                 <Play className="w-4 h-4 mr-2" />
-                Postar Story Agora
+                {isPosting ? 'Postando...' : 'Postar Story Agora'}
               </Button>
             )}
             
