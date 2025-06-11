@@ -95,7 +95,7 @@ class GroupsApiService {
     }
   }
 
-  // Nova função para criar grupo em lote com ações em fila - CORRIGIDA
+  // Nova função para criar grupo em lote - UPLOAD MINIO + WEBHOOK
   async createGroupBatch(instanceId: string, actions: any[]) {
     try {
       const userId = this.getUserId();
@@ -103,19 +103,31 @@ class GroupsApiService {
         throw new Error('Acesso negado à instância');
       }
 
-      // Converter File para base64 se houver imagem
+      // Processar ações e fazer upload de imagens para MinIO se necessário
       const processedActions = await Promise.all(actions.map(async (action) => {
         if (action.action === 'update_group_picture' && action.data.profileImage instanceof File) {
-          const base64 = await this.fileToBase64(action.data.profileImage);
-          return {
-            ...action,
-            data: {
-              ...action.data,
-              profileImage: base64,
-              fileName: action.data.profileImage.name,
-              fileType: action.data.profileImage.type
-            }
-          };
+          console.log('Fazendo upload da imagem para MinIO...');
+          
+          // Importar dinamicamente o serviço MinIO
+          const { minioService } = await import('@/services/minio');
+          
+          try {
+            // Fazer upload da imagem para MinIO
+            const imageUrl = await minioService.uploadFile(action.data.profileImage);
+            console.log('Imagem enviada para MinIO com sucesso:', imageUrl);
+            
+            return {
+              ...action,
+              data: {
+                imageUrl: imageUrl, // URL da imagem no MinIO
+                fileName: action.data.profileImage.name,
+                fileType: action.data.profileImage.type
+              }
+            };
+          } catch (uploadError) {
+            console.error('Erro no upload da imagem para MinIO:', uploadError);
+            throw new Error('Falha no upload da imagem de perfil');
+          }
         }
         return action;
       }));
