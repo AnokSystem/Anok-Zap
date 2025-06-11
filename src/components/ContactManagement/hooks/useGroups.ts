@@ -29,8 +29,9 @@ export const useGroups = ({ selectedInstance, contactType }: UseGroupsProps) => 
     
     setIsLoadingGroups(true);
     try {
-      console.log('🔄 Carregando grupos onde sou admin para instância:', selectedInstance);
-      const groupsData = await groupsApiService.getGroups(selectedInstance);
+      console.log('🔄 Carregando TODOS os grupos para instância:', selectedInstance);
+      // Usar getAllGroups para buscar TODOS os grupos na seção de contatos
+      const groupsData = await groupsApiService.getAllGroups(selectedInstance);
       console.log('📊 Grupos carregados:', groupsData);
       
       // Converter para o formato esperado pelo ContactManagement
@@ -49,20 +50,20 @@ export const useGroups = ({ selectedInstance, contactType }: UseGroupsProps) => 
       if (formattedGroups.length === 0) {
         toast({
           title: "Nenhum grupo encontrado",
-          description: "Não foram encontrados grupos onde você é administrador",
+          description: "Não foram encontrados grupos nesta instância",
           variant: "destructive",
         });
       } else {
         toast({
           title: "Grupos carregados",
-          description: `${formattedGroups.length} grupos encontrados onde você é administrador`,
+          description: `${formattedGroups.length} grupos encontrados`,
         });
       }
     } catch (error) {
       console.error('❌ Erro ao carregar grupos:', error);
       toast({
         title: "Erro",
-        description: "Falha ao carregar grupos onde você é administrador",
+        description: "Falha ao carregar grupos",
         variant: "destructive",
       });
     } finally {

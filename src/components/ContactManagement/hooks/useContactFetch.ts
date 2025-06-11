@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { evolutionApiService } from '@/services/evolutionApi';
+import { groupsApiService } from '@/services/groupsApi';
 import { nocodbService } from '@/services/nocodb';
 import { Contact, ContactType, MemberType } from '../types';
 

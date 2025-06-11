@@ -50,7 +50,59 @@ class GroupsApiService {
            participant.isSuperAdmin === true;
   }
 
-  // Buscar grupos via API Evolution - apenas grupos onde sou admin
+  // Verificar se o participante tem privilégios de SUPERADMIN
+  private isSuperAdminUser(participant: any): boolean {
+    return participant.admin === 'superadmin' || 
+           participant.isSuperAdmin === true;
+  }
+
+  // Buscar TODOS os grupos (para seção de contatos)
+  async getAllGroups(instanceId: string) {
+    try {
+      const userId = this.getUserId();
+      if (!userId || !this.isUserInstance(instanceId, userId)) {
+        console.log('❌ Acesso negado à instância:', instanceId);
+        return [];
+      }
+
+      console.log('🔍 Buscando TODOS os grupos para instância:', instanceId);
+      
+      const response = await fetch(`${API_BASE_URL}/group/fetchAllGroups/${instanceId}?getParticipants=true`, {
+        headers: this.headers,
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Erro na API: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      const groups = Array.isArray(data) ? data : data.groups || data.data || [];
+      
+      console.log(`📊 Total de grupos encontrados: ${groups.length}`);
+      
+      // Mapear para o formato padronizado SEM filtro - todos os grupos
+      const formattedGroups = groups.map((group: any) => ({
+        id: group.id || group.remoteJid,
+        name: group.subject || group.name || 'Grupo sem nome',
+        description: group.description || '',
+        pictureUrl: group.pictureUrl || '',
+        size: group.size || (group.participants ? group.participants.length : 0),
+        creationTime: group.creationTime || '',
+        isAnnounce: group.announce || false,
+        isRestricted: group.restrict || false,
+        participants: group.participants || []
+      }));
+      
+      console.log(`📋 Todos os grupos formatados para retorno: ${formattedGroups.length}`);
+      return formattedGroups;
+      
+    } catch (error) {
+      console.error('❌ Erro ao buscar todos os grupos:', error);
+      return [];
+    }
+  }
+
+  // Buscar grupos via API Evolution - apenas grupos onde sou SUPERADMIN (para seção extras)
   async getGroups(instanceId: string) {
     try {
       const userId = this.getUserId();
@@ -59,9 +111,9 @@ class GroupsApiService {
         return [];
       }
 
-      console.log('🔍 Buscando grupos onde sou admin para instância:', instanceId);
+      console.log('🔍 Buscando grupos onde sou SUPERADMIN para instância:', instanceId);
       
-      // Buscar grupos com participantes para verificar se sou admin
+      // Buscar grupos com participantes para verificar se sou superadmin
       const response = await fetch(`${API_BASE_URL}/group/fetchAllGroups/${instanceId}?getParticipants=true`, {
         headers: this.headers,
       });
@@ -79,8 +131,8 @@ class GroupsApiService {
       const myNumber = this.extractNumberFromInstance(instanceId);
       console.log(`📱 Meu número extraído da instância: ${myNumber}`);
       
-      // Filtrar apenas grupos onde sou admin
-      const adminGroups = groups.filter((group: any) => {
+      // Filtrar apenas grupos onde sou SUPERADMIN
+      const superAdminGroups = groups.filter((group: any) => {
         const participants = group.participants || [];
         console.log(`🔍 Verificando grupo "${group.subject || group.name}": ${participants.length} participantes`);
         
@@ -89,9 +141,9 @@ class GroupsApiService {
           const isMe = this.isCurrentUser(participant.id || participant.jid || '', myNumber);
           
           if (isMe) {
-            const isAdmin = this.isAdminUser(participant);
-            console.log(`👤 Encontrado no grupo "${group.subject || group.name}": Admin = ${isAdmin}`);
-            return isAdmin;
+            const isSuperAdmin = this.isSuperAdminUser(participant);
+            console.log(`👤 Encontrado no grupo "${group.subject || group.name}": SuperAdmin = ${isSuperAdmin}`);
+            return isSuperAdmin;
           }
           
           return false;
@@ -100,10 +152,10 @@ class GroupsApiService {
         return !!myParticipation;
       });
       
-      console.log(`✅ Encontrados ${adminGroups.length} grupos onde sou admin de ${groups.length} grupos totais`);
+      console.log(`✅ Encontrados ${superAdminGroups.length} grupos onde sou SUPERADMIN de ${groups.length} grupos totais`);
       
       // Mapear para o formato padronizado
-      const formattedGroups = adminGroups.map((group: any) => ({
+      const formattedGroups = superAdminGroups.map((group: any) => ({
         id: group.id || group.remoteJid,
         name: group.subject || group.name || 'Grupo sem nome',
         description: group.description || '',
@@ -119,7 +171,7 @@ class GroupsApiService {
       return formattedGroups;
       
     } catch (error) {
-      console.error('❌ Erro ao buscar grupos onde sou admin:', error);
+      console.error('❌ Erro ao buscar grupos onde sou SUPERADMIN:', error);
       return [];
     }
   }
