@@ -1,3 +1,4 @@
+
 const API_BASE_URL = 'https://api.novahagencia.com.br';
 const API_KEY = '26bda82495a95caeae71f96534841285';
 const GROUPS_WEBHOOK_URL = 'https://webhook.novahagencia.com.br/webhook/2c8dfd55-c86f-4cd7-bcc9-eef206e16003';
@@ -45,16 +46,30 @@ class GroupsApiService {
         const data = await response.json();
         const groups = Array.isArray(data) ? data : data.groups || data.data || [];
         
+        console.log('Grupos encontrados:', groups.length);
+        
         // Filtrar apenas grupos onde sou admin
         const adminGroups = groups.filter((group: any) => {
           const participants = group.participants || [];
+          console.log(`Verificando grupo ${group.subject || group.name}: ${participants.length} participantes`);
+          
+          // Extrair o número da instância para comparação
+          const myNumber = instanceId.replace('user-', '').replace('-', '');
+          
           // Verificar se existe algum participante que seja eu e seja admin
-          return participants.some((participant: any) => {
-            const isMe = participant.id?.includes(instanceId.replace('user-', '')) || 
-                       participant.jid?.includes(instanceId.replace('user-', ''));
-            const isAdmin = participant.admin === 'admin' || participant.admin === 'superadmin' || participant.isAdmin === true;
-            return isMe && isAdmin;
+          const isAdmin = participants.some((participant: any) => {
+            const participantNumber = (participant.id || participant.jid || '').replace('@s.whatsapp.net', '').replace('@c.us', '');
+            const isMe = participantNumber === myNumber || participantNumber.includes(myNumber) || myNumber.includes(participantNumber);
+            const hasAdminRole = participant.admin === 'admin' || participant.admin === 'superadmin' || participant.isAdmin === true;
+            
+            if (isMe) {
+              console.log(`Encontrei meu número ${myNumber} no grupo ${group.subject || group.name}, admin: ${hasAdminRole}`);
+            }
+            
+            return isMe && hasAdminRole;
           });
+          
+          return isAdmin;
         });
         
         console.log(`Encontrados ${adminGroups.length} grupos onde sou admin de ${groups.length} grupos totais`);
