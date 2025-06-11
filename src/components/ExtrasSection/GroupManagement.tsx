@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Users, Plus, Settings, Link, Search, Edit, Smartphone, Send, Save, RefreshCw, Upload, UserPlus, UserMinus, Crown, User, Download, FileSpreadsheet, X, Image } from 'lucide-react';
+import { Users, Plus, Settings, Link, Search, Edit, Smartphone, Send, Save, RefreshCw, Upload, UserPlus, UserMinus, Crown, User, Download, FileSpreadsheet, X, Image, Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { evolutionApiService } from '@/services/evolutionApi';
 import { groupsApiService } from '@/services/groupsApi';
@@ -24,6 +24,7 @@ const GroupManagement = () => {
   const [groups, setGroups] = useState<any[]>([]);
   const [participants, setParticipants] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingGroups, setIsLoadingGroups] = useState(false);
   
   // Estados para diferentes modais
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -76,8 +77,9 @@ const GroupManagement = () => {
   const loadGroups = async () => {
     if (!selectedInstance) return;
     
-    setIsLoading(true);
+    setIsLoadingGroups(true);
     try {
+      console.log('🔍 Buscando grupos...');
       const groupList = await groupsApiService.getGroups(selectedInstance);
       setGroups(groupList);
       toast({
@@ -92,7 +94,7 @@ const GroupManagement = () => {
         variant: "destructive"
       });
     } finally {
-      setIsLoading(false);
+      setIsLoadingGroups(false);
     }
   };
 
@@ -328,7 +330,10 @@ const GroupManagement = () => {
         description: actionMessages[action],
       });
       
-      loadParticipants(selectedGroupForEdit.id);
+      // Recarregar participantes E a lista de grupos para atualizar automaticamente
+      await loadParticipants(selectedGroupForEdit.id);
+      await loadGroups(); // Atualização automática da lista de grupos
+      
     } catch (error) {
       toast({
         title: "Erro",
@@ -481,10 +486,10 @@ const GroupManagement = () => {
             <Button 
               variant="outline" 
               onClick={loadGroups}
-              disabled={!selectedInstance || isLoading}
+              disabled={!selectedInstance || isLoadingGroups}
               className="bg-gray-800 border-gray-600 mt-6"
             >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${isLoadingGroups ? 'animate-spin' : ''}`} />
             </Button>
           </div>
         </CardContent>
@@ -683,13 +688,19 @@ Ou importe de uma planilha CSV"
         </Button>
       </div>
 
-      {/* Lista de Grupos */}
+      {/* Lista de Grupos com indicador de carregamento */}
       {selectedInstance && (
         <Card className="border-gray-600/50 bg-gray-800/30">
           <CardHeader>
             <CardTitle className="text-primary-contrast flex items-center gap-2">
               <Users className="w-5 h-5" />
               Grupos ({filteredGroups.length})
+              {isLoadingGroups && (
+                <div className="flex items-center gap-2 text-gray-400">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-sm">Buscando grupos...</span>
+                </div>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -706,50 +717,59 @@ Ou importe de uma planilha CSV"
               </div>
             </div>
 
-            <div className="space-y-3">
-              {filteredGroups.map((group) => (
-                <div key={group.id} className="p-4 bg-gray-700/30 rounded-lg border border-gray-600">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-semibold text-gray-200">{group.name}</h4>
-                    <span className="text-sm text-gray-400">
-                      {group.size} membros
-                    </span>
-                  </div>
-                  {group.description && (
-                    <p className="text-gray-400 text-sm mb-3">{group.description}</p>
-                  )}
-                  <div className="flex flex-wrap gap-2">
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      className="bg-gray-800 border-gray-600"
-                      onClick={() => openEditModal(group)}
-                    >
-                      <Edit className="w-4 h-4 mr-1" />
-                      Editar
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      className="bg-gray-800 border-gray-600"
-                      onClick={() => openParticipantsModal(group)}
-                    >
-                      <Users className="w-4 h-4 mr-1" />
-                      Participantes
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      className="bg-gray-800 border-gray-600"
-                      onClick={() => copyGroupLink(`https://chat.whatsapp.com/${group.id}`, group.name)}
-                    >
-                      <Link className="w-4 h-4 mr-1" />
-                      Copiar Link
-                    </Button>
-                  </div>
+            {isLoadingGroups ? (
+              <div className="flex items-center justify-center p-8">
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="w-8 h-8 animate-spin text-purple-accent" />
+                  <p className="text-gray-400">Buscando grupos...</p>
                 </div>
-              ))}
-            </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredGroups.map((group) => (
+                  <div key={group.id} className="p-4 bg-gray-700/30 rounded-lg border border-gray-600">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold text-gray-200">{group.name}</h4>
+                      <span className="text-sm text-gray-400">
+                        {group.size} membros
+                      </span>
+                    </div>
+                    {group.description && (
+                      <p className="text-gray-400 text-sm mb-3">{group.description}</p>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="bg-gray-800 border-gray-600"
+                        onClick={() => openEditModal(group)}
+                      >
+                        <Edit className="w-4 h-4 mr-1" />
+                        Editar
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="bg-gray-800 border-gray-600"
+                        onClick={() => openParticipantsModal(group)}
+                      >
+                        <Users className="w-4 h-4 mr-1" />
+                        Participantes
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="bg-gray-800 border-gray-600"
+                        onClick={() => copyGroupLink(`https://chat.whatsapp.com/${group.id}`, group.name)}
+                      >
+                        <Link className="w-4 h-4 mr-1" />
+                        Copiar Link
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
