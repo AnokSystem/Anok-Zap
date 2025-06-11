@@ -5,7 +5,7 @@ export { tutorialService } from './tutorialService';
 // Services
 export { tutorialMetadataService } from './metadataService';
 export { tutorialLocalStorageService } from './localStorageService';
-export { fileUploadService } from './fileUploadService';
+export { tutorialFileUploadService } from './fileUploadService';
 
 // Sub-services
 export { tutorialConnectionService } from './connectionService';
