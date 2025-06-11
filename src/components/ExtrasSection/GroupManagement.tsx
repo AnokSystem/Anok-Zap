@@ -7,9 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Users, Plus, Settings, Link, Search, Edit, Smartphone, Send, Save, RefreshCw } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Users, Plus, Settings, Link, Search, Edit, Smartphone, Send, Save, RefreshCw, Upload, UserPlus, UserMinus, Crown, User } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { evolutionApiService } from '@/services/evolutionApi';
+import { groupsApiService } from '@/services/groupsApi';
 
 const GroupManagement = () => {
   const { toast } = useToast();
@@ -19,11 +21,32 @@ const GroupManagement = () => {
   const [groupMessage, setGroupMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [groups, setGroups] = useState<any[]>([]);
+  const [participants, setParticipants] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Estados para diferentes modais
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showParticipantsModal, setShowParticipantsModal] = useState(false);
+  const [selectedGroupForEdit, setSelectedGroupForEdit] = useState<any>(null);
+  
+  // Dados para criação de grupo
   const [newGroupData, setNewGroupData] = useState({
     name: '',
     description: '',
     isPrivate: false
   });
+
+  // Dados para edição de grupo
+  const [editGroupData, setEditGroupData] = useState({
+    name: '',
+    description: '',
+    pictureFile: null as File | null,
+    isAnnounce: false,
+    isRestricted: false
+  });
+
+  const [newParticipantNumber, setNewParticipantNumber] = useState('');
 
   useEffect(() => {
     loadInstances();
@@ -47,11 +70,37 @@ const GroupManagement = () => {
   const loadGroups = async () => {
     if (!selectedInstance) return;
     
+    setIsLoading(true);
     try {
-      const groupList = await evolutionApiService.getGroups(selectedInstance);
+      const groupList = await groupsApiService.getGroups(selectedInstance);
       setGroups(groupList);
+      toast({
+        title: "Grupos Carregados",
+        description: `${groupList.length} grupos encontrados`,
+      });
     } catch (error) {
       console.error('Erro ao carregar grupos:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao carregar grupos",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadParticipants = async (groupId: string) => {
+    try {
+      const participantsList = await groupsApiService.getGroupParticipants(selectedInstance, groupId);
+      setParticipants(participantsList);
+    } catch (error) {
+      console.error('Erro ao carregar participantes:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao carregar participantes",
+        variant: "destructive"
+      });
     }
   };
 
@@ -59,7 +108,7 @@ const GroupManagement = () => {
     group.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleCreateGroup = () => {
+  const handleCreateGroup = async () => {
     if (!selectedInstance) {
       toast({
         title: "Erro",
@@ -78,38 +127,201 @@ const GroupManagement = () => {
       return;
     }
 
-    toast({
-      title: "Grupo Criado",
-      description: `Grupo "${newGroupData.name}" criado com sucesso!`,
-    });
-    setNewGroupData({ name: '', description: '', isPrivate: false });
+    setIsLoading(true);
+    try {
+      await groupsApiService.createGroup(selectedInstance, newGroupData);
+      toast({
+        title: "Grupo Criado",
+        description: `Grupo "${newGroupData.name}" criado com sucesso!`,
+      });
+      setNewGroupData({ name: '', description: '', isPrivate: false });
+      setShowCreateModal(false);
+      loadGroups(); // Recarregar lista
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Falha ao criar grupo",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleSendMessage = () => {
-    if (!selectedInstance) {
+  const handleUpdateGroupName = async () => {
+    if (!selectedGroupForEdit || !editGroupData.name) return;
+
+    setIsLoading(true);
+    try {
+      await groupsApiService.updateGroupName(selectedInstance, selectedGroupForEdit.id, editGroupData.name);
+      toast({
+        title: "Nome Atualizado",
+        description: "Nome do grupo atualizado com sucesso!",
+      });
+      loadGroups();
+    } catch (error) {
       toast({
         title: "Erro",
-        description: "Selecione uma instância",
+        description: "Falha ao atualizar nome",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdateGroupDescription = async () => {
+    if (!selectedGroupForEdit) return;
+
+    setIsLoading(true);
+    try {
+      await groupsApiService.updateGroupDescription(selectedInstance, selectedGroupForEdit.id, editGroupData.description);
+      toast({
+        title: "Descrição Atualizada",
+        description: "Descrição do grupo atualizada com sucesso!",
+      });
+      loadGroups();
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Falha ao atualizar descrição",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdateGroupPicture = async () => {
+    if (!selectedGroupForEdit || !editGroupData.pictureFile) return;
+
+    setIsLoading(true);
+    try {
+      await groupsApiService.updateGroupPicture(selectedInstance, selectedGroupForEdit.id, editGroupData.pictureFile);
+      toast({
+        title: "Imagem Atualizada",
+        description: "Imagem do grupo atualizada com sucesso!",
+      });
+      loadGroups();
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Falha ao atualizar imagem",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdateGroupSettings = async () => {
+    if (!selectedGroupForEdit) return;
+
+    setIsLoading(true);
+    try {
+      await groupsApiService.updateGroupSettings(selectedInstance, selectedGroupForEdit.id, {
+        isAnnounce: editGroupData.isAnnounce,
+        isRestricted: editGroupData.isRestricted
+      });
+      toast({
+        title: "Configurações Atualizadas",
+        description: "Configurações do grupo atualizadas com sucesso!",
+      });
+      loadGroups();
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Falha ao atualizar configurações",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleParticipantAction = async (participantId: string, action: 'add' | 'remove' | 'promote' | 'demote') => {
+    if (!selectedGroupForEdit) return;
+
+    setIsLoading(true);
+    try {
+      await groupsApiService.manageParticipant(selectedInstance, selectedGroupForEdit.id, participantId, action);
+      const actionMessages = {
+        add: 'Participante adicionado',
+        remove: 'Participante removido',
+        promote: 'Participante promovido a admin',
+        demote: 'Admin rebaixado a membro'
+      };
+      
+      toast({
+        title: "Sucesso",
+        description: actionMessages[action],
+      });
+      
+      loadParticipants(selectedGroupForEdit.id);
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: `Falha ao ${action} participante`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAddParticipant = async () => {
+    if (!newParticipantNumber || !selectedGroupForEdit) return;
+
+    await handleParticipantAction(newParticipantNumber + '@s.whatsapp.net', 'add');
+    setNewParticipantNumber('');
+  };
+
+  const handleSendMessage = async () => {
+    if (!selectedInstance || !selectedGroup || !groupMessage) {
+      toast({
+        title: "Erro",
+        description: "Selecione uma instância, grupo e digite uma mensagem",
         variant: "destructive"
       });
       return;
     }
 
-    if (!selectedGroup || !groupMessage) {
+    setIsLoading(true);
+    try {
+      await groupsApiService.sendMessageToGroup(selectedInstance, selectedGroup, groupMessage);
+      const group = groups.find(g => g.id === selectedGroup);
+      toast({
+        title: "Mensagem Enviada",
+        description: `Mensagem enviada para o grupo "${group?.name}"`,
+      });
+      setGroupMessage('');
+    } catch (error) {
       toast({
         title: "Erro",
-        description: "Selecione um grupo e digite uma mensagem",
+        description: "Falha ao enviar mensagem",
         variant: "destructive"
       });
-      return;
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    const group = groups.find(g => g.id === selectedGroup);
-    toast({
-      title: "Mensagem Enviada",
-      description: `Mensagem enviada para o grupo "${group?.name}"`,
+  const openEditModal = (group: any) => {
+    setSelectedGroupForEdit(group);
+    setEditGroupData({
+      name: group.name,
+      description: group.description || '',
+      pictureFile: null,
+      isAnnounce: group.isAnnounce || false,
+      isRestricted: group.isRestricted || false
     });
-    setGroupMessage('');
+    setShowEditModal(true);
+  };
+
+  const openParticipantsModal = (group: any) => {
+    setSelectedGroupForEdit(group);
+    loadParticipants(group.id);
+    setShowParticipantsModal(true);
   };
 
   const copyGroupLink = (link: string, groupName: string) => {
@@ -157,120 +369,315 @@ const GroupManagement = () => {
             <Button 
               variant="outline" 
               onClick={loadGroups}
+              disabled={!selectedInstance || isLoading}
               className="bg-gray-800 border-gray-600 mt-6"
             >
-              <RefreshCw className="w-4 h-4" />
+              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Criar Novo Grupo */}
-      <Card className="border-gray-600/50 bg-gray-800/30">
-        <CardHeader>
-          <CardTitle className="text-primary-contrast flex items-center gap-2">
-            <Plus className="w-5 h-5" />
-            Criar Novo Grupo
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Botões de Ação */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+          <DialogTrigger asChild>
+            <Button className="btn-primary h-16" disabled={!selectedInstance}>
+              <Plus className="w-5 h-5 mr-2" />
+              Criar Novo Grupo
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="bg-gray-800 border-gray-600">
+            <DialogHeader>
+              <DialogTitle className="text-primary-contrast">Criar Novo Grupo</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label className="text-gray-300">Nome do Grupo</Label>
+                <Input
+                  value={newGroupData.name}
+                  onChange={(e) => setNewGroupData({ ...newGroupData, name: e.target.value })}
+                  placeholder="Digite o nome do grupo"
+                  className="bg-gray-700 border-gray-600"
+                />
+              </div>
+              <div>
+                <Label className="text-gray-300">Descrição</Label>
+                <Textarea
+                  value={newGroupData.description}
+                  onChange={(e) => setNewGroupData({ ...newGroupData, description: e.target.value })}
+                  placeholder="Descrição do grupo (opcional)"
+                  className="bg-gray-700 border-gray-600"
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="private"
+                  checked={newGroupData.isPrivate}
+                  onCheckedChange={(checked) => setNewGroupData({ ...newGroupData, isPrivate: !!checked })}
+                />
+                <Label htmlFor="private" className="text-gray-300">Grupo Privado</Label>
+              </div>
+              <Button onClick={handleCreateGroup} disabled={isLoading} className="btn-primary w-full">
+                {isLoading ? 'Criando...' : 'Criar Grupo'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Button 
+          variant="outline" 
+          className="h-16 bg-gray-800 border-gray-600"
+          disabled={!selectedInstance || groups.length === 0}
+          onClick={() => {
+            if (groups.length > 0) {
+              openEditModal(groups[0]);
+            }
+          }}
+        >
+          <Settings className="w-5 h-5 mr-2" />
+          Gerenciar Grupos
+        </Button>
+
+        <Button 
+          variant="outline" 
+          className="h-16 bg-gray-800 border-gray-600"
+          disabled={!selectedInstance || groups.length === 0}
+        >
+          <Send className="w-5 h-5 mr-2" />
+          Enviar Mensagens
+        </Button>
+      </div>
+
+      {/* Lista de Grupos */}
+      {selectedInstance && (
+        <Card className="border-gray-600/50 bg-gray-800/30">
+          <CardHeader>
+            <CardTitle className="text-primary-contrast flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              Grupos ({filteredGroups.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div>
-              <Label className="text-gray-300">Nome do Grupo</Label>
-              <Input
-                value={newGroupData.name}
-                onChange={(e) => setNewGroupData({ ...newGroupData, name: e.target.value })}
-                placeholder="Digite o nome do grupo"
-                className="bg-gray-800 border-gray-600"
-              />
+              <Label className="text-gray-300">Buscar Grupos</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                <Input
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar grupos..."
+                  className="bg-gray-800 border-gray-600 pl-10"
+                />
+              </div>
             </div>
-            <div className="flex items-center space-x-2 pt-6">
-              <Checkbox
-                id="private"
-                checked={newGroupData.isPrivate}
-                onCheckedChange={(checked) => setNewGroupData({ ...newGroupData, isPrivate: !!checked })}
-              />
-              <Label htmlFor="private" className="text-gray-300">Grupo Privado</Label>
-            </div>
-          </div>
 
-          <div>
-            <Label className="text-gray-300">Descrição</Label>
-            <Textarea
-              value={newGroupData.description}
-              onChange={(e) => setNewGroupData({ ...newGroupData, description: e.target.value })}
-              placeholder="Descrição do grupo (opcional)"
-              className="bg-gray-800 border-gray-600 text-gray-200"
-              rows={3}
-            />
-          </div>
-
-          <div className="flex gap-3">
-            <Button onClick={handleCreateGroup} className="btn-primary flex-1">
-              <Plus className="w-4 h-4 mr-2" />
-              Criar Grupo
-            </Button>
-            <Button variant="outline" className="flex-1 bg-gray-800 border-gray-600">
-              <Save className="w-4 h-4 mr-2" />
-              Salvar Rascunho
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Gerenciar Grupos Existentes */}
-      <Card className="border-gray-600/50 bg-gray-800/30">
-        <CardHeader>
-          <CardTitle className="text-primary-contrast flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            Gerenciar Grupos ({filteredGroups.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label className="text-gray-300">Buscar Grupos</Label>
-            <div className="relative">
-              <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-              <Input
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar grupos..."
-                className="bg-gray-800 border-gray-600 pl-10"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {filteredGroups.map((group) => (
-              <div key={group.id} className="p-4 bg-gray-700/30 rounded-lg border border-gray-600">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-semibold text-gray-200">{group.name}</h4>
-                  <span className="text-sm text-gray-400">ID: {group.id.slice(0, 15)}...</span>
+            <div className="space-y-3">
+              {filteredGroups.map((group) => (
+                <div key={group.id} className="p-4 bg-gray-700/30 rounded-lg border border-gray-600">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold text-gray-200">{group.name}</h4>
+                    <span className="text-sm text-gray-400">
+                      {group.size} membros
+                    </span>
+                  </div>
+                  {group.description && (
+                    <p className="text-gray-400 text-sm mb-3">{group.description}</p>
+                  )}
+                  <div className="flex flex-wrap gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="bg-gray-800 border-gray-600"
+                      onClick={() => openEditModal(group)}
+                    >
+                      <Edit className="w-4 h-4 mr-1" />
+                      Editar
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="bg-gray-800 border-gray-600"
+                      onClick={() => openParticipantsModal(group)}
+                    >
+                      <Users className="w-4 h-4 mr-1" />
+                      Participantes
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="bg-gray-800 border-gray-600"
+                      onClick={() => copyGroupLink(`https://chat.whatsapp.com/${group.id}`, group.name)}
+                    >
+                      <Link className="w-4 h-4 mr-1" />
+                      Copiar Link
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" className="bg-gray-800 border-gray-600">
-                    <Edit className="w-4 h-4 mr-1" />
-                    Editar
-                  </Button>
-                  <Button size="sm" variant="outline" className="bg-gray-800 border-gray-600">
-                    <Settings className="w-4 h-4 mr-1" />
-                    Configurações
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="bg-gray-800 border-gray-600"
-                    onClick={() => copyGroupLink(`https://chat.whatsapp.com/${group.id}`, group.name)}
-                  >
-                    <Link className="w-4 h-4 mr-1" />
-                    Copiar Link
-                  </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Modal de Edição de Grupo */}
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent className="bg-gray-800 border-gray-600 max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-primary-contrast">
+              Editar Grupo: {selectedGroupForEdit?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            {/* Atualizar Nome */}
+            <div className="space-y-2">
+              <Label className="text-gray-300">Nome do Grupo</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={editGroupData.name}
+                  onChange={(e) => setEditGroupData({ ...editGroupData, name: e.target.value })}
+                  className="bg-gray-700 border-gray-600"
+                />
+                <Button onClick={handleUpdateGroupName} disabled={isLoading}>
+                  <Save className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Atualizar Descrição */}
+            <div className="space-y-2">
+              <Label className="text-gray-300">Descrição</Label>
+              <div className="flex gap-2">
+                <Textarea
+                  value={editGroupData.description}
+                  onChange={(e) => setEditGroupData({ ...editGroupData, description: e.target.value })}
+                  className="bg-gray-700 border-gray-600"
+                />
+                <Button onClick={handleUpdateGroupDescription} disabled={isLoading}>
+                  <Save className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Atualizar Imagem */}
+            <div className="space-y-2">
+              <Label className="text-gray-300">Imagem do Grupo</Label>
+              <div className="flex gap-2">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setEditGroupData({ ...editGroupData, pictureFile: e.target.files?.[0] || null })}
+                  className="bg-gray-700 border-gray-600"
+                />
+                <Button onClick={handleUpdateGroupPicture} disabled={isLoading || !editGroupData.pictureFile}>
+                  <Upload className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Configurações */}
+            <div className="space-y-4">
+              <Label className="text-gray-300">Configurações do Grupo</Label>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="announce"
+                    checked={editGroupData.isAnnounce}
+                    onCheckedChange={(checked) => setEditGroupData({ ...editGroupData, isAnnounce: !!checked })}
+                  />
+                  <Label htmlFor="announce" className="text-gray-300">Apenas admins podem enviar mensagens</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="restricted"
+                    checked={editGroupData.isRestricted}
+                    onCheckedChange={(checked) => setEditGroupData({ ...editGroupData, isRestricted: !!checked })}
+                  />
+                  <Label htmlFor="restricted" className="text-gray-300">Apenas admins podem editar info do grupo</Label>
                 </div>
               </div>
-            ))}
+              <Button onClick={handleUpdateGroupSettings} disabled={isLoading} className="btn-primary">
+                Salvar Configurações
+              </Button>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Participantes */}
+      <Dialog open={showParticipantsModal} onOpenChange={setShowParticipantsModal}>
+        <DialogContent className="bg-gray-800 border-gray-600 max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-primary-contrast">
+              Participantes: {selectedGroupForEdit?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Adicionar Participante */}
+            <div className="space-y-2">
+              <Label className="text-gray-300">Adicionar Participante</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={newParticipantNumber}
+                  onChange={(e) => setNewParticipantNumber(e.target.value)}
+                  placeholder="Número do telefone (sem +55)"
+                  className="bg-gray-700 border-gray-600"
+                />
+                <Button onClick={handleAddParticipant} disabled={isLoading || !newParticipantNumber}>
+                  <UserPlus className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Lista de Participantes */}
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {participants.map((participant) => (
+                <div key={participant.id} className="flex items-center justify-between p-3 bg-gray-700/30 rounded">
+                  <div>
+                    <p className="text-gray-200">{participant.name}</p>
+                    <p className="text-gray-400 text-sm">{participant.phoneNumber}</p>
+                    {participant.isAdmin && (
+                      <span className="text-yellow-400 text-xs">Admin</span>
+                    )}
+                  </div>
+                  <div className="flex gap-1">
+                    {!participant.isAdmin && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="bg-gray-800 border-gray-600"
+                        onClick={() => handleParticipantAction(participant.id, 'promote')}
+                        disabled={isLoading}
+                      >
+                        <Crown className="w-3 h-3" />
+                      </Button>
+                    )}
+                    {participant.isAdmin && !participant.isSuperAdmin && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="bg-gray-800 border-gray-600"
+                        onClick={() => handleParticipantAction(participant.id, 'demote')}
+                        disabled={isLoading}
+                      >
+                        <User className="w-3 h-3" />
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleParticipantAction(participant.id, 'remove')}
+                      disabled={isLoading}
+                    >
+                      <UserMinus className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Disparar Mensagem para Grupo */}
       <Card className="border-gray-600/50 bg-gray-800/30">
@@ -309,9 +716,13 @@ const GroupManagement = () => {
           </div>
 
           <div className="flex gap-3">
-            <Button onClick={handleSendMessage} className="btn-primary flex-1">
+            <Button 
+              onClick={handleSendMessage} 
+              className="btn-primary flex-1"
+              disabled={isLoading || !selectedGroup || !groupMessage}
+            >
               <Send className="w-4 h-4 mr-2" />
-              Enviar Mensagem
+              {isLoading ? 'Enviando...' : 'Enviar Mensagem'}
             </Button>
             <Button variant="outline" className="flex-1 bg-gray-800 border-gray-600">
               <Save className="w-4 h-4 mr-2" />
