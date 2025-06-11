@@ -30,4 +30,5 @@ export interface Group {
   size: number;
   isAnnounce?: boolean;
   isRestricted?: boolean;
+  inviteCode?: string;
 }

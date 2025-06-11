@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { groupsApiService } from '@/services/groupsApi';
@@ -226,6 +225,125 @@ export const useGroupActions = (
     }
   };
 
+  const deleteGroup = async (groupId: string, groupName: string) => {
+    if (!selectedInstance) {
+      toast({
+        title: "Erro",
+        description: "Selecione uma instância",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      console.log('🗑️ Excluindo grupo:', groupId);
+      
+      await groupsApiService.deleteGroup(selectedInstance, groupId);
+      
+      toast({
+        title: "Grupo Excluído",
+        description: `Grupo "${groupName}" foi excluído com sucesso`,
+      });
+      
+      loadGroups();
+      return true;
+    } catch (error) {
+      console.error('❌ Erro ao excluir grupo:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao excluir grupo",
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const removeAllParticipants = async (groupId: string, participants: any[], groupName: string) => {
+    if (!selectedInstance) {
+      toast({
+        title: "Erro",
+        description: "Selecione uma instância",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      console.log('👥 Removendo todos os participantes do grupo:', groupId);
+      
+      // Filtrar apenas participantes que não são admins/superadmins
+      const participantsToRemove = participants.filter(p => !p.isAdmin && !p.isSuperAdmin);
+      
+      await groupsApiService.removeAllParticipants(selectedInstance, groupId, participantsToRemove.map(p => p.id));
+      
+      toast({
+        title: "Participantes Removidos",
+        description: `${participantsToRemove.length} participantes foram removidos do grupo "${groupName}"`,
+      });
+      
+      await loadParticipants(groupId);
+      await loadGroups();
+      return true;
+    } catch (error) {
+      console.error('❌ Erro ao remover participantes:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao remover participantes",
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getGroupInviteLink = async (groupId: string, groupName: string) => {
+    if (!selectedInstance) {
+      toast({
+        title: "Erro",
+        description: "Selecione uma instância",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      console.log('🔗 Obtendo link de convite para o grupo:', groupId);
+      
+      const inviteCode = await groupsApiService.getGroupInviteCode(selectedInstance, groupId);
+      
+      if (inviteCode) {
+        const inviteLink = `https://chat.whatsapp.com/${inviteCode}`;
+        
+        await navigator.clipboard.writeText(inviteLink);
+        
+        toast({
+          title: "Link Copiado",
+          description: `Link de convite do grupo "${groupName}" copiado!`,
+        });
+        
+        return inviteLink;
+      } else {
+        toast({
+          title: "Erro",
+          description: "Não foi possível obter o link de convite",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('❌ Erro ao obter link de convite:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao obter link de convite",
+        variant: "destructive"
+      });
+    }
+  };
+
   const sendMessageToGroup = async (groupId: string, message: string, groups: any[]) => {
     if (!selectedInstance || !groupId || !message) {
       toast({
@@ -260,6 +378,9 @@ export const useGroupActions = (
     createGroup,
     updateGroupInfo,
     manageParticipant,
+    deleteGroup,
+    removeAllParticipants,
+    getGroupInviteLink,
     sendMessageToGroup,
   };
 };

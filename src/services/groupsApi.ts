@@ -308,6 +308,105 @@ class GroupsApiService {
     }
   }
 
+  // Excluir grupo
+  async deleteGroup(instanceId: string, groupId: string) {
+    try {
+      const userId = this.getUserId();
+      if (!userId || !this.isUserInstance(instanceId, userId)) {
+        throw new Error('Acesso negado à instância');
+      }
+
+      const webhookData = {
+        action: 'delete_group',
+        instanceId,
+        userId,
+        groupId,
+        timestamp: new Date().toISOString(),
+      };
+
+      const response = await fetch(GROUPS_WEBHOOK_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(webhookData),
+      });
+
+      if (response.ok) {
+        console.log('Grupo excluído via webhook');
+        return true;
+      }
+      
+      throw new Error('Falha ao excluir grupo');
+    } catch (error) {
+      console.error('Erro ao excluir grupo:', error);
+      throw error;
+    }
+  }
+
+  // Remover todos os participantes
+  async removeAllParticipants(instanceId: string, groupId: string, participantIds: string[]) {
+    try {
+      const userId = this.getUserId();
+      if (!userId || !this.isUserInstance(instanceId, userId)) {
+        throw new Error('Acesso negado à instância');
+      }
+
+      const webhookData = {
+        action: 'remove_all_participants',
+        instanceId,
+        userId,
+        groupId,
+        data: {
+          participantIds: participantIds
+        },
+        timestamp: new Date().toISOString(),
+      };
+
+      const response = await fetch(GROUPS_WEBHOOK_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(webhookData),
+      });
+
+      if (response.ok) {
+        console.log('Todos os participantes removidos via webhook');
+        return true;
+      }
+      
+      throw new Error('Falha ao remover participantes');
+    } catch (error) {
+      console.error('Erro ao remover todos os participantes:', error);
+      throw error;
+    }
+  }
+
+  // Obter código de convite do grupo
+  async getGroupInviteCode(instanceId: string, groupId: string) {
+    try {
+      const userId = this.getUserId();
+      if (!userId || !this.isUserInstance(instanceId, userId)) {
+        throw new Error('Acesso negado à instância');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/group/inviteCode/${instanceId}?groupJid=${groupId}`, {
+        headers: this.headers,
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        return data.inviteCode || data.code;
+      }
+      
+      throw new Error('Falha ao obter código de convite');
+    } catch (error) {
+      console.error('Erro ao obter código de convite:', error);
+      throw error;
+    }
+  }
+
   // Nova função para criar grupo em lote - UPLOAD MINIO + WEBHOOK
   async createGroupBatch(instanceId: string, actions: any[]) {
     try {

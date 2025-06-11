@@ -40,6 +40,9 @@ const GroupManagement = () => {
     createGroup,
     updateGroupInfo,
     manageParticipant,
+    deleteGroup,
+    removeAllParticipants,
+    getGroupInviteLink,
     sendMessageToGroup,
   } = useGroupActions(selectedInstance, loadGroups, loadParticipants);
 
@@ -95,6 +98,27 @@ const GroupManagement = () => {
     await manageParticipant(selectedGroupForEdit.id, participantId, action);
   };
 
+  const handleDeleteGroup = async (groupId: string, groupName: string) => {
+    if (window.confirm(`Tem certeza que deseja excluir o grupo "${groupName}"? Esta ação não pode ser desfeita.`)) {
+      await deleteGroup(groupId, groupName);
+    }
+  };
+
+  const handleRemoveAllParticipants = async (groupId: string, participants: any[], groupName: string) => {
+    const regularParticipants = participants.filter(p => !p.isAdmin && !p.isSuperAdmin);
+    if (regularParticipants.length === 0) {
+      toast({
+        title: "Nenhum Participante",
+        description: "Não há participantes regulares para remover",
+      });
+      return;
+    }
+
+    if (window.confirm(`Tem certeza que deseja remover todos os ${regularParticipants.length} participantes do grupo "${groupName}"?`)) {
+      await removeAllParticipants(groupId, participants, groupName);
+    }
+  };
+
   const handleSendMessage = async () => {
     await sendMessageToGroup(selectedGroup, groupMessage, groups);
     setGroupMessage('');
@@ -116,14 +140,6 @@ const GroupManagement = () => {
     setSelectedGroupForEdit(group);
     loadParticipants(group.id);
     setShowParticipantsModal(true);
-  };
-
-  const copyGroupLink = (link: string, groupName: string) => {
-    navigator.clipboard.writeText(link);
-    toast({
-      title: "Link Copiado",
-      description: `Link do grupo "${groupName}" copiado!`,
-    });
   };
 
   return (
@@ -179,7 +195,8 @@ const GroupManagement = () => {
         isLoadingGroups={isLoadingGroups}
         onEditGroup={openEditModal}
         onOpenParticipants={openParticipantsModal}
-        onCopyGroupLink={copyGroupLink}
+        onCopyGroupLink={getGroupInviteLink}
+        onDeleteGroup={handleDeleteGroup}
       />
 
       {/* Modal de Edição de Grupo */}
@@ -276,6 +293,7 @@ const GroupManagement = () => {
         isLoading={isLoading}
         onRefreshParticipants={() => selectedGroupForEdit && loadParticipants(selectedGroupForEdit.id)}
         onManageParticipant={handleParticipantAction}
+        onRemoveAllParticipants={handleRemoveAllParticipants}
       />
 
       {/* Disparar Mensagem para Grupo */}
