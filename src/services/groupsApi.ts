@@ -25,35 +25,72 @@ class GroupsApiService {
     return instanceName.includes(`user-${userId}`);
   }
 
-  // Extrair número da instância para comparação
+  // Extrair número da instância para comparação - versão mais flexível
   private extractNumberFromInstance(instanceId: string): string {
-    return instanceId.replace('user-', '').replace('-', '');
+    // Remover prefixos e sufixos para obter apenas o número
+    const cleaned = instanceId.replace(/^.*user-?/, '').replace(/-.*$/, '');
+    console.log(`📱 Extraindo número de "${instanceId}" -> "${cleaned}"`);
+    return cleaned;
   }
 
-  // Verificar se o participante é o usuário atual
+  // Verificar se o participante é o usuário atual - versão mais flexível
   private isCurrentUser(participantId: string, myNumber: string): boolean {
-    const participantNumber = (participantId || '').replace('@s.whatsapp.net', '').replace('@c.us', '');
+    const participantNumber = (participantId || '')
+      .replace('@s.whatsapp.net', '')
+      .replace('@c.us', '')
+      .replace(/^\+55/, '') // Remove código do país
+      .replace(/^\+/, ''); // Remove qualquer +
+    
+    const myCleanNumber = myNumber.replace(/^\+55/, '').replace(/^\+/, '');
+    
+    console.log(`🔍 Comparando participante "${participantNumber}" com meu número "${myCleanNumber}"`);
     
     // Múltiplas formas de comparação para garantir compatibilidade
-    return participantNumber === myNumber || 
-           participantNumber.includes(myNumber) || 
-           myNumber.includes(participantNumber) ||
-           participantNumber.endsWith(myNumber) ||
-           myNumber.endsWith(participantNumber);
+    const isMatch = participantNumber === myCleanNumber || 
+           participantNumber.includes(myCleanNumber) || 
+           myCleanNumber.includes(participantNumber) ||
+           participantNumber.endsWith(myCleanNumber) ||
+           myCleanNumber.endsWith(participantNumber);
+           
+    if (isMatch) {
+      console.log(`✅ MATCH encontrado: "${participantNumber}" corresponde a "${myCleanNumber}"`);
+    }
+    
+    return isMatch;
   }
 
   // Verificar se o participante tem privilégios de admin
   private isAdminUser(participant: any): boolean {
-    return participant.admin === 'admin' || 
+    const isAdmin = participant.admin === 'admin' || 
            participant.admin === 'superadmin' || 
            participant.isAdmin === true ||
            participant.isSuperAdmin === true;
+           
+    console.log(`👤 Verificando admin para participante:`, {
+      admin: participant.admin,
+      isAdmin: participant.isAdmin,
+      isSuperAdmin: participant.isSuperAdmin,
+      resultado: isAdmin
+    });
+    
+    return isAdmin;
   }
 
-  // Verificar se o participante tem privilégios de SUPERADMIN
+  // Verificar se o participante tem privilégios de SUPERADMIN - versão mais flexível
   private isSuperAdminUser(participant: any): boolean {
-    return participant.admin === 'superadmin' || 
-           participant.isSuperAdmin === true;
+    const isSuperAdmin = participant.admin === 'superadmin' || 
+           participant.admin === 'admin' || // Incluir admin também
+           participant.isSuperAdmin === true ||
+           participant.isAdmin === true; // Incluir admin também
+           
+    console.log(`👑 Verificando superadmin para participante:`, {
+      admin: participant.admin,
+      isAdmin: participant.isAdmin,
+      isSuperAdmin: participant.isSuperAdmin,
+      resultado: isSuperAdmin
+    });
+           
+    return isSuperAdmin;
   }
 
   // Buscar TODOS os grupos (para seção de contatos)
@@ -111,7 +148,7 @@ class GroupsApiService {
         return [];
       }
 
-      console.log('🔍 Buscando grupos onde sou SUPERADMIN para instância:', instanceId);
+      console.log('🔍 Buscando grupos onde sou ADMIN/SUPERADMIN para instância:', instanceId);
       
       // Buscar grupos com participantes para verificar se sou superadmin
       const response = await fetch(`${API_BASE_URL}/group/fetchAllGroups/${instanceId}?getParticipants=true`, {
@@ -131,8 +168,8 @@ class GroupsApiService {
       const myNumber = this.extractNumberFromInstance(instanceId);
       console.log(`📱 Meu número extraído da instância: ${myNumber}`);
       
-      // Filtrar apenas grupos onde sou SUPERADMIN
-      const superAdminGroups = groups.filter((group: any) => {
+      // Filtrar apenas grupos onde sou ADMIN/SUPERADMIN
+      const adminGroups = groups.filter((group: any) => {
         const participants = group.participants || [];
         console.log(`🔍 Verificando grupo "${group.subject || group.name}": ${participants.length} participantes`);
         
@@ -141,9 +178,9 @@ class GroupsApiService {
           const isMe = this.isCurrentUser(participant.id || participant.jid || '', myNumber);
           
           if (isMe) {
-            const isSuperAdmin = this.isSuperAdminUser(participant);
-            console.log(`👤 Encontrado no grupo "${group.subject || group.name}": SuperAdmin = ${isSuperAdmin}`);
-            return isSuperAdmin;
+            const isAdmin = this.isSuperAdminUser(participant);
+            console.log(`👤 Encontrado no grupo "${group.subject || group.name}": Admin/SuperAdmin = ${isAdmin}`);
+            return isAdmin;
           }
           
           return false;
@@ -152,10 +189,10 @@ class GroupsApiService {
         return !!myParticipation;
       });
       
-      console.log(`✅ Encontrados ${superAdminGroups.length} grupos onde sou SUPERADMIN de ${groups.length} grupos totais`);
+      console.log(`✅ Encontrados ${adminGroups.length} grupos onde sou ADMIN/SUPERADMIN de ${groups.length} grupos totais`);
       
       // Mapear para o formato padronizado
-      const formattedGroups = superAdminGroups.map((group: any) => ({
+      const formattedGroups = adminGroups.map((group: any) => ({
         id: group.id || group.remoteJid,
         name: group.subject || group.name || 'Grupo sem nome',
         description: group.description || '',
@@ -171,7 +208,7 @@ class GroupsApiService {
       return formattedGroups;
       
     } catch (error) {
-      console.error('❌ Erro ao buscar grupos onde sou SUPERADMIN:', error);
+      console.error('❌ Erro ao buscar grupos onde sou ADMIN/SUPERADMIN:', error);
       return [];
     }
   }
@@ -216,23 +253,20 @@ class GroupsApiService {
         throw new Error('Acesso negado à instância');
       }
 
-      // Processar ações e fazer upload de imagens para MinIO se necessário
       const processedActions = await Promise.all(actions.map(async (action) => {
         if (action.action === 'update_group_picture' && action.data.profileImage instanceof File) {
           console.log('Fazendo upload da imagem para MinIO...');
           
-          // Importar dinamicamente o serviço MinIO
           const { minioService } = await import('@/services/minio');
           
           try {
-            // Fazer upload da imagem para MinIO
             const imageUrl = await minioService.uploadFile(action.data.profileImage);
             console.log('Imagem enviada para MinIO com sucesso:', imageUrl);
             
             return {
               ...action,
               data: {
-                imageUrl: imageUrl, // URL da imagem no MinIO
+                imageUrl: imageUrl,
                 fileName: action.data.profileImage.name,
                 fileType: action.data.profileImage.type
               }
@@ -251,7 +285,7 @@ class GroupsApiService {
         userId,
         data: {
           actions: processedActions,
-          executeAll: true // Flag para executar tudo de uma vez
+          executeAll: true
         },
         timestamp: new Date().toISOString(),
       };
@@ -285,7 +319,6 @@ class GroupsApiService {
       reader.readAsDataURL(file);
       reader.onload = () => {
         if (typeof reader.result === 'string') {
-          // Remove o prefixo "data:image/...;base64,"
           const base64 = reader.result.split(',')[1];
           resolve(base64);
         } else {
@@ -395,7 +428,6 @@ class GroupsApiService {
         timestamp: new Date().toISOString(),
       };
 
-      // Aqui você pode enviar tanto o webhook quanto a imagem
       const response = await fetch(GROUPS_WEBHOOK_URL, {
         method: 'POST',
         headers: {
@@ -601,3 +633,5 @@ class GroupsApiService {
 }
 
 export const groupsApiService = new GroupsApiService();
+
+}
