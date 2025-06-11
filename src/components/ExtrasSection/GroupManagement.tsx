@@ -509,7 +509,11 @@ const GroupManagement = () => {
                   rows={6}
                 />
                 
-                {uploadedFile && (\n                  <div className="text-sm text-gray-400 bg-gray-700/30 p-2 rounded">\n                    📎 Arquivo: {uploadedFile.name}\n                  </div>\n                )}
+                {uploadedFile && (
+                  <div className="text-sm text-gray-400 bg-gray-700/30 p-2 rounded">
+                    📎 Arquivo: {uploadedFile.name}
+                  </div>
+                )}
               </div>
               
               <div className="flex items-center space-x-2">
