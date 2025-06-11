@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,14 +57,14 @@ const StoriesManagement = () => {
 
     try {
       const formData = new FormData();
-      formData.append('media', storyData.file);
+      formData.append('statusMessage', storyData.file);
       if (storyData.caption) {
-        formData.append('caption', storyData.caption);
+        formData.append('content', storyData.caption);
       }
 
       console.log(`Postando story na instância ${instanceId}`);
       
-      // Simulando chamada para API da Evolution - substitua pela implementação real
+      // Endpoint correto para stories na Evolution API
       const response = await fetch(`https://api.novahagencia.com.br/message/sendStatus/${instanceId}`, {
         method: 'POST',
         headers: {
@@ -78,7 +77,8 @@ const StoriesManagement = () => {
         console.log(`Story postado com sucesso na instância ${instanceId}`);
         return true;
       } else {
-        console.error(`Erro ao postar story na instância ${instanceId}:`, response.status);
+        const errorText = await response.text();
+        console.error(`Erro ao postar story na instância ${instanceId}:`, response.status, errorText);
         return false;
       }
     } catch (error) {

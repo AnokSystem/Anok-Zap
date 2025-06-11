@@ -49,8 +49,8 @@ const ProfileManagement = () => {
     try {
       console.log('Carregando dados do perfil para instância:', selectedInstance);
       
-      // Implementar chamada real para buscar dados do perfil
-      const response = await fetch(`https://api.novahagencia.com.br/chat/fetchProfile/${selectedInstance}`, {
+      // Endpoint correto para buscar dados do perfil
+      const response = await fetch(`https://api.novahagencia.com.br/instance/fetchInstance/${selectedInstance}`, {
         headers: {
           'apikey': '26bda82495a95caeae71f96534841285',
         },
@@ -61,9 +61,9 @@ const ProfileManagement = () => {
         console.log('Dados do perfil carregados:', data);
         
         setProfileData({
-          name: data.pushName || data.name || '',
-          status: data.status || '',
-          description: data.description || '',
+          name: data.profileName || data.pushName || '',
+          status: '', // Status não retornado pela API de instância
+          description: '', // Descrição não retornada pela API de instância
           profilePhoto: null,
           profilePhotoUrl: data.profilePicUrl || ''
         });
@@ -119,6 +119,7 @@ const ProfileManagement = () => {
     try {
       console.log('Atualizando nome do perfil:', profileData.name);
       
+      // Endpoint correto para atualizar nome do perfil
       const response = await fetch(`https://api.novahagencia.com.br/chat/updateProfileName/${selectedInstance}`, {
         method: 'PUT',
         headers: {
@@ -136,6 +137,8 @@ const ProfileManagement = () => {
           description: `Nome alterado para "${profileData.name}"`,
         });
       } else {
+        const errorText = await response.text();
+        console.error('Erro na atualização do nome:', errorText);
         throw new Error('Falha na atualização');
       }
     } catch (error) {
@@ -165,6 +168,7 @@ const ProfileManagement = () => {
     try {
       console.log('Atualizando status do perfil:', profileData.status);
       
+      // Endpoint correto para atualizar status
       const response = await fetch(`https://api.novahagencia.com.br/chat/updateProfileStatus/${selectedInstance}`, {
         method: 'PUT',
         headers: {
@@ -182,6 +186,8 @@ const ProfileManagement = () => {
           description: "Status do perfil atualizado com sucesso",
         });
       } else {
+        const errorText = await response.text();
+        console.error('Erro na atualização do status:', errorText);
         throw new Error('Falha na atualização');
       }
     } catch (error) {
@@ -270,6 +276,7 @@ const ProfileManagement = () => {
       const formData = new FormData();
       formData.append('picture', profileData.profilePhoto);
 
+      // Endpoint correto para atualizar foto do perfil
       const response = await fetch(`https://api.novahagencia.com.br/chat/updateProfilePicture/${selectedInstance}`, {
         method: 'PUT',
         headers: {
@@ -284,6 +291,8 @@ const ProfileManagement = () => {
           description: "Foto do perfil atualizada com sucesso",
         });
       } else {
+        const errorText = await response.text();
+        console.error('Erro na atualização da foto:', errorText);
         throw new Error('Falha na atualização');
       }
     } catch (error) {
@@ -313,6 +322,7 @@ const ProfileManagement = () => {
     try {
       console.log('Removendo foto do perfil');
       
+      // Endpoint correto para remover foto do perfil
       const response = await fetch(`https://api.novahagencia.com.br/chat/removeProfilePicture/${selectedInstance}`, {
         method: 'DELETE',
         headers: {
@@ -327,6 +337,8 @@ const ProfileManagement = () => {
           description: "Foto do perfil removida com sucesso",
         });
       } else {
+        const errorText = await response.text();
+        console.error('Erro na remoção da foto:', errorText);
         throw new Error('Falha na remoção');
       }
     } catch (error) {
