@@ -25,6 +25,7 @@ const GroupManagement = () => {
   const [participants, setParticipants] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingGroups, setIsLoadingGroups] = useState(false);
+  const [isLoadingParticipants, setIsLoadingParticipants] = useState(false);
   
   // Estados para diferentes modais
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -99,8 +100,11 @@ const GroupManagement = () => {
   };
 
   const loadParticipants = async (groupId: string) => {
+    setIsLoadingParticipants(true);
     try {
+      console.log('👥 Carregando participantes do grupo:', groupId);
       const participantsList = await groupsApiService.getGroupParticipants(selectedInstance, groupId);
+      console.log('✅ Participantes carregados:', participantsList.length);
       setParticipants(participantsList);
     } catch (error) {
       console.error('Erro ao carregar participantes:', error);
@@ -109,6 +113,8 @@ const GroupManagement = () => {
         description: "Falha ao carregar participantes",
         variant: "destructive"
       });
+    } finally {
+      setIsLoadingParticipants(false);
     }
   };
 
@@ -317,7 +323,10 @@ const GroupManagement = () => {
 
     setIsLoading(true);
     try {
+      console.log(`🔄 Executando ação "${action}" para participante:`, participantId);
+      
       await groupsApiService.manageParticipant(selectedInstance, selectedGroupForEdit.id, participantId, action);
+      
       const actionMessages = {
         add: 'Participante adicionado',
         remove: 'Participante removido',
@@ -330,11 +339,16 @@ const GroupManagement = () => {
         description: actionMessages[action],
       });
       
-      // Recarregar participantes E a lista de grupos para atualizar automaticamente
+      console.log('✅ Ação executada com sucesso, atualizando listas...');
+      
+      // Recarregar participantes automaticamente
       await loadParticipants(selectedGroupForEdit.id);
-      await loadGroups(); // Atualização automática da lista de grupos
+      
+      // Recarregar grupos para atualizar contagem de membros
+      await loadGroups();
       
     } catch (error) {
+      console.error(`❌ Erro ao ${action} participante:`, error);
       toast({
         title: "Erro",
         description: `Falha ao ${action} participante`,
@@ -348,8 +362,19 @@ const GroupManagement = () => {
   const handleAddParticipant = async () => {
     if (!newParticipantNumber || !selectedGroupForEdit) return;
 
-    await handleParticipantAction(newParticipantNumber + '@s.whatsapp.net', 'add');
-    setNewParticipantNumber('');
+    console.log('➕ Adicionando novo participante:', newParticipantNumber);
+    
+    // Formatar número corretamente
+    const formattedNumber = newParticipantNumber.includes('@') 
+      ? newParticipantNumber 
+      : newParticipantNumber + '@s.whatsapp.net';
+    
+    await handleParticipantAction(formattedNumber, 'add');
+    
+    // Limpar campo apenas após sucesso
+    if (!isLoading) {
+      setNewParticipantNumber('');
+    }
   };
 
   const handleSendMessage = async () => {
@@ -715,7 +740,6 @@ Ou importe de uma planilha CSV"
                   className="bg-gray-800 border-gray-600 pl-10"
                 />
               </div>
-            </div>
 
             {isLoadingGroups ? (
               <div className="flex items-center justify-center p-8">
@@ -864,12 +888,26 @@ Ou importe de uma planilha CSV"
         </DialogContent>
       </Dialog>
 
-      {/* Modal de Participantes */}
+      {/* Modal de Participantes - ATUALIZADO */}
       <Dialog open={showParticipantsModal} onOpenChange={setShowParticipantsModal}>
         <DialogContent className="bg-gray-800 border-gray-600 max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="text-primary-contrast">
-              Participantes: {selectedGroupForEdit?.name}
+            <DialogTitle className="text-primary-contrast flex items-center justify-between">
+              <span>Participantes: {selectedGroupForEdit?.name}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-400">
+                  {participants.length} membros
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => selectedGroupForEdit && loadParticipants(selectedGroupForEdit.id)}
+                  disabled={isLoadingParticipants}
+                  className="text-gray-400 hover:text-gray-200"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isLoadingParticipants ? 'animate-spin' : ''}`} />
+                </Button>
+              </div>
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
@@ -880,60 +918,98 @@ Ou importe de uma planilha CSV"
                 <Input
                   value={newParticipantNumber}
                   onChange={(e) => setNewParticipantNumber(e.target.value)}
-                  placeholder="Número do telefone (sem +55)"
+                  placeholder="Número do telefone (ex: 5511999999999)"
                   className="bg-gray-700 border-gray-600"
+                  disabled={isLoading}
                 />
-                <Button onClick={handleAddParticipant} disabled={isLoading || !newParticipantNumber}>
-                  <UserPlus className="w-4 h-4" />
+                <Button 
+                  onClick={handleAddParticipant} 
+                  disabled={isLoading || !newParticipantNumber}
+                  className="bg-purple-accent hover:bg-purple-accent/80"
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <UserPlus className="w-4 h-4" />
+                  )}
                 </Button>
               </div>
             </div>
 
             {/* Lista de Participantes */}
             <div className="space-y-2 max-h-96 overflow-y-auto">
-              {participants.map((participant) => (
-                <div key={participant.id} className="flex items-center justify-between p-3 bg-gray-700/30 rounded">
-                  <div>
-                    <p className="text-gray-200">{participant.name}</p>
-                    <p className="text-gray-400 text-sm">{participant.phoneNumber}</p>
-                    {participant.isAdmin && (
-                      <span className="text-yellow-400 text-xs">Admin</span>
-                    )}
-                  </div>
-                  <div className="flex gap-1">
-                    {!participant.isAdmin && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="bg-gray-800 border-gray-600"
-                        onClick={() => handleParticipantAction(participant.id, 'promote')}
-                        disabled={isLoading}
-                      >
-                        <Crown className="w-3 h-3" />
-                      </Button>
-                    )}
-                    {participant.isAdmin && !participant.isSuperAdmin && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="bg-gray-800 border-gray-600"
-                        onClick={() => handleParticipantAction(participant.id, 'demote')}
-                        disabled={isLoading}
-                      >
-                        <User className="w-3 h-3" />
-                      </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => handleParticipantAction(participant.id, 'remove')}
-                      disabled={isLoading}
-                    >
-                      <UserMinus className="w-3 h-3" />
-                    </Button>
+              {isLoadingParticipants ? (
+                <div className="flex items-center justify-center p-8">
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="w-6 h-6 animate-spin text-purple-accent" />
+                    <p className="text-gray-400 text-sm">Carregando participantes...</p>
                   </div>
                 </div>
-              ))}
+              ) : participants.length === 0 ? (
+                <div className="text-center p-8">
+                  <Users className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-gray-400">Nenhum participante encontrado</p>
+                </div>
+              ) : (
+                participants.map((participant) => (
+                  <div key={participant.id} className="flex items-center justify-between p-3 bg-gray-700/30 rounded border border-gray-600">
+                    <div>
+                      <p className="text-gray-200 font-medium">{participant.name}</p>
+                      <p className="text-gray-400 text-sm">{participant.phoneNumber}</p>
+                      {participant.isAdmin && (
+                        <span className="inline-flex items-center gap-1 text-yellow-400 text-xs bg-yellow-400/10 px-2 py-0.5 rounded mt-1">
+                          <Crown className="w-3 h-3" />
+                          Admin
+                        </span>
+                      )}
+                      {participant.isSuperAdmin && (
+                        <span className="inline-flex items-center gap-1 text-purple-400 text-xs bg-purple-400/10 px-2 py-0.5 rounded mt-1">
+                          <Crown className="w-3 h-3" />
+                          Super Admin
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex gap-1">
+                      {!participant.isAdmin && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="bg-gray-800 border-gray-600 hover:bg-gray-700"
+                          onClick={() => handleParticipantAction(participant.id, 'promote')}
+                          disabled={isLoading}
+                          title="Promover a admin"
+                        >
+                          <Crown className="w-3 h-3" />
+                        </Button>
+                      )}
+                      {participant.isAdmin && !participant.isSuperAdmin && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="bg-gray-800 border-gray-600 hover:bg-gray-700"
+                          onClick={() => handleParticipantAction(participant.id, 'demote')}
+                          disabled={isLoading}
+                          title="Rebaixar para membro"
+                        >
+                          <User className="w-3 h-3" />
+                        </Button>
+                      )}
+                      {!participant.isSuperAdmin && (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleParticipantAction(participant.id, 'remove')}
+                          disabled={isLoading}
+                          title="Remover do grupo"
+                          className="hover:bg-red-600"
+                        >
+                          <UserMinus className="w-3 h-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </DialogContent>
