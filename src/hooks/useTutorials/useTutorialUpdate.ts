@@ -1,12 +1,12 @@
 
 import { useCallback } from 'react';
-import { tutorialService, CreateTutorialData } from '@/services/tutorialService';
+import { tutorialService, CreateTutorialData, TutorialData } from '@/services/tutorialService';
 import { useToast } from '@/hooks/use-toast';
 import { validateTutorialData, getErrorMessage } from './validationUtils';
 
 export const useTutorialUpdate = (
   setUploading: (uploading: boolean) => void,
-  replaceTutorial: (tutorialId: string, tutorial: any) => void
+  replaceTutorial: (tutorialId: string, tutorial: TutorialData) => void
 ) => {
   const { toast } = useToast();
 
@@ -25,7 +25,25 @@ export const useTutorialUpdate = (
         return false;
       }
 
-      const updatedTutorial = await tutorialService.updateTutorial(tutorialId, data);
+      // Get existing tutorial data first
+      const tutorials = await tutorialService.getTutorials();
+      const existingTutorial = tutorials.find(t => t.id === tutorialId);
+      
+      if (!existingTutorial) {
+        throw new Error('Tutorial não encontrado');
+      }
+
+      // Create updated tutorial data
+      const updatedTutorial: TutorialData = {
+        ...existingTutorial,
+        title: data.title,
+        description: data.description,
+        category: data.category,
+        updatedAt: new Date().toISOString()
+      };
+
+      // Update tutorial
+      await tutorialService.updateTutorial(updatedTutorial);
       
       console.log('✅ Tutorial atualizado, atualizando lista...');
       
