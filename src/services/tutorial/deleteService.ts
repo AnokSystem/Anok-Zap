@@ -14,16 +14,19 @@ class TutorialDeleteService {
       tutorialLocalStorageService.deleteTutorial(tutorialId);
       console.log('✅ DeleteService - Tutorial removido do localStorage');
       
+      // Testar conexão e obter Base ID
       if (!(await tutorialConnectionService.testConnection())) {
         console.warn('❌ DeleteService - Sem conexão com NocoDB, mas localStorage já foi atualizado');
         return;
       }
       
-      const targetBaseId = nocodbService.getTargetBaseId();
+      const targetBaseId = tutorialConnectionService.getTargetBaseId();
       if (!targetBaseId) {
         console.error('❌ DeleteService - Base ID não encontrado');
         return;
       }
+
+      console.log('✅ DeleteService - Base ID obtido:', targetBaseId);
 
       const tableId = await nocodbService.getTableId(targetBaseId, this.TUTORIALS_TABLE);
       
@@ -32,6 +35,7 @@ class TutorialDeleteService {
         return;
       }
 
+      console.log('✅ DeleteService - Table ID obtido:', tableId);
       console.log('🔍 DeleteService - Buscando registro no NocoDB com ID:', tutorialId);
       
       // Buscar o registro usando o campo ID customizado

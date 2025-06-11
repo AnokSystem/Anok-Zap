@@ -4,6 +4,7 @@ import { nocodbService } from '../nocodb';
 class TutorialConnectionService {
   private isConnected = false;
   private connectionTested = false;
+  private targetBaseId: string | null = null;
 
   async testConnection(): Promise<boolean> {
     if (this.connectionTested) return this.isConnected;
@@ -14,24 +15,51 @@ class TutorialConnectionService {
       // Verificar se temos configuração básica
       if (!nocodbService.config.baseUrl || !nocodbService.config.apiToken) {
         console.error('❌ Configuração do NocoDB incompleta');
+        console.error('BaseURL:', nocodbService.config.baseUrl);
+        console.error('ApiToken presente:', !!nocodbService.config.apiToken);
         this.isConnected = false;
         this.connectionTested = true;
         return false;
       }
       
-      const targetBaseId = nocodbService.getTargetBaseId();
-      console.log('📋 Base ID encontrado:', targetBaseId);
+      // Primeiro, buscar todas as bases disponíveis
+      const basesUrl = `${nocodbService.config.baseUrl}/api/v1/db/meta/projects`;
+      console.log('🔗 Buscando bases em:', basesUrl);
       
-      if (!targetBaseId) {
-        console.warn('❌ Base do NocoDB não encontrada');
+      const basesResponse = await fetch(basesUrl, {
+        method: 'GET',
+        headers: {
+          ...nocodbService.headers,
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!basesResponse.ok) {
+        console.error('❌ Erro ao buscar bases:', basesResponse.status);
+        const errorText = await basesResponse.text();
+        console.error('❌ Detalhes do erro:', errorText);
         this.isConnected = false;
         this.connectionTested = true;
         return false;
       }
 
+      const basesData = await basesResponse.json();
+      console.log('📊 Bases encontradas:', basesData);
+      
+      if (!basesData.list || basesData.list.length === 0) {
+        console.error('❌ Nenhuma base encontrada no NocoDB');
+        this.isConnected = false;
+        this.connectionTested = true;
+        return false;
+      }
+
+      // Pegar a primeira base disponível ou procurar por uma específica
+      this.targetBaseId = basesData.list[0].id;
+      console.log('✅ Base ID encontrado:', this.targetBaseId);
+
       // Testar acesso às tabelas do projeto
-      const testUrl = `${nocodbService.config.baseUrl}/api/v1/db/meta/projects/${targetBaseId}/tables`;
-      console.log('🔗 Testando URL:', testUrl);
+      const testUrl = `${nocodbService.config.baseUrl}/api/v1/db/meta/projects/${this.targetBaseId}/tables`;
+      console.log('🔗 Testando acesso às tabelas:', testUrl);
       
       const response = await fetch(testUrl, {
         method: 'GET',
@@ -64,9 +92,14 @@ class TutorialConnectionService {
     }
   }
 
+  getTargetBaseId(): string | null {
+    return this.targetBaseId;
+  }
+
   resetConnection(): void {
     this.connectionTested = false;
     this.isConnected = false;
+    this.targetBaseId = null;
     console.log('🔄 Conexão resetada - próxima chamada irá testar novamente');
   }
 

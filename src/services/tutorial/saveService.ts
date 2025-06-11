@@ -10,22 +10,36 @@ class TutorialSaveService {
 
   async saveTutorial(tutorial: TutorialData): Promise<void> {
     try {
-      console.log('💾 Salvando metadata do tutorial:', tutorial.id);
+      console.log('💾 SaveService - Salvando metadata do tutorial:', tutorial.id);
       
+      // Testar conexão primeiro
       if (!(await tutorialConnectionService.testConnection())) {
-        console.warn('❌ Sem conexão com NocoDB, salvando apenas no localStorage');
+        console.warn('❌ SaveService - Sem conexão com NocoDB, salvando apenas no localStorage');
         tutorialLocalStorageService.saveTutorial(tutorial);
         return;
       }
       
+      // Garantir que a tabela existe
       await tutorialDataService.ensureTutorialsTable();
       
-      const targetBaseId = nocodbService.getTargetBaseId();
-      const tableId = await nocodbService.getTableId(targetBaseId!, this.TUTORIALS_TABLE);
+      const targetBaseId = tutorialConnectionService.getTargetBaseId();
+      if (!targetBaseId) {
+        console.error('❌ SaveService - Base ID não encontrado');
+        tutorialLocalStorageService.saveTutorial(tutorial);
+        return;
+      }
+
+      console.log('✅ SaveService - Base ID obtido:', targetBaseId);
+
+      const tableId = await nocodbService.getTableId(targetBaseId, this.TUTORIALS_TABLE);
       
       if (!tableId) {
-        throw new Error('Tabela de tutoriais não encontrada');
+        console.error('❌ SaveService - Tabela de tutoriais não encontrada');
+        tutorialLocalStorageService.saveTutorial(tutorial);
+        return;
       }
+
+      console.log('✅ SaveService - Table ID obtido:', tableId);
 
       const tutorialData = {
         ID: tutorial.id,
@@ -39,7 +53,12 @@ class TutorialSaveService {
         UpdatedAt: tutorial.updatedAt
       };
 
-      const response = await fetch(`${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}`, {
+      console.log('📝 SaveService - Dados a serem salvos:', tutorialData);
+
+      const saveUrl = `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}`;
+      console.log('🔗 SaveService - URL de salvamento:', saveUrl);
+
+      const response = await fetch(saveUrl, {
         method: 'POST',
         headers: {
           ...nocodbService.headers,
@@ -49,19 +68,22 @@ class TutorialSaveService {
       });
 
       if (response.ok) {
-        console.log('✅ Tutorial salvo no NocoDB com sucesso!');
+        const result = await response.json();
+        console.log('✅ SaveService - Tutorial salvo no NocoDB com sucesso!');
+        console.log('✅ SaveService - Resposta:', result);
         tutorialLocalStorageService.saveTutorial(tutorial);
       } else {
         const errorText = await response.text();
-        console.error('❌ Erro ao salvar no NocoDB:', response.status, errorText);
-        throw new Error(`Erro ao salvar tutorial no NocoDB: ${response.status}`);
+        console.error('❌ SaveService - Erro ao salvar no NocoDB:', response.status, errorText);
+        console.log('📦 SaveService - Salvando no localStorage como fallback...');
+        tutorialLocalStorageService.saveTutorial(tutorial);
       }
     } catch (error) {
-      console.error('❌ Erro ao salvar metadata no NocoDB:', error);
+      console.error('❌ SaveService - Erro ao salvar metadata no NocoDB:', error);
       
-      console.log('📦 Salvando no localStorage como fallback...');
+      console.log('📦 SaveService - Salvando no localStorage como fallback...');
       tutorialLocalStorageService.saveTutorial(tutorial);
-      console.log('✅ Tutorial salvo no localStorage como fallback');
+      console.log('✅ SaveService - Tutorial salvo no localStorage como fallback');
     }
   }
 }
