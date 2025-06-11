@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,10 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Users, Plus, Settings, Link, Search, Edit, Smartphone, Send, Save, RefreshCw, Upload, UserPlus, UserMinus, Crown, User } from 'lucide-react';
+import { Users, Plus, Settings, Link, Search, Edit, Smartphone, Send, Save, RefreshCw, Upload, UserPlus, UserMinus, Crown, User, Download, FileSpreadsheet, X } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { evolutionApiService } from '@/services/evolutionApi';
 import { groupsApiService } from '@/services/groupsApi';
+import { useSpreadsheetProcessor } from '@/components/MassMessaging/hooks/useSpreadsheetProcessor';
 
 const GroupManagement = () => {
   const { toast } = useToast();
@@ -34,8 +34,12 @@ const GroupManagement = () => {
   const [newGroupData, setNewGroupData] = useState({
     name: '',
     description: '',
-    isPrivate: false
+    isPrivate: false,
+    participants: '' // Nova propriedade para participantes
   });
+
+  // Hook para processamento de planilhas
+  const { uploadedFile, isLoading: isProcessingFile, handleSpreadsheetUpload, downloadTemplate } = useSpreadsheetProcessor();
 
   // Dados para edição de grupo
   const [editGroupData, setEditGroupData] = useState({
@@ -129,12 +133,40 @@ const GroupManagement = () => {
 
     setIsLoading(true);
     try {
-      await groupsApiService.createGroup(selectedInstance, newGroupData);
+      // Processar lista de participantes se fornecida
+      let participantsList: string[] = [];
+      if (newGroupData.participants.trim()) {
+        const lines = newGroupData.participants.split('\n');
+        participantsList = lines
+          .map(line => line.trim())
+          .filter(line => line)
+          .map(line => {
+            // Se a linha tem formato "telefone - nome", extrair apenas o telefone
+            if (line.includes(' - ')) {
+              return line.split(' - ')[0].trim();
+            }
+            return line;
+          })
+          .map(phone => {
+            // Garantir que termine com @s.whatsapp.net se for um número
+            if (phone.match(/^\+?\d+$/)) {
+              return phone.replace(/^\+/, '') + '@s.whatsapp.net';
+            }
+            return phone;
+          });
+      }
+
+      await groupsApiService.createGroup(selectedInstance, {
+        ...newGroupData,
+        participants: participantsList
+      });
+      
       toast({
         title: "Grupo Criado",
         description: `Grupo "${newGroupData.name}" criado com sucesso!`,
       });
-      setNewGroupData({ name: '', description: '', isPrivate: false });
+      
+      setNewGroupData({ name: '', description: '', isPrivate: false, participants: '' });
       setShowCreateModal(false);
       loadGroups(); // Recarregar lista
     } catch (error) {
@@ -332,6 +364,16 @@ const GroupManagement = () => {
     });
   };
 
+  const handleParticipantsFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    handleSpreadsheetUpload(event, newGroupData.participants, (value) => 
+      setNewGroupData({ ...newGroupData, participants: value })
+    );
+  };
+
+  const clearParticipantsList = () => {
+    setNewGroupData({ ...newGroupData, participants: '' });
+  };
+
   return (
     <div className="space-y-6">
       {/* Seleção de Instância */}
@@ -387,7 +429,7 @@ const GroupManagement = () => {
               Criar Novo Grupo
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-gray-800 border-gray-600">
+          <DialogContent className="bg-gray-800 border-gray-600 max-w-2xl">
             <DialogHeader>
               <DialogTitle className="text-primary-contrast">Criar Novo Grupo</DialogTitle>
             </DialogHeader>
@@ -410,6 +452,70 @@ const GroupManagement = () => {
                   className="bg-gray-700 border-gray-600"
                 />
               </div>
+              
+              {/* Seção de Participantes */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-gray-300">Participantes (opcional)</Label>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={downloadTemplate}
+                      className="bg-gray-700 border-gray-600"
+                    >
+                      <Download className="w-4 h-4 mr-1" />
+                      Modelo
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => document.getElementById('participants-file-upload')?.click()}
+                      disabled={isProcessingFile}
+                      className="bg-gray-700 border-gray-600"
+                    >
+                      <FileSpreadsheet className="w-4 h-4 mr-1" />
+                      {isProcessingFile ? 'Processando...' : 'Importar'}
+                    </Button>
+                    {newGroupData.participants && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={clearParticipantsList}
+                        className="bg-gray-700 border-gray-600 text-red-400 hover:text-red-300"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                
+                <input
+                  id="participants-file-upload"
+                  type="file"
+                  accept=".csv,.xlsx,.xls"
+                  onChange={handleParticipantsFileUpload}
+                  className="hidden"
+                />
+                
+                <Textarea
+                  value={newGroupData.participants}
+                  onChange={(e) => setNewGroupData({ ...newGroupData, participants: e.target.value })}
+                  placeholder="Digite os números dos participantes (um por linha)&#10;Formato: +5511999999999 ou +5511999999999 - Nome&#10;&#10;Ou importe de uma planilha CSV"
+                  className="bg-gray-700 border-gray-600"
+                  rows={6}
+                />
+                
+                {uploadedFile && (
+                  <div className="text-sm text-gray-400 bg-gray-700/30 p-2 rounded">
+                    📎 Arquivo: {uploadedFile.name}
+                  </div>
+                )}
+              </div>
+              
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="private"
@@ -736,3 +842,5 @@ const GroupManagement = () => {
 };
 
 export default GroupManagement;
+
+}

@@ -1,4 +1,3 @@
-
 const API_BASE_URL = 'https://api.novahagencia.com.br';
 const API_KEY = '26bda82495a95caeae71f96534841285';
 const GROUPS_WEBHOOK_URL = 'https://webhook.novahagencia.com.br/webhook/2c8dfd55-c86f-4cd7-bcc9-eef206e16003';
@@ -97,7 +96,7 @@ class GroupsApiService {
   }
 
   // Criar grupo via webhook
-  async createGroup(instanceId: string, groupData: { name: string; description?: string; isPrivate?: boolean }) {
+  async createGroup(instanceId: string, groupData: { name: string; description?: string; isPrivate?: boolean; participants?: string[] }) {
     try {
       const userId = this.getUserId();
       if (!userId || !this.isUserInstance(instanceId, userId)) {
@@ -112,6 +111,7 @@ class GroupsApiService {
           name: groupData.name,
           description: groupData.description || '',
           isPrivate: groupData.isPrivate || false,
+          participants: groupData.participants || [],
         },
         timestamp: new Date().toISOString(),
       };
