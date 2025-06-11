@@ -95,6 +95,44 @@ class GroupsApiService {
     }
   }
 
+  // Nova função para criar grupo em lote com ações em fila
+  async createGroupBatch(instanceId: string, actions: any[]) {
+    try {
+      const userId = this.getUserId();
+      if (!userId || !this.isUserInstance(instanceId, userId)) {
+        throw new Error('Acesso negado à instância');
+      }
+
+      const webhookData = {
+        action: 'create_group_batch',
+        instanceId,
+        userId,
+        data: {
+          actions: actions
+        },
+        timestamp: new Date().toISOString(),
+      };
+
+      const response = await fetch(GROUPS_WEBHOOK_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(webhookData),
+      });
+
+      if (response.ok) {
+        console.log('Criação de grupo em lote enviada via webhook');
+        return true;
+      }
+      
+      throw new Error('Falha ao enviar criação em lote');
+    } catch (error) {
+      console.error('Erro ao criar grupo em lote:', error);
+      throw error;
+    }
+  }
+
   // Nova função para atualizar múltiplas informações do grupo
   async updateGroupBatch(instanceId: string, groupId: string, actions: any[]) {
     try {

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Users, Plus, Settings, Link, Search, Edit, Smartphone, Send, Save, RefreshCw, Upload, UserPlus, UserMinus, Crown, User, Download, FileSpreadsheet, X } from 'lucide-react';
+import { Users, Plus, Settings, Link, Search, Edit, Smartphone, Send, Save, RefreshCw, Upload, UserPlus, UserMinus, Crown, User, Download, FileSpreadsheet, X, Image } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { evolutionApiService } from '@/services/evolutionApi';
 import { groupsApiService } from '@/services/groupsApi';
@@ -35,7 +35,8 @@ const GroupManagement = () => {
     name: '',
     description: '',
     isPrivate: false,
-    participants: ''
+    participants: '',
+    profileImage: null as File | null
   });
 
   // Hook para processamento de planilhas
@@ -156,17 +157,38 @@ const GroupManagement = () => {
           });
       }
 
-      await groupsApiService.createGroup(selectedInstance, {
-        ...newGroupData,
-        participants: participantsList
+      // Preparar lista de ações para criação em fila
+      const creationActions = [];
+
+      // Ação principal: criar grupo
+      creationActions.push({
+        action: 'create_group',
+        data: {
+          name: newGroupData.name,
+          description: newGroupData.description,
+          isPrivate: newGroupData.isPrivate,
+          participants: participantsList
+        }
       });
+
+      // Se há imagem, adicionar ação de atualização de imagem
+      if (newGroupData.profileImage) {
+        creationActions.push({
+          action: 'update_group_picture',
+          data: {
+            profileImage: newGroupData.profileImage
+          }
+        });
+      }
+
+      await groupsApiService.createGroupBatch(selectedInstance, creationActions);
       
       toast({
         title: "Grupo Criado",
         description: `Grupo "${newGroupData.name}" criado com sucesso!`,
       });
       
-      setNewGroupData({ name: '', description: '', isPrivate: false, participants: '' });
+      setNewGroupData({ name: '', description: '', isPrivate: false, participants: '', profileImage: null });
       setShowCreateModal(false);
       loadGroups(); // Recarregar lista
     } catch (error) {
@@ -355,6 +377,37 @@ const GroupManagement = () => {
     setNewGroupData({ ...newGroupData, participants: '' });
   };
 
+  const handleProfileImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validar tipo de arquivo
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Erro",
+          description: "Por favor, selecione apenas arquivos de imagem.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Validar tamanho (máximo 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Erro",
+          description: "A imagem deve ter no máximo 5MB.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      setNewGroupData({ ...newGroupData, profileImage: file });
+    }
+  };
+
+  const removeProfileImage = () => {
+    setNewGroupData({ ...newGroupData, profileImage: null });
+  };
+
   return (
     <div className="space-y-6">
       {/* Seleção de Instância */}
@@ -432,6 +485,61 @@ const GroupManagement = () => {
                   placeholder="Descrição do grupo (opcional)"
                   className="bg-gray-700 border-gray-600"
                 />
+              </div>
+
+              {/* Seção de Imagem de Perfil */}
+              <div className="space-y-3">
+                <Label className="text-gray-300">Imagem de Perfil (opcional)</Label>
+                {!newGroupData.profileImage ? (
+                  <div className="border-2 border-dashed border-gray-600 rounded-lg p-4 text-center">
+                    <Image className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                    <p className="text-gray-400 text-sm mb-3">
+                      Selecione uma imagem para o perfil do grupo
+                    </p>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleProfileImageChange}
+                      className="hidden"
+                      id="profile-image-upload"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => document.getElementById('profile-image-upload')?.click()}
+                      className="bg-gray-700 border-gray-600"
+                    >
+                      <Upload className="w-4 h-4 mr-1" />
+                      Escolher Imagem
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="border border-gray-600 rounded-lg p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                          <Image className="w-5 h-5 text-blue-400" />
+                        </div>
+                        <div>
+                          <p className="text-gray-200 text-sm font-medium">{newGroupData.profileImage.name}</p>
+                          <p className="text-gray-400 text-xs">
+                            {(newGroupData.profileImage.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={removeProfileImage}
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
               
               {/* Seção de Participantes */}
@@ -832,3 +940,5 @@ Ou importe de uma planilha CSV"
 };
 
 export default GroupManagement;
+
+}
