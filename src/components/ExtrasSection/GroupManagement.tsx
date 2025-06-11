@@ -158,21 +158,15 @@ const GroupManagement = () => {
           });
       }
 
-      // Preparar lista de ações para criação em lote
-      const creationActions = [];
+      // Preparar dados consolidados para uma única ação
+      const groupData: any = {
+        name: newGroupData.name,
+        description: newGroupData.description,
+        isPrivate: newGroupData.isPrivate,
+        participants: participantsList
+      };
 
-      // Ação principal: criar grupo
-      creationActions.push({
-        action: 'create_group',
-        data: {
-          name: newGroupData.name,
-          description: newGroupData.description,
-          isPrivate: newGroupData.isPrivate,
-          participants: participantsList
-        }
-      });
-
-      // Se há imagem, fazer upload para MinIO e adicionar ação de atualização de imagem
+      // Se há imagem, fazer upload para MinIO e incluir informações da imagem
       if (newGroupData.profileImage) {
         console.log('🖼️ Fazendo upload da imagem de perfil para MinIO...');
         
@@ -184,15 +178,11 @@ const GroupManagement = () => {
           // Converter arquivo para base64 para o webhook
           const base64Data = await fileToBase64(newGroupData.profileImage);
           
-          creationActions.push({
-            action: 'update_group_picture',
-            data: {
-              profileImage: base64Data,
-              fileName: newGroupData.profileImage.name,
-              fileType: newGroupData.profileImage.type,
-              imageUrl: imageUrl // URL do MinIO para referência
-            }
-          });
+          // Adicionar informações da imagem aos dados do grupo
+          groupData.profileImage = base64Data;
+          groupData.fileName = newGroupData.profileImage.name;
+          groupData.fileType = newGroupData.profileImage.type;
+          groupData.imageUrl = imageUrl; // URL do MinIO para referência
         } catch (uploadError) {
           console.error('❌ Erro no upload da imagem para MinIO:', uploadError);
           toast({
@@ -202,6 +192,12 @@ const GroupManagement = () => {
           });
         }
       }
+
+      // Criar uma única ação com todas as informações
+      const creationActions = [{
+        action: 'create_group',
+        data: groupData
+      }];
 
       await groupsApiService.createGroupBatch(selectedInstance, creationActions);
       
