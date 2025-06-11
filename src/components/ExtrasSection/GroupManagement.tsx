@@ -940,5 +940,3 @@ Ou importe de uma planilha CSV"
 };
 
 export default GroupManagement;
-
-}
