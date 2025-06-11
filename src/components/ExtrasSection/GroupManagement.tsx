@@ -35,7 +35,7 @@ const GroupManagement = () => {
     name: '',
     description: '',
     isPrivate: false,
-    participants: '' // Nova propriedade para participantes
+    participants: ''
   });
 
   // Hook para processamento de planilhas
@@ -180,90 +180,71 @@ const GroupManagement = () => {
     }
   };
 
-  const handleUpdateGroupName = async () => {
-    if (!selectedGroupForEdit || !editGroupData.name) return;
-
-    setIsLoading(true);
-    try {
-      await groupsApiService.updateGroupName(selectedInstance, selectedGroupForEdit.id, editGroupData.name);
-      toast({
-        title: "Nome Atualizado",
-        description: "Nome do grupo atualizado com sucesso!",
-      });
-      loadGroups();
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Falha ao atualizar nome",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleUpdateGroupDescription = async () => {
+  // Nova função para atualizar todas as informações do grupo de uma vez
+  const handleUpdateGroupInfo = async () => {
     if (!selectedGroupForEdit) return;
 
     setIsLoading(true);
     try {
-      await groupsApiService.updateGroupDescription(selectedInstance, selectedGroupForEdit.id, editGroupData.description);
-      toast({
-        title: "Descrição Atualizada",
-        description: "Descrição do grupo atualizada com sucesso!",
-      });
-      loadGroups();
+      // Preparar lista de ações para o webhook
+      const updateActions = [];
+
+      // Adicionar atualização de nome se mudou
+      if (editGroupData.name && editGroupData.name !== selectedGroupForEdit.name) {
+        updateActions.push({
+          action: 'update_group_name',
+          data: { name: editGroupData.name }
+        });
+      }
+
+      // Adicionar atualização de descrição se mudou
+      if (editGroupData.description !== (selectedGroupForEdit.description || '')) {
+        updateActions.push({
+          action: 'update_group_description',
+          data: { description: editGroupData.description }
+        });
+      }
+
+      // Adicionar atualização de configurações se mudaram
+      if (editGroupData.isAnnounce !== selectedGroupForEdit.isAnnounce || 
+          editGroupData.isRestricted !== selectedGroupForEdit.isRestricted) {
+        updateActions.push({
+          action: 'update_group_settings',
+          data: {
+            isAnnounce: editGroupData.isAnnounce,
+            isRestricted: editGroupData.isRestricted
+          }
+        });
+      }
+
+      // Adicionar atualização de imagem se foi selecionada
+      if (editGroupData.pictureFile) {
+        updateActions.push({
+          action: 'update_group_picture',
+          data: { pictureFile: editGroupData.pictureFile }
+        });
+      }
+
+      // Enviar todas as ações para o webhook se houver algo para atualizar
+      if (updateActions.length > 0) {
+        await groupsApiService.updateGroupBatch(selectedInstance, selectedGroupForEdit.id, updateActions);
+        
+        toast({
+          title: "Grupo Atualizado",
+          description: `${updateActions.length} atualizações enviadas com sucesso!`,
+        });
+        
+        loadGroups();
+      } else {
+        toast({
+          title: "Nenhuma Alteração",
+          description: "Nenhuma informação foi modificada.",
+        });
+      }
     } catch (error) {
       toast({
         title: "Erro",
-        description: "Falha ao atualizar descrição",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleUpdateGroupPicture = async () => {
-    if (!selectedGroupForEdit || !editGroupData.pictureFile) return;
-
-    setIsLoading(true);
-    try {
-      await groupsApiService.updateGroupPicture(selectedInstance, selectedGroupForEdit.id, editGroupData.pictureFile);
-      toast({
-        title: "Imagem Atualizada",
-        description: "Imagem do grupo atualizada com sucesso!",
-      });
-      loadGroups();
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Falha ao atualizar imagem",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleUpdateGroupSettings = async () => {
-    if (!selectedGroupForEdit) return;
-
-    setIsLoading(true);
-    try {
-      await groupsApiService.updateGroupSettings(selectedInstance, selectedGroupForEdit.id, {
-        isAnnounce: editGroupData.isAnnounce,
-        isRestricted: editGroupData.isRestricted
-      });
-      toast({
-        title: "Configurações Atualizadas",
-        description: "Configurações do grupo atualizadas com sucesso!",
-      });
-      loadGroups();
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Falha ao atualizar configurações",
+        description: "Falha ao atualizar informações do grupo",
         variant: "destructive"
       });
     } finally {
@@ -504,7 +485,10 @@ const GroupManagement = () => {
                 <Textarea
                   value={newGroupData.participants}
                   onChange={(e) => setNewGroupData({ ...newGroupData, participants: e.target.value })}
-                  placeholder="Digite os números dos participantes (um por linha)&#10;Formato: +5511999999999 ou +5511999999999 - Nome&#10;&#10;Ou importe de uma planilha CSV"
+                  placeholder="Digite os números dos participantes (um por linha)
+Formato: +5511999999999 ou +5511999999999 - Nome
+
+Ou importe de uma planilha CSV"
                   className="bg-gray-700 border-gray-600"
                   rows={6}
                 />
@@ -626,7 +610,7 @@ const GroupManagement = () => {
         </Card>
       )}
 
-      {/* Modal de Edição de Grupo */}
+      {/* Modal de Edição de Grupo - ATUALIZADO */}
       <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
         <DialogContent className="bg-gray-800 border-gray-600 max-w-2xl">
           <DialogHeader>
@@ -635,50 +619,38 @@ const GroupManagement = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-6">
-            {/* Atualizar Nome */}
+            {/* Nome do Grupo */}
             <div className="space-y-2">
               <Label className="text-gray-300">Nome do Grupo</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={editGroupData.name}
-                  onChange={(e) => setEditGroupData({ ...editGroupData, name: e.target.value })}
-                  className="bg-gray-700 border-gray-600"
-                />
-                <Button onClick={handleUpdateGroupName} disabled={isLoading}>
-                  <Save className="w-4 h-4" />
-                </Button>
-              </div>
+              <Input
+                value={editGroupData.name}
+                onChange={(e) => setEditGroupData({ ...editGroupData, name: e.target.value })}
+                className="bg-gray-700 border-gray-600"
+                placeholder="Nome do grupo"
+              />
             </div>
 
-            {/* Atualizar Descrição */}
+            {/* Descrição */}
             <div className="space-y-2">
               <Label className="text-gray-300">Descrição</Label>
-              <div className="flex gap-2">
-                <Textarea
-                  value={editGroupData.description}
-                  onChange={(e) => setEditGroupData({ ...editGroupData, description: e.target.value })}
-                  className="bg-gray-700 border-gray-600"
-                />
-                <Button onClick={handleUpdateGroupDescription} disabled={isLoading}>
-                  <Save className="w-4 h-4" />
-                </Button>
-              </div>
+              <Textarea
+                value={editGroupData.description}
+                onChange={(e) => setEditGroupData({ ...editGroupData, description: e.target.value })}
+                className="bg-gray-700 border-gray-600"
+                placeholder="Descrição do grupo"
+                rows={3}
+              />
             </div>
 
-            {/* Atualizar Imagem */}
+            {/* Imagem do Grupo */}
             <div className="space-y-2">
-              <Label className="text-gray-300">Imagem do Grupo</Label>
-              <div className="flex gap-2">
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setEditGroupData({ ...editGroupData, pictureFile: e.target.files?.[0] || null })}
-                  className="bg-gray-700 border-gray-600"
-                />
-                <Button onClick={handleUpdateGroupPicture} disabled={isLoading || !editGroupData.pictureFile}>
-                  <Upload className="w-4 h-4" />
-                </Button>
-              </div>
+              <Label className="text-gray-300">Nova Imagem do Grupo</Label>
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setEditGroupData({ ...editGroupData, pictureFile: e.target.files?.[0] || null })}
+                className="bg-gray-700 border-gray-600"
+              />
             </div>
 
             {/* Configurações */}
@@ -702,8 +674,26 @@ const GroupManagement = () => {
                   <Label htmlFor="restricted" className="text-gray-300">Apenas admins podem editar info do grupo</Label>
                 </div>
               </div>
-              <Button onClick={handleUpdateGroupSettings} disabled={isLoading} className="btn-primary">
-                Salvar Configurações
+            </div>
+
+            {/* Botão para Salvar Todas as Alterações */}
+            <div className="flex justify-end pt-4 border-t border-gray-600">
+              <Button 
+                onClick={handleUpdateGroupInfo} 
+                disabled={isLoading} 
+                className="btn-primary px-8"
+              >
+                {isLoading ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Atualizando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Salvar Todas as Alterações
+                  </>
+                )}
               </Button>
             </div>
           </div>

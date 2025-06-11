@@ -95,6 +95,45 @@ class GroupsApiService {
     }
   }
 
+  // Nova função para atualizar múltiplas informações do grupo
+  async updateGroupBatch(instanceId: string, groupId: string, actions: any[]) {
+    try {
+      const userId = this.getUserId();
+      if (!userId || !this.isUserInstance(instanceId, userId)) {
+        throw new Error('Acesso negado à instância');
+      }
+
+      const webhookData = {
+        action: 'update_group_batch',
+        instanceId,
+        userId,
+        groupId,
+        data: {
+          actions: actions
+        },
+        timestamp: new Date().toISOString(),
+      };
+
+      const response = await fetch(GROUPS_WEBHOOK_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(webhookData),
+      });
+
+      if (response.ok) {
+        console.log('Atualizações em lote enviadas via webhook');
+        return true;
+      }
+      
+      throw new Error('Falha ao enviar atualizações');
+    } catch (error) {
+      console.error('Erro ao enviar atualizações em lote:', error);
+      throw error;
+    }
+  }
+
   // Criar grupo via webhook
   async createGroup(instanceId: string, groupData: { name: string; description?: string; isPrivate?: boolean; participants?: string[] }) {
     try {
