@@ -95,7 +95,7 @@ class GroupsApiService {
     }
   }
 
-  // Nova função para criar grupo em lote com ações em fila
+  // Nova função para criar grupo em lote com ações em fila - CORRIGIDA
   async createGroupBatch(instanceId: string, actions: any[]) {
     try {
       const userId = this.getUserId();
@@ -103,15 +103,35 @@ class GroupsApiService {
         throw new Error('Acesso negado à instância');
       }
 
+      // Converter File para base64 se houver imagem
+      const processedActions = await Promise.all(actions.map(async (action) => {
+        if (action.action === 'update_group_picture' && action.data.profileImage instanceof File) {
+          const base64 = await this.fileToBase64(action.data.profileImage);
+          return {
+            ...action,
+            data: {
+              ...action.data,
+              profileImage: base64,
+              fileName: action.data.profileImage.name,
+              fileType: action.data.profileImage.type
+            }
+          };
+        }
+        return action;
+      }));
+
       const webhookData = {
         action: 'create_group_batch',
         instanceId,
         userId,
         data: {
-          actions: actions
+          actions: processedActions,
+          executeAll: true // Flag para executar tudo de uma vez
         },
         timestamp: new Date().toISOString(),
       };
+
+      console.log('Enviando dados para webhook:', webhookData);
 
       const response = await fetch(GROUPS_WEBHOOK_URL, {
         method: 'POST',
@@ -131,6 +151,24 @@ class GroupsApiService {
       console.error('Erro ao criar grupo em lote:', error);
       throw error;
     }
+  }
+
+  // Função auxiliar para converter File para base64
+  private fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          // Remove o prefixo "data:image/...;base64,"
+          const base64 = reader.result.split(',')[1];
+          resolve(base64);
+        } else {
+          reject(new Error('Falha ao converter arquivo para base64'));
+        }
+      };
+      reader.onerror = error => reject(error);
+    });
   }
 
   // Nova função para atualizar múltiplas informações do grupo
