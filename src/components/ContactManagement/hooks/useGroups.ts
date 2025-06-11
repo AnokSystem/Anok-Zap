@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { evolutionApiService } from '@/services/evolutionApi';
+import { groupsApiService } from '@/services/groupsApi';
 import { Group, ContactType } from '../types';
 
 interface UseGroupsProps {
@@ -30,13 +30,25 @@ export const useGroups = ({ selectedInstance, contactType }: UseGroupsProps) => 
     setIsLoadingGroups(true);
     try {
       console.log('Carregando grupos para instância:', selectedInstance);
-      const groupsData = await evolutionApiService.getGroups(selectedInstance);
+      const groupsData = await groupsApiService.getGroups(selectedInstance);
       console.log('Grupos carregados:', groupsData);
-      setGroups(groupsData);
+      
+      // Converter para o formato esperado pelo ContactManagement
+      const formattedGroups = groupsData.map((group: any) => ({
+        id: group.id,
+        name: group.name,
+        subject: group.name,
+        description: group.description || '',
+        pictureUrl: group.pictureUrl || '',
+        size: group.size || 0,
+        participants: group.participants || []
+      }));
+      
+      setGroups(formattedGroups);
       
       toast({
         title: "Sucesso",
-        description: `${groupsData.length} grupos encontrados`,
+        description: `${formattedGroups.length} grupos encontrados onde você é admin`,
       });
     } catch (error) {
       console.error('Erro ao carregar grupos:', error);
