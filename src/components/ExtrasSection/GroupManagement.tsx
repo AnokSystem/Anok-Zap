@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { evolutionApiService } from '@/services/evolutionApi';
 import { groupsApiService } from '@/services/groupsApi';
 import { useSpreadsheetProcessor } from '@/components/MassMessaging/hooks/useSpreadsheetProcessor';
+import { minioService } from '@/services/minio';
 
 const GroupManagement = () => {
   const { toast } = useToast();
@@ -157,7 +158,7 @@ const GroupManagement = () => {
           });
       }
 
-      // Preparar lista de ações para criação em fila
+      // Preparar lista de ações para criação em lote
       const creationActions = [];
 
       // Ação principal: criar grupo
@@ -171,14 +172,35 @@ const GroupManagement = () => {
         }
       });
 
-      // Se há imagem, adicionar ação de atualização de imagem
+      // Se há imagem, fazer upload para MinIO e adicionar ação de atualização de imagem
       if (newGroupData.profileImage) {
-        creationActions.push({
-          action: 'update_group_picture',
-          data: {
-            profileImage: newGroupData.profileImage
-          }
-        });
+        console.log('🖼️ Fazendo upload da imagem de perfil para MinIO...');
+        
+        try {
+          // Fazer upload da imagem para MinIO
+          const imageUrl = await minioService.uploadFile(newGroupData.profileImage);
+          console.log('✅ Imagem enviada para MinIO com sucesso:', imageUrl);
+          
+          // Converter arquivo para base64 para o webhook
+          const base64Data = await fileToBase64(newGroupData.profileImage);
+          
+          creationActions.push({
+            action: 'update_group_picture',
+            data: {
+              profileImage: base64Data,
+              fileName: newGroupData.profileImage.name,
+              fileType: newGroupData.profileImage.type,
+              imageUrl: imageUrl // URL do MinIO para referência
+            }
+          });
+        } catch (uploadError) {
+          console.error('❌ Erro no upload da imagem para MinIO:', uploadError);
+          toast({
+            title: "Aviso",
+            description: "Erro no upload da imagem, mas o grupo será criado sem foto de perfil",
+            variant: "destructive"
+          });
+        }
       }
 
       await groupsApiService.createGroupBatch(selectedInstance, creationActions);
@@ -192,6 +214,7 @@ const GroupManagement = () => {
       setShowCreateModal(false);
       loadGroups(); // Recarregar lista
     } catch (error) {
+      console.error('❌ Erro ao criar grupo:', error);
       toast({
         title: "Erro",
         description: "Falha ao criar grupo",
@@ -202,7 +225,24 @@ const GroupManagement = () => {
     }
   };
 
-  // Nova função para atualizar todas as informações do grupo de uma vez
+  // Função auxiliar para converter File para base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          // Remove o prefixo "data:image/...;base64,"
+          const base64 = reader.result.split(',')[1];
+          resolve(base64);
+        } else {
+          reject(new Error('Falha ao converter arquivo para base64'));
+        }
+      };
+      reader.onerror = error => reject(error);
+    });
+  };
+
   const handleUpdateGroupInfo = async () => {
     if (!selectedGroupForEdit) return;
 
