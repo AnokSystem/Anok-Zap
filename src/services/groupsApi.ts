@@ -25,7 +25,7 @@ class GroupsApiService {
     return instanceName.includes(`user-${userId}`);
   }
 
-  // Buscar grupos via API Evolution
+  // Buscar grupos via API Evolution - apenas grupos onde sou admin
   async getGroups(instanceId: string) {
     try {
       const userId = this.getUserId();
@@ -34,9 +34,10 @@ class GroupsApiService {
         return [];
       }
 
-      console.log('Buscando grupos para instância:', instanceId);
+      console.log('Buscando grupos onde sou admin para instância:', instanceId);
       
-      const response = await fetch(`${API_BASE_URL}/group/fetchAllGroups/${instanceId}?getParticipants=false`, {
+      // Buscar grupos com participantes para verificar se sou admin
+      const response = await fetch(`${API_BASE_URL}/group/fetchAllGroups/${instanceId}?getParticipants=true`, {
         headers: this.headers,
       });
       
@@ -44,12 +45,26 @@ class GroupsApiService {
         const data = await response.json();
         const groups = Array.isArray(data) ? data : data.groups || data.data || [];
         
-        return groups.map((group: any) => ({
+        // Filtrar apenas grupos onde sou admin
+        const adminGroups = groups.filter((group: any) => {
+          const participants = group.participants || [];
+          // Verificar se existe algum participante que seja eu e seja admin
+          return participants.some((participant: any) => {
+            const isMe = participant.id?.includes(instanceId.replace('user-', '')) || 
+                       participant.jid?.includes(instanceId.replace('user-', ''));
+            const isAdmin = participant.admin === 'admin' || participant.admin === 'superadmin' || participant.isAdmin === true;
+            return isMe && isAdmin;
+          });
+        });
+        
+        console.log(`Encontrados ${adminGroups.length} grupos onde sou admin de ${groups.length} grupos totais`);
+        
+        return adminGroups.map((group: any) => ({
           id: group.id || group.remoteJid,
           name: group.subject || group.name || 'Grupo sem nome',
           description: group.description || '',
           pictureUrl: group.pictureUrl || '',
-          size: group.size || 0,
+          size: group.size || (group.participants ? group.participants.length : 0),
           creationTime: group.creationTime || '',
           isAnnounce: group.announce || false,
           isRestricted: group.restrict || false,
@@ -58,7 +73,7 @@ class GroupsApiService {
       
       throw new Error('Falha ao buscar grupos');
     } catch (error) {
-      console.error('Erro ao buscar grupos:', error);
+      console.error('Erro ao buscar grupos onde sou admin:', error);
       return [];
     }
   }
