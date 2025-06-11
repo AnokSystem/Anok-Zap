@@ -30,13 +30,13 @@ export const useTutorialDelete = (
       const tutorialTitle = tutorialToDelete.title;
       console.log('📝 useTutorialDelete - Deletando tutorial:', tutorialTitle);
       
-      // Remover da interface IMEDIATAMENTE para melhor UX
-      removeTutorial(tutorialId);
-      
-      // Tentar deletar do backend (se falhar, já removemos da interface)
+      // Tentar deletar do backend primeiro
       console.log('⏳ useTutorialDelete - Chamando tutorialService.deleteTutorial...');
       await tutorialService.deleteTutorial(tutorialId);
       console.log('✅ useTutorialDelete - Serviço executado com sucesso');
+      
+      // Remover da interface após sucesso no backend
+      removeTutorial(tutorialId);
       
       console.log('🎉 useTutorialDelete - PROCESSO CONCLUÍDO COM SUCESSO');
       
@@ -50,13 +50,15 @@ export const useTutorialDelete = (
     } catch (error) {
       console.error('❌ useTutorialDelete - ERRO DURANTE EXCLUSÃO:', error);
       
+      // Ainda assim remover da interface para melhor UX
+      removeTutorial(tutorialId);
+      
       toast({
         title: "Tutorial Removido",
-        description: "Tutorial removido da interface. Pode haver problemas de sincronização com o servidor.",
+        description: "Tutorial removido da interface. Verifique a conexão com o servidor.",
         variant: "default"
       });
       
-      // Não restaurar o tutorial na interface - melhor experiência do usuário
       return true;
     }
   }, [tutorials, toast, removeTutorial]);

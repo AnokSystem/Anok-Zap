@@ -20,7 +20,12 @@ class TutorialDeleteService {
       }
       
       const targetBaseId = nocodbService.getTargetBaseId();
-      const tableId = await nocodbService.getTableId(targetBaseId!, this.TUTORIALS_TABLE);
+      if (!targetBaseId) {
+        console.error('❌ DeleteService - Base ID não encontrado');
+        return;
+      }
+
+      const tableId = await nocodbService.getTableId(targetBaseId, this.TUTORIALS_TABLE);
       
       if (!tableId) {
         console.error('❌ DeleteService - Tabela não encontrada, mas localStorage já foi atualizado');
@@ -28,8 +33,11 @@ class TutorialDeleteService {
       }
 
       console.log('🔍 DeleteService - Buscando registro no NocoDB com ID:', tutorialId);
+      
+      // Buscar o registro usando o campo ID customizado
+      const searchUrl = `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}`;
       const searchResponse = await fetch(
-        `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}?where=(ID,eq,${tutorialId})`,
+        `${searchUrl}?where=(ID,eq,${encodeURIComponent(tutorialId)})&limit=1`,
         {
           method: 'GET',
           headers: nocodbService.headers,
@@ -54,29 +62,26 @@ class TutorialDeleteService {
         return; // localStorage já foi atualizado
       }
 
-      // Usar o campo correto para o ID interno do NocoDB
+      // Pegar o ID interno do NocoDB do primeiro registro encontrado
       const record = records[0];
-      const internalRecordId = record.CreatedAt1 ? record.CreatedAt1 : record.Id;
+      const nocodbRecordId = record.Id || record.id;
       
-      if (!internalRecordId) {
-        console.error('❌ DeleteService - ID interno do registro não encontrado');
+      if (!nocodbRecordId) {
+        console.error('❌ DeleteService - ID interno do NocoDB não encontrado');
         console.error('❌ DeleteService - Estrutura do registro:', record);
         return; // localStorage já foi atualizado
       }
       
-      console.log('📝 DeleteService - ID interno encontrado:', internalRecordId);
+      console.log('📝 DeleteService - ID interno do NocoDB encontrado:', nocodbRecordId);
       
-      // Vamos tentar usar o endpoint de busca por ID customizado
-      const deleteUrl = `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}`;
+      // Deletar usando o ID interno do NocoDB
+      const deleteUrl = `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}/${nocodbRecordId}`;
       
-      console.log('⏳ DeleteService - Tentando deletar pelo ID customizado...');
-      const deleteResponse = await fetch(
-        `${deleteUrl}?where=(ID,eq,${tutorialId})`,
-        {
-          method: 'DELETE',
-          headers: nocodbService.headers,
-        }
-      );
+      console.log('⏳ DeleteService - Executando DELETE no NocoDB...');
+      const deleteResponse = await fetch(deleteUrl, {
+        method: 'DELETE',
+        headers: nocodbService.headers,
+      });
 
       if (!deleteResponse.ok) {
         console.error('❌ DeleteService - Erro ao deletar do NocoDB:', deleteResponse.status);
@@ -85,6 +90,8 @@ class TutorialDeleteService {
         return; // localStorage já foi atualizado
       }
 
+      const deleteResult = await deleteResponse.json();
+      console.log('✅ DeleteService - Resposta do delete:', deleteResult);
       console.log('✅ DeleteService - Tutorial deletado do NocoDB com sucesso');
       
     } catch (error) {
