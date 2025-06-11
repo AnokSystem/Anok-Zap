@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { tutorialService, TutorialData, CreateTutorialData } from '@/services/tutorialService';
 import { tutorialMetadataService } from '@/services/tutorial/metadataService';
 import { useToast } from '@/hooks/use-toast';
@@ -9,7 +9,7 @@ export const useTutorials = () => {
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
 
-  const fetchTutorials = async () => {
+  const fetchTutorials = useCallback(async () => {
     try {
       setLoading(true);
       console.log('🔍 useTutorials - Iniciando busca de tutoriais...');
@@ -19,7 +19,6 @@ export const useTutorials = () => {
       
       const data = await tutorialService.getTutorials();
       console.log('📚 useTutorials - Tutoriais carregados:', data.length);
-      console.log('📋 useTutorials - Lista completa:', data);
       
       setTutorials(data);
       return data;
@@ -34,9 +33,9 @@ export const useTutorials = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
-  const createTutorial = async (data: CreateTutorialData): Promise<boolean> => {
+  const createTutorial = useCallback(async (data: CreateTutorialData): Promise<boolean> => {
     try {
       setUploading(true);
       console.log('🚀 Iniciando criação de tutorial:', data.title);
@@ -114,9 +113,9 @@ export const useTutorials = () => {
     } finally {
       setUploading(false);
     }
-  };
+  }, [toast]);
 
-  const updateTutorial = async (tutorialId: string, data: CreateTutorialData): Promise<boolean> => {
+  const updateTutorial = useCallback(async (tutorialId: string, data: CreateTutorialData): Promise<boolean> => {
     try {
       setUploading(true);
       console.log('🔄 Iniciando atualização de tutorial:', tutorialId, data.title);
@@ -191,9 +190,9 @@ export const useTutorials = () => {
     } finally {
       setUploading(false);
     }
-  };
+  }, [toast]);
 
-  const deleteTutorial = async (tutorialId: string): Promise<boolean> => {
+  const deleteTutorial = useCallback(async (tutorialId: string): Promise<boolean> => {
     console.log('🚀 useTutorials.deleteTutorial - INICIANDO PROCESSO DE EXCLUSÃO');
     console.log('📝 useTutorials.deleteTutorial - Tutorial ID:', tutorialId);
     
@@ -248,8 +247,9 @@ export const useTutorials = () => {
       // Não restaurar o tutorial na interface - melhor experiência do usuário
       return true;
     }
-  };
+  }, [tutorials, toast]);
 
+  // Executar apenas uma vez na montagem
   useEffect(() => {
     console.log('🔧 Hook useTutorials montado, carregando tutoriais...');
     fetchTutorials();
@@ -259,8 +259,8 @@ export const useTutorials = () => {
     tutorials,
     loading,
     uploading,
-    createTutorial,
-    updateTutorial,
+    createTutorial: createTutorial,
+    updateTutorial: updateTutorial,
     deleteTutorial,
     refreshTutorials: fetchTutorials
   };

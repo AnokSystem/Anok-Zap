@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { BookOpen } from 'lucide-react';
 import { useTutorials } from '@/hooks/useTutorials';
 import { TutorialData } from '@/services/tutorialService';
@@ -15,72 +15,63 @@ const TutorialsSection = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedTutorial, setSelectedTutorial] = useState<TutorialData | null>(null);
   const [editingTutorial, setEditingTutorial] = useState<TutorialData | null>(null);
-  const [tutorialsCount, setTutorialsCount] = useState(0);
 
-  useEffect(() => {
-    console.log('📊 TutorialsSection - Lista de tutoriais atualizada:', tutorials.length, 'tutoriais');
-    console.log('📋 TutorialsSection - Tutoriais completos:', tutorials);
-    setTutorialsCount(tutorials.length);
+  // Memoizar o número de tutoriais para evitar re-renders desnecessários
+  const tutorialsCount = useMemo(() => tutorials.length, [tutorials.length]);
+
+  // Memoizar tutoriais agrupados
+  const groupedTutorials = useMemo(() => {
+    return tutorials.reduce((acc, tutorial) => {
+      if (!acc[tutorial.category]) {
+        acc[tutorial.category] = [];
+      }
+      acc[tutorial.category].push(tutorial);
+      return acc;
+    }, {} as Record<string, TutorialData[]>);
   }, [tutorials]);
 
-  useEffect(() => {
-    console.log('🔄 TutorialsSection montado, forçando refresh...');
-    refreshTutorials();
-    
-    const interval = setInterval(() => {
-      console.log('⏰ Refresh automático de tutoriais...');
-      refreshTutorials();
-    }, 30000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleDeleteTutorial = async (tutorialId: string): Promise<void> => {
+  // Usar useCallback para evitar re-criação desnecessária das funções
+  const handleDeleteTutorial = useCallback(async (tutorialId: string): Promise<void> => {
     console.log('🗑️ TutorialsSection.handleDeleteTutorial - INICIANDO:', tutorialId);
     
     try {
       const success = await deleteTutorial(tutorialId);
       console.log('🔄 TutorialsSection.handleDeleteTutorial - Resultado:', success);
-      
-      if (success) {
-        console.log('✅ TutorialsSection.handleDeleteTutorial - Sucesso, forçando refresh...');
-        // Forçar refresh imediato
-        await refreshTutorials();
-      } else {
-        console.log('❌ TutorialsSection.handleDeleteTutorial - Falha na exclusão');
-        throw new Error('Falha na exclusão do tutorial');
-      }
     } catch (error) {
       console.error('❌ TutorialsSection.handleDeleteTutorial - ERRO:', error);
       throw error;
     }
-  };
+  }, [deleteTutorial]);
 
-  const handleCreateModalClose = () => {
+  const handleCreateModalClose = useCallback(() => {
     setIsCreateModalOpen(false);
-    setTimeout(() => {
-      refreshTutorials();
-    }, 100);
-  };
+  }, []);
 
-  const handleEditTutorial = (tutorial: TutorialData) => {
+  const handleEditTutorial = useCallback((tutorial: TutorialData) => {
     setEditingTutorial(tutorial);
-  };
+  }, []);
 
-  const handleEditModalClose = () => {
+  const handleEditModalClose = useCallback(() => {
     setEditingTutorial(null);
-    setTimeout(() => {
-      refreshTutorials();
-    }, 100);
-  };
+  }, []);
 
-  const groupedTutorials = tutorials.reduce((acc, tutorial) => {
-    if (!acc[tutorial.category]) {
-      acc[tutorial.category] = [];
-    }
-    acc[tutorial.category].push(tutorial);
-    return acc;
-  }, {} as Record<string, TutorialData[]>);
+  const handleCreateClick = useCallback(() => {
+    setIsCreateModalOpen(true);
+  }, []);
+
+  const handleViewTutorial = useCallback((tutorial: TutorialData) => {
+    setSelectedTutorial(tutorial);
+  }, []);
+
+  const handleCloseViewModal = useCallback(() => {
+    setSelectedTutorial(null);
+  }, []);
+
+  // Executar apenas na montagem inicial - sem interval automático
+  useEffect(() => {
+    console.log('🔄 TutorialsSection montado, carregando tutoriais inicial...');
+    refreshTutorials();
+  }, []);
 
   if (loading) {
     return (
@@ -101,26 +92,18 @@ const TutorialsSection = () => {
   console.log('🎨 TutorialsSection - Renderizando com', tutorialsCount, 'tutoriais');
 
   return (
-    <div className="space-y-8" key={`tutorials-${tutorialsCount}-${Date.now()}`}>
+    <div className="space-y-8">
       <TutorialsSectionHeader
         tutorialsCount={tutorialsCount}
-        onCreateClick={() => setIsCreateModalOpen(true)}
+        onCreateClick={handleCreateClick}
       />
-
-      <div className="text-xs text-gray-500 p-3 bg-gray-800/20 rounded">
-        <div>Debug: {tutorialsCount} tutoriais carregados | Última atualização: {new Date().toLocaleTimeString()}</div>
-        <div className="mt-1">Status: {loading ? 'Carregando...' : 'Pronto'}</div>
-        {tutorials.length > 0 && (
-          <div className="mt-1">Tutoriais: {tutorials.map(t => t.title).join(', ')}</div>
-        )}
-      </div>
 
       {Object.entries(groupedTutorials).map(([category, categoryTutorials]) => (
         <TutorialCategorySection
-          key={`${category}-${categoryTutorials.length}-${Date.now()}`}
+          key={category}
           category={category}
           tutorials={categoryTutorials}
-          onViewTutorial={setSelectedTutorial}
+          onViewTutorial={handleViewTutorial}
           onEditTutorial={handleEditTutorial}
           onDeleteTutorial={handleDeleteTutorial}
         />
@@ -128,7 +111,7 @@ const TutorialsSection = () => {
 
       {tutorials.length === 0 && (
         <EmptyTutorialsState
-          onCreateClick={() => setIsCreateModalOpen(true)}
+          onCreateClick={handleCreateClick}
         />
       )}
 
@@ -146,7 +129,7 @@ const TutorialsSection = () => {
       <TutorialViewModal
         tutorial={selectedTutorial}
         isOpen={!!selectedTutorial}
-        onClose={() => setSelectedTutorial(null)}
+        onClose={handleCloseViewModal}
       />
     </div>
   );
