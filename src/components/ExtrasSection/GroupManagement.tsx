@@ -1,37 +1,74 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Plus, Settings, Link, Search, Edit } from 'lucide-react';
+import { Checkbox } from "@/components/ui/checkbox";
+import { Users, Plus, Settings, Link, Search, Edit, Smartphone, Send, Save, RefreshCw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { evolutionApiService } from '@/services/evolutionApi';
 
 const GroupManagement = () => {
   const { toast } = useToast();
+  const [instances, setInstances] = useState<any[]>([]);
+  const [selectedInstance, setSelectedInstance] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('');
   const [groupMessage, setGroupMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [groups, setGroups] = useState<any[]>([]);
   const [newGroupData, setNewGroupData] = useState({
     name: '',
     description: '',
     isPrivate: false
   });
 
-  // Mock data for groups
-  const groups = [
-    { id: 'group1', name: 'Grupo de Vendas', members: 45, link: 'https://chat.whatsapp.com/abc123' },
-    { id: 'group2', name: 'Suporte Técnico', members: 28, link: 'https://chat.whatsapp.com/def456' },
-    { id: 'group3', name: 'Marketing Digital', members: 67, link: 'https://chat.whatsapp.com/ghi789' }
-  ];
+  useEffect(() => {
+    loadInstances();
+  }, []);
+
+  useEffect(() => {
+    if (selectedInstance) {
+      loadGroups();
+    }
+  }, [selectedInstance]);
+
+  const loadInstances = async () => {
+    try {
+      const instanceList = await evolutionApiService.getInstances();
+      setInstances(instanceList);
+    } catch (error) {
+      console.error('Erro ao carregar instâncias:', error);
+    }
+  };
+
+  const loadGroups = async () => {
+    if (!selectedInstance) return;
+    
+    try {
+      const groupList = await evolutionApiService.getGroups(selectedInstance);
+      setGroups(groupList);
+    } catch (error) {
+      console.error('Erro ao carregar grupos:', error);
+    }
+  };
 
   const filteredGroups = groups.filter(group => 
     group.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleCreateGroup = () => {
+    if (!selectedInstance) {
+      toast({
+        title: "Erro",
+        description: "Selecione uma instância",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (!newGroupData.name) {
       toast({
         title: "Erro",
@@ -49,6 +86,15 @@ const GroupManagement = () => {
   };
 
   const handleSendMessage = () => {
+    if (!selectedInstance) {
+      toast({
+        title: "Erro",
+        description: "Selecione uma instância",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (!selectedGroup || !groupMessage) {
       toast({
         title: "Erro",
@@ -76,6 +122,49 @@ const GroupManagement = () => {
 
   return (
     <div className="space-y-6">
+      {/* Seleção de Instância */}
+      <Card className="border-gray-600/50 bg-gray-800/30">
+        <CardHeader>
+          <CardTitle className="text-primary-contrast flex items-center gap-2">
+            <Smartphone className="w-5 h-5" />
+            Selecionar Instância
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <Label className="text-gray-300">Instância Ativa</Label>
+              <Select value={selectedInstance} onValueChange={setSelectedInstance}>
+                <SelectTrigger className="bg-gray-800 border-gray-600">
+                  <SelectValue placeholder="Escolha uma instância" />
+                </SelectTrigger>
+                <SelectContent>
+                  {instances.map((instance) => (
+                    <SelectItem key={instance.id} value={instance.id}>
+                      <div className="flex items-center gap-2">
+                        {instance.name}
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          instance.status === 'conectado' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                        }`}>
+                          {instance.status}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={loadGroups}
+              className="bg-gray-800 border-gray-600 mt-6"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Criar Novo Grupo */}
       <Card className="border-gray-600/50 bg-gray-800/30">
         <CardHeader>
@@ -96,12 +185,10 @@ const GroupManagement = () => {
               />
             </div>
             <div className="flex items-center space-x-2 pt-6">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="private"
                 checked={newGroupData.isPrivate}
-                onChange={(e) => setNewGroupData({ ...newGroupData, isPrivate: e.target.checked })}
-                className="rounded"
+                onCheckedChange={(checked) => setNewGroupData({ ...newGroupData, isPrivate: !!checked })}
               />
               <Label htmlFor="private" className="text-gray-300">Grupo Privado</Label>
             </div>
@@ -118,10 +205,16 @@ const GroupManagement = () => {
             />
           </div>
 
-          <Button onClick={handleCreateGroup} className="btn-primary">
-            <Plus className="w-4 h-4 mr-2" />
-            Criar Grupo
-          </Button>
+          <div className="flex gap-3">
+            <Button onClick={handleCreateGroup} className="btn-primary flex-1">
+              <Plus className="w-4 h-4 mr-2" />
+              Criar Grupo
+            </Button>
+            <Button variant="outline" className="flex-1 bg-gray-800 border-gray-600">
+              <Save className="w-4 h-4 mr-2" />
+              Salvar Rascunho
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -130,7 +223,7 @@ const GroupManagement = () => {
         <CardHeader>
           <CardTitle className="text-primary-contrast flex items-center gap-2">
             <Users className="w-5 h-5" />
-            Gerenciar Grupos
+            Gerenciar Grupos ({filteredGroups.length})
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -150,9 +243,9 @@ const GroupManagement = () => {
           <div className="space-y-3">
             {filteredGroups.map((group) => (
               <div key={group.id} className="p-4 bg-gray-700/30 rounded-lg border border-gray-600">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-3">
                   <h4 className="font-semibold text-gray-200">{group.name}</h4>
-                  <span className="text-sm text-gray-400">{group.members} membros</span>
+                  <span className="text-sm text-gray-400">ID: {group.id.slice(0, 15)}...</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm" variant="outline" className="bg-gray-800 border-gray-600">
@@ -167,7 +260,7 @@ const GroupManagement = () => {
                     size="sm" 
                     variant="outline" 
                     className="bg-gray-800 border-gray-600"
-                    onClick={() => copyGroupLink(group.link, group.name)}
+                    onClick={() => copyGroupLink(`https://chat.whatsapp.com/${group.id}`, group.name)}
                   >
                     <Link className="w-4 h-4 mr-1" />
                     Copiar Link
@@ -179,11 +272,11 @@ const GroupManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Enviar Mensagem para Grupo */}
+      {/* Disparar Mensagem para Grupo */}
       <Card className="border-gray-600/50 bg-gray-800/30">
         <CardHeader>
           <CardTitle className="text-primary-contrast flex items-center gap-2">
-            <Users className="w-5 h-5" />
+            <Send className="w-5 h-5" />
             Disparar Mensagem para Grupo
           </CardTitle>
         </CardHeader>
@@ -197,7 +290,7 @@ const GroupManagement = () => {
               <SelectContent>
                 {groups.map((group) => (
                   <SelectItem key={group.id} value={group.id}>
-                    {group.name} ({group.members} membros)
+                    {group.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -215,9 +308,16 @@ const GroupManagement = () => {
             />
           </div>
 
-          <Button onClick={handleSendMessage} className="btn-primary w-full">
-            Enviar Mensagem
-          </Button>
+          <div className="flex gap-3">
+            <Button onClick={handleSendMessage} className="btn-primary flex-1">
+              <Send className="w-4 h-4 mr-2" />
+              Enviar Mensagem
+            </Button>
+            <Button variant="outline" className="flex-1 bg-gray-800 border-gray-600">
+              <Save className="w-4 h-4 mr-2" />
+              Salvar Mensagem
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
