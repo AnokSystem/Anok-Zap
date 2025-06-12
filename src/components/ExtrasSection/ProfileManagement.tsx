@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,12 @@ const ProfileManagement = () => {
   useEffect(() => {
     loadInstances();
   }, []);
+
+  useEffect(() => {
+    if (selectedInstance) {
+      loadProfileData();
+    }
+  }, [selectedInstance]);
 
   const loadInstances = async () => {
     try {
