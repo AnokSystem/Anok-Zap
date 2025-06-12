@@ -15,8 +15,15 @@ export class MinioUploadOperations {
     try {
       console.log('Iniciando upload para MinIO...', file.name);
       
-      // Usar o nome do arquivo que já vem com o caminho da pasta
-      const filePath = file.name;
+      // Limpar o nome do arquivo removendo caracteres especiais e espaços
+      const sanitizedFileName = file.name
+        .replace(/[^a-zA-Z0-9.-]/g, '_')
+        .replace(/\s+/g, '_');
+      
+      const timestamp = Date.now();
+      const fileExtension = sanitizedFileName.split('.').pop() || 'jpg';
+      const cleanFileName = sanitizedFileName.replace(/\.[^/.]+$/, "");
+      const filePath = `grupos/profile_images/${cleanFileName}_${timestamp}.${fileExtension}`;
       
       const url = new URL(this.config.serverUrl);
       const path = `/${this.config.bucketName}/${filePath}`;
@@ -27,7 +34,7 @@ export class MinioUploadOperations {
       const hashArray = Array.from(new Uint8Array(hashBuffer));
       const payloadHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
       
-      // Headers corrigidos
+      // Headers corrigidos com Content-Length como string
       const amzDate = new Date().toISOString().replace(/[:\-]|\.\d{3}/g, '');
       const headers: MinioHeaders = {
         'Host': url.hostname,
@@ -39,6 +46,7 @@ export class MinioUploadOperations {
 
       console.log('Upload para caminho:', filePath);
       console.log('Headers de upload:', headers);
+      console.log('Payload hash:', payloadHash);
 
       const authorization = await this.auth.createSignature(
         'PUT', 
@@ -53,6 +61,7 @@ export class MinioUploadOperations {
       
       const fullUrl = `${this.config.serverUrl}${path}`;
       console.log('URL de upload:', fullUrl);
+      console.log('Authorization header:', authorization);
       
       const response = await fetch(fullUrl, {
         method: 'PUT',
