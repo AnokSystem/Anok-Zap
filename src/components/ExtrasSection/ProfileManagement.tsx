@@ -42,10 +42,33 @@ const ProfileManagement = () => {
 
   const loadInstances = async () => {
     try {
+      console.log('🔄 Carregando instâncias...');
       const instanceList = await evolutionApiService.getInstances();
-      setInstances(instanceList);
+      console.log('✅ Instâncias carregadas:', instanceList);
+      
+      // Mapear instâncias para formato correto
+      const mappedInstances = instanceList.map(instance => ({
+        id: instance.id || instance.name,
+        name: instance.name,
+        connectionStatus: instance.connectionStatus,
+        profileName: instance.profileName,
+        profilePicUrl: instance.profilePicUrl,
+        status: instance.connectionStatus === 'open' ? 'conectado' : 'desconectado'
+      }));
+      
+      setInstances(mappedInstances);
+      
+      toast({
+        title: "Instâncias Carregadas",
+        description: `${mappedInstances.length} instâncias encontradas`,
+      });
     } catch (error) {
-      console.error('Erro ao carregar instâncias:', error);
+      console.error('❌ Erro ao carregar instâncias:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar instâncias",
+        variant: "destructive"
+      });
     }
   };
 
@@ -53,18 +76,20 @@ const ProfileManagement = () => {
     if (!selectedInstance) return;
     
     try {
-      console.log('Carregando dados do perfil para instância:', selectedInstance);
+      console.log('🔍 Carregando dados do perfil para instância:', selectedInstance);
       
-      // Buscar dados da instância na lista de instâncias carregadas
-      const instanceData = instances.find(instance => instance.name === selectedInstance || instance.id === selectedInstance);
+      // Buscar dados da instância na lista carregada
+      const instanceData = instances.find(instance => 
+        instance.id === selectedInstance || instance.name === selectedInstance
+      );
       
       if (instanceData) {
-        console.log('Dados da instância encontrados:', instanceData);
+        console.log('✅ Dados da instância encontrados:', instanceData);
         
         setProfileData({
           name: instanceData.profileName || '',
-          status: '', // Status não retornado pela API de instância
-          description: '', // Descrição não retornada pela API de instância
+          status: '',
+          description: '',
           profilePhoto: null,
           profilePhotoUrl: instanceData.profilePicUrl || ''
         });
@@ -74,37 +99,55 @@ const ProfileManagement = () => {
           description: "Dados do perfil carregados com sucesso",
         });
       } else {
-        console.log('Instância não encontrada na lista');
+        console.log('⚠️ Instância não encontrada na lista local, buscando via API...');
         
-        // Fallback: tentar buscar dados específicos da instância
-        const response = await fetch(`https://api.novahagencia.com.br/instance/fetchInstances`, {
-          headers: {
-            'apikey': '26bda82495a95caeae71f96534841285',
-          },
-        });
+        // Tentar buscar diretamente via API
+        try {
+          const response = await fetch(`https://api.novahagencia.com.br/instance/fetchInstances`, {
+            headers: {
+              'apikey': '26bda82495a95caeae71f96534841285',
+            },
+          });
 
-        if (response.ok) {
-          const allInstances = await response.json();
-          const currentInstance = allInstances.find((inst: any) => inst.name === selectedInstance || inst.id === selectedInstance);
-          
-          if (currentInstance) {
-            setProfileData({
-              name: currentInstance.profileName || '',
-              status: '',
-              description: '',
-              profilePhoto: null,
-              profilePhotoUrl: currentInstance.profilePicUrl || ''
-            });
+          if (response.ok) {
+            const allInstances = await response.json();
+            console.log('📡 Instâncias da API:', allInstances);
+            
+            const currentInstance = allInstances.find((inst: any) => 
+              inst.name === selectedInstance || inst.id === selectedInstance
+            );
+            
+            if (currentInstance) {
+              console.log('✅ Instância encontrada via API:', currentInstance);
+              setProfileData({
+                name: currentInstance.profileName || '',
+                status: '',
+                description: '',
+                profilePhoto: null,
+                profilePhotoUrl: currentInstance.profilePicUrl || ''
+              });
 
-            toast({
-              title: "Dados Carregados",
-              description: "Dados do perfil carregados com sucesso",
-            });
+              toast({
+                title: "Dados Carregados",
+                description: "Dados do perfil carregados via API",
+              });
+            } else {
+              throw new Error('Instância não encontrada');
+            }
+          } else {
+            throw new Error('Falha na requisição da API');
           }
+        } catch (apiError) {
+          console.error('❌ Erro ao buscar via API:', apiError);
+          toast({
+            title: "Erro",
+            description: "Instância não encontrada",
+            variant: "destructive"
+          });
         }
       }
     } catch (error) {
-      console.error('Erro ao carregar dados do perfil:', error);
+      console.error('❌ Erro geral ao carregar dados do perfil:', error);
       toast({
         title: "Erro",
         description: "Erro ao carregar dados do perfil",
@@ -116,6 +159,26 @@ const ProfileManagement = () => {
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Validar tipo de arquivo
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Erro",
+          description: "Por favor, selecione apenas arquivos de imagem",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Validar tamanho do arquivo (5MB máximo)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Erro",
+          description: "A imagem deve ter no máximo 5MB",
+          variant: "destructive"
+        });
+        return;
+      }
+
       setProfileData({ ...profileData, profilePhoto: file });
       const reader = new FileReader();
       reader.onload = () => {
@@ -147,9 +210,8 @@ const ProfileManagement = () => {
     setIsUpdating(true);
 
     try {
-      console.log('Atualizando nome do perfil:', profileData.name);
+      console.log('📝 Atualizando nome do perfil:', profileData.name);
       
-      // Endpoint correto para atualizar nome do perfil
       const response = await fetch(`https://api.novahagencia.com.br/chat/updateProfileName/${selectedInstance}`, {
         method: 'PUT',
         headers: {
@@ -161,21 +223,30 @@ const ProfileManagement = () => {
         }),
       });
 
+      console.log('📡 Status da resposta:', response.status);
+
       if (response.ok) {
         toast({
           title: "Nome Atualizado",
           description: `Nome alterado para "${profileData.name}"`,
         });
+        
+        // Atualizar lista de instâncias
+        await loadInstances();
       } else {
         const errorText = await response.text();
-        console.error('Erro na atualização do nome:', errorText);
-        throw new Error('Falha na atualização');
+        console.error('❌ Erro na atualização do nome:', errorText);
+        toast({
+          title: "Erro",
+          description: "Falha ao atualizar nome do perfil",
+          variant: "destructive"
+        });
       }
     } catch (error) {
-      console.error('Erro ao atualizar nome:', error);
+      console.error('❌ Erro ao atualizar nome:', error);
       toast({
         title: "Erro",
-        description: "Erro ao atualizar nome do perfil",
+        description: "Erro de conexão ao atualizar nome",
         variant: "destructive"
       });
     } finally {
@@ -193,12 +264,20 @@ const ProfileManagement = () => {
       return;
     }
 
+    if (!profileData.status.trim()) {
+      toast({
+        title: "Erro",
+        description: "Digite um status",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsUpdating(true);
 
     try {
-      console.log('Atualizando status do perfil:', profileData.status);
+      console.log('📝 Atualizando status do perfil:', profileData.status);
       
-      // Endpoint correto para atualizar status
       const response = await fetch(`https://api.novahagencia.com.br/chat/updateProfileStatus/${selectedInstance}`, {
         method: 'PUT',
         headers: {
@@ -217,14 +296,131 @@ const ProfileManagement = () => {
         });
       } else {
         const errorText = await response.text();
-        console.error('Erro na atualização do status:', errorText);
-        throw new Error('Falha na atualização');
+        console.error('❌ Erro na atualização do status:', errorText);
+        toast({
+          title: "Erro",
+          description: "Falha ao atualizar status do perfil",
+          variant: "destructive"
+        });
       }
     } catch (error) {
-      console.error('Erro ao atualizar status:', error);
+      console.error('❌ Erro ao atualizar status:', error);
       toast({
         title: "Erro",
-        description: "Erro ao atualizar status do perfil",
+        description: "Erro de conexão ao atualizar status",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleUpdatePhoto = async () => {
+    if (!selectedInstance) {
+      toast({
+        title: "Erro",
+        description: "Selecione uma instância",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!profileData.profilePhoto) {
+      toast({
+        title: "Erro",
+        description: "Selecione uma foto",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsUpdating(true);
+
+    try {
+      console.log('📷 Atualizando foto do perfil');
+      
+      const formData = new FormData();
+      formData.append('picture', profileData.profilePhoto);
+
+      const response = await fetch(`https://api.novahagencia.com.br/chat/updateProfilePicture/${selectedInstance}`, {
+        method: 'PUT',
+        headers: {
+          'apikey': '26bda82495a95caeae71f96534841285',
+        },
+        body: formData,
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Foto Atualizada",
+          description: "Foto do perfil atualizada com sucesso",
+        });
+        
+        // Recarregar dados do perfil
+        await loadProfileData();
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Erro na atualização da foto:', errorText);
+        toast({
+          title: "Erro",
+          description: "Falha ao atualizar foto do perfil",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('❌ Erro ao atualizar foto:', error);
+      toast({
+        title: "Erro",
+        description: "Erro de conexão ao atualizar foto",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleRemovePhoto = async () => {
+    if (!selectedInstance) {
+      toast({
+        title: "Erro",
+        description: "Selecione uma instância",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsUpdating(true);
+
+    try {
+      console.log('🗑️ Removendo foto do perfil');
+      
+      const response = await fetch(`https://api.novahagencia.com.br/chat/removeProfilePicture/${selectedInstance}`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': '26bda82495a95caeae71f96534841285',
+        },
+      });
+
+      if (response.ok) {
+        setProfileData({ ...profileData, profilePhoto: null, profilePhotoUrl: '' });
+        toast({
+          title: "Foto Removida",
+          description: "Foto do perfil removida com sucesso",
+        });
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Erro na remoção da foto:', errorText);
+        toast({
+          title: "Erro",
+          description: "Falha ao remover foto do perfil",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('❌ Erro ao remover foto:', error);
+      toast({
+        title: "Erro",
+        description: "Erro de conexão ao remover foto",
         variant: "destructive"
       });
     } finally {
@@ -272,110 +468,6 @@ const ProfileManagement = () => {
       toast({
         title: "Erro",
         description: "Erro ao atualizar descrição do perfil",
-        variant: "destructive"
-      });
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleUpdatePhoto = async () => {
-    if (!selectedInstance) {
-      toast({
-        title: "Erro",
-        description: "Selecione uma instância",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!profileData.profilePhoto) {
-      toast({
-        title: "Erro",
-        description: "Selecione uma foto",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsUpdating(true);
-
-    try {
-      console.log('Atualizando foto do perfil');
-      
-      const formData = new FormData();
-      formData.append('picture', profileData.profilePhoto);
-
-      // Endpoint correto para atualizar foto do perfil
-      const response = await fetch(`https://api.novahagencia.com.br/chat/updateProfilePicture/${selectedInstance}`, {
-        method: 'PUT',
-        headers: {
-          'apikey': '26bda82495a95caeae71f96534841285',
-        },
-        body: formData,
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Foto Atualizada",
-          description: "Foto do perfil atualizada com sucesso",
-        });
-      } else {
-        const errorText = await response.text();
-        console.error('Erro na atualização da foto:', errorText);
-        throw new Error('Falha na atualização');
-      }
-    } catch (error) {
-      console.error('Erro ao atualizar foto:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao atualizar foto do perfil",
-        variant: "destructive"
-      });
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleRemovePhoto = async () => {
-    if (!selectedInstance) {
-      toast({
-        title: "Erro",
-        description: "Selecione uma instância",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsUpdating(true);
-
-    try {
-      console.log('Removendo foto do perfil');
-      
-      // Endpoint correto para remover foto do perfil
-      const response = await fetch(`https://api.novahagencia.com.br/chat/removeProfilePicture/${selectedInstance}`, {
-        method: 'DELETE',
-        headers: {
-          'apikey': '26bda82495a95caeae71f96534841285',
-        },
-      });
-
-      if (response.ok) {
-        setProfileData({ ...profileData, profilePhoto: null, profilePhotoUrl: '' });
-        toast({
-          title: "Foto Removida",
-          description: "Foto do perfil removida com sucesso",
-        });
-      } else {
-        const errorText = await response.text();
-        console.error('Erro na remoção da foto:', errorText);
-        throw new Error('Falha na remoção');
-      }
-    } catch (error) {
-      console.error('Erro ao remover foto:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao remover foto do perfil",
         variant: "destructive"
       });
     } finally {
@@ -447,13 +539,13 @@ const ProfileManagement = () => {
                 </SelectTrigger>
                 <SelectContent>
                   {instances.map((instance) => (
-                    <SelectItem key={instance.id} value={instance.name}>
+                    <SelectItem key={instance.id} value={instance.id}>
                       <div className="flex items-center gap-2">
                         {instance.name}
                         <span className={`text-xs px-2 py-1 rounded ${
-                          instance.connectionStatus === 'open' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                          instance.status === 'conectado' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
                         }`}>
-                          {instance.connectionStatus === 'open' ? 'conectado' : 'desconectado'}
+                          {instance.status}
                         </span>
                       </div>
                     </SelectItem>
@@ -498,6 +590,9 @@ const ProfileManagement = () => {
                 onChange={handlePhotoChange}
                 className="bg-gray-800 border-gray-600"
               />
+              <p className="text-xs text-gray-400 mt-1">
+                Máximo 5MB - JPG, PNG, WEBP
+              </p>
             </div>
           </div>
           
@@ -505,7 +600,7 @@ const ProfileManagement = () => {
             <Button 
               onClick={handleUpdatePhoto} 
               className="btn-primary flex-1"
-              disabled={isUpdating || !selectedInstance}
+              disabled={isUpdating || !selectedInstance || !profileData.profilePhoto}
             >
               <Camera className="w-4 h-4 mr-2" />
               {isUpdating ? 'Atualizando...' : 'Atualizar Foto'}
@@ -544,7 +639,7 @@ const ProfileManagement = () => {
               <Button 
                 onClick={handleUpdateName} 
                 className="btn-primary"
-                disabled={isUpdating || !selectedInstance}
+                disabled={isUpdating || !selectedInstance || !profileData.name.trim()}
               >
                 <Save className="w-4 h-4 mr-2" />
                 {isUpdating ? 'Salvando...' : 'Salvar Nome'}
@@ -564,129 +659,38 @@ const ProfileManagement = () => {
               <Button 
                 onClick={handleUpdateStatus} 
                 className="btn-primary"
-                disabled={isUpdating || !selectedInstance}
+                disabled={isUpdating || !selectedInstance || !profileData.status.trim()}
               >
                 <Save className="w-4 h-4 mr-2" />
                 {isUpdating ? 'Salvando...' : 'Salvar Status'}
               </Button>
             </div>
           </div>
-
-          <div>
-            <Label className="text-gray-300">Descrição</Label>
-            <div className="space-y-3">
-              <Textarea
-                value={profileData.description}
-                onChange={(e) => setProfileData({ ...profileData, description: e.target.value })}
-                placeholder="Digite uma descrição"
-                className="bg-gray-800 border-gray-600 text-gray-200"
-                rows={3}
-              />
-              <Button 
-                onClick={handleUpdateDescription} 
-                className="btn-primary w-full"
-                disabled={isUpdating || !selectedInstance}
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {isUpdating ? 'Salvando...' : 'Salvar Descrição'}
-              </Button>
-            </div>
-          </div>
         </CardContent>
       </Card>
 
-      {/* Configurações de Privacidade */}
-      <Card className="border-gray-600/50 bg-gray-800/30">
-        <CardHeader>
-          <CardTitle className="text-primary-contrast flex items-center gap-2">
-            <Shield className="w-5 h-5" />
-            Configurações de Privacidade
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
+      {/* Status da Conexão */}
+      {selectedInstance && (
+        <Card className="border-gray-600/50 bg-gray-800/30">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
               <div>
-                <Label className="text-gray-300">Visto por último</Label>
-                <p className="text-sm text-gray-400">Quem pode ver quando você esteve online</p>
+                <h4 className="text-primary-contrast font-medium">Status da Instância</h4>
+                <p className="text-gray-400 text-sm">
+                  Instância: {instances.find(i => i.id === selectedInstance)?.name}
+                </p>
               </div>
-              <Select 
-                value={privacySettings.lastSeen} 
-                onValueChange={(value) => setPrivacySettings({ ...privacySettings, lastSeen: value })}
-              >
-                <SelectTrigger className="w-32 bg-gray-800 border-gray-600">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="everyone">Todos</SelectItem>
-                  <SelectItem value="contacts">Contatos</SelectItem>
-                  <SelectItem value="nobody">Ninguém</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
-              <div>
-                <Label className="text-gray-300">Foto do perfil</Label>
-                <p className="text-sm text-gray-400">Quem pode ver sua foto do perfil</p>
+              <div className={`px-3 py-1 rounded text-xs font-medium ${
+                instances.find(i => i.id === selectedInstance)?.status === 'conectado' 
+                  ? 'bg-green-500/20 text-green-400' 
+                  : 'bg-red-500/20 text-red-400'
+              }`}>
+                {instances.find(i => i.id === selectedInstance)?.status}
               </div>
-              <Select 
-                value={privacySettings.profilePhoto} 
-                onValueChange={(value) => setPrivacySettings({ ...privacySettings, profilePhoto: value })}
-              >
-                <SelectTrigger className="w-32 bg-gray-800 border-gray-600">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="everyone">Todos</SelectItem>
-                  <SelectItem value="contacts">Contatos</SelectItem>
-                  <SelectItem value="nobody">Ninguém</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
-
-            <div className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
-              <div>
-                <Label className="text-gray-300">Confirmação de leitura</Label>
-                <p className="text-sm text-gray-400">Enviar confirmações de leitura</p>
-              </div>
-              <Switch
-                checked={privacySettings.readReceipts}
-                onCheckedChange={(checked) => setPrivacySettings({ ...privacySettings, readReceipts: checked })}
-              />
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
-              <div>
-                <Label className="text-gray-300">Grupos</Label>
-                <p className="text-sm text-gray-400">Quem pode adicionar você em grupos</p>
-              </div>
-              <Select 
-                value={privacySettings.groups} 
-                onValueChange={(value) => setPrivacySettings({ ...privacySettings, groups: value })}
-              >
-                <SelectTrigger className="w-32 bg-gray-800 border-gray-600">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="everyone">Todos</SelectItem>
-                  <SelectItem value="contacts">Contatos</SelectItem>
-                  <SelectItem value="admins">Admins</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <Button 
-            onClick={handleUpdatePrivacy} 
-            className="btn-primary w-full"
-            disabled={isUpdating || !selectedInstance}
-          >
-            <Shield className="w-4 h-4 mr-2" />
-            {isUpdating ? 'Salvando...' : 'Salvar Configurações de Privacidade'}
-          </Button>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
