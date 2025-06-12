@@ -44,6 +44,7 @@ const GroupManagement = () => {
     removeAllParticipants,
     getGroupInviteLink,
     sendMessageToGroup,
+    addParticipants,
   } = useGroupActions(selectedInstance, loadGroups, loadParticipants);
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -99,7 +100,7 @@ const GroupManagement = () => {
   };
 
   const handleDeleteGroup = async (groupId: string, groupName: string) => {
-    if (window.confirm(`Tem certeza que deseja excluir o grupo "${groupName}"? Esta ação não pode ser desfeita.`)) {
+    if (window.confirm(`Tem certeza que deseja sair do grupo "${groupName}"? Esta ação não pode ser desfeita.`)) {
       await deleteGroup(groupId, groupName);
     }
   };
@@ -294,6 +295,7 @@ const GroupManagement = () => {
         onRefreshParticipants={() => selectedGroupForEdit && loadParticipants(selectedGroupForEdit.id)}
         onManageParticipant={handleParticipantAction}
         onRemoveAllParticipants={handleRemoveAllParticipants}
+        onAddParticipants={addParticipants}
       />
 
       {/* Disparar Mensagem para Grupo */}

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { groupsApiService } from '@/services/groupsApi';
 import { minioService } from '@/services/minio';
-import { GroupData, EditGroupData } from '../types';
+import { GroupData, EditGroupData, AddParticipantsData } from '../types';
 
 export const useGroupActions = (
   selectedInstance: string,
@@ -373,6 +373,69 @@ export const useGroupActions = (
     }
   };
 
+  const addParticipants = async (groupId: string, participantsData: AddParticipantsData, groupName: string) => {
+    if (!selectedInstance) {
+      toast({
+        title: "Erro",
+        description: "Selecione uma instância",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (!participantsData.participants.trim()) {
+      toast({
+        title: "Erro",
+        description: "Adicione pelo menos um participante",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    setIsLoading(true);
+    try {
+      const lines = participantsData.participants.split('\n');
+      const participantsList = lines
+        .map(line => line.trim())
+        .filter(line => line)
+        .map(line => {
+          if (line.includes(' - ')) {
+            return line.split(' - ')[0].trim();
+          }
+          return line;
+        })
+        .map(phone => {
+          if (phone.match(/^\+?\d+$/)) {
+            return phone.replace(/^\+/, '') + '@s.whatsapp.net';
+          }
+          return phone;
+        });
+
+      console.log('👥 Adicionando participantes ao grupo:', groupId, participantsList);
+      
+      await groupsApiService.addParticipants(selectedInstance, groupId, participantsList);
+      
+      toast({
+        title: "Participantes Adicionados",
+        description: `${participantsList.length} participantes foram adicionados ao grupo "${groupName}"`,
+      });
+      
+      await loadParticipants(groupId);
+      await loadGroups();
+      return true;
+    } catch (error) {
+      console.error('❌ Erro ao adicionar participantes:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao adicionar participantes",
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     isLoading,
     createGroup,
@@ -382,5 +445,6 @@ export const useGroupActions = (
     removeAllParticipants,
     getGroupInviteLink,
     sendMessageToGroup,
+    addParticipants,
   };
 };

@@ -1,11 +1,13 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Users, RefreshCw, UserMinus, UserPlus, Crown, UserX, Trash2 } from 'lucide-react';
-import { Participant, Group } from '../types';
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Users, RefreshCw, UserMinus, UserPlus, Crown, UserX, Trash2, Plus } from 'lucide-react';
+import { Participant, Group, AddParticipantsData } from '../types';
 
 interface ParticipantsModalProps {
   isOpen: boolean;
@@ -17,6 +19,7 @@ interface ParticipantsModalProps {
   onRefreshParticipants: () => void;
   onManageParticipant: (participantId: string, action: 'add' | 'remove' | 'promote' | 'demote') => void;
   onRemoveAllParticipants: (groupId: string, participants: Participant[], groupName: string) => void;
+  onAddParticipants: (groupId: string, participantsData: AddParticipantsData, groupName: string) => Promise<boolean>;
 }
 
 export const ParticipantsModal = ({
@@ -28,12 +31,24 @@ export const ParticipantsModal = ({
   isLoading,
   onRefreshParticipants,
   onManageParticipant,
-  onRemoveAllParticipants
+  onRemoveAllParticipants,
+  onAddParticipants
 }: ParticipantsModalProps) => {
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newParticipants, setNewParticipants] = useState('');
+
   if (!selectedGroup) return null;
 
   const regularParticipants = participants.filter(p => !p.isAdmin && !p.isSuperAdmin);
   const adminParticipants = participants.filter(p => p.isAdmin || p.isSuperAdmin);
+
+  const handleAddParticipants = async () => {
+    const success = await onAddParticipants(selectedGroup.id, { participants: newParticipants }, selectedGroup.name);
+    if (success) {
+      setNewParticipants('');
+      setShowAddForm(false);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -60,6 +75,16 @@ export const ParticipantsModal = ({
               <Button 
                 variant="outline" 
                 size="sm"
+                onClick={() => setShowAddForm(!showAddForm)}
+                disabled={isLoading}
+                className="bg-gray-700 border-gray-600"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Adicionar
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
                 onClick={onRefreshParticipants}
                 disabled={isLoadingParticipants}
                 className="bg-gray-700 border-gray-600"
@@ -81,6 +106,45 @@ export const ParticipantsModal = ({
               )}
             </div>
           </div>
+
+          {/* Formulário para adicionar participantes */}
+          {showAddForm && (
+            <div className="p-4 bg-gray-700/30 rounded-lg border border-gray-600 space-y-4">
+              <div>
+                <Label className="text-gray-300">Adicionar Participantes</Label>
+                <Textarea
+                  value={newParticipants}
+                  onChange={(e) => setNewParticipants(e.target.value)}
+                  placeholder="Digite os números dos participantes (um por linha)&#10;Exemplo:&#10;5511999999999&#10;5511888888888"
+                  className="bg-gray-800 border-gray-600 text-gray-200 mt-2"
+                  rows={4}
+                />
+                <p className="text-sm text-gray-400 mt-1">
+                  Digite um número por linha. Formato: 5511999999999
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={handleAddParticipants}
+                  disabled={isLoading || !newParticipants.trim()}
+                  className="btn-primary"
+                >
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  {isLoading ? 'Adicionando...' : 'Adicionar Participantes'}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowAddForm(false);
+                    setNewParticipants('');
+                  }}
+                  className="bg-gray-800 border-gray-600"
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          )}
 
           {isLoadingParticipants ? (
             <div className="flex items-center justify-center p-8">

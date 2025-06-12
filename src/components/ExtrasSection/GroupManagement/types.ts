@@ -32,3 +32,7 @@ export interface Group {
   isRestricted?: boolean;
   inviteCode?: string;
 }
+
+export interface AddParticipantsData {
+  participants: string;
+}
