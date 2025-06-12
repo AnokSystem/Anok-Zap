@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { groupsApiService } from '@/services/groupsApi';
@@ -157,10 +158,29 @@ export const useGroupActions = (
       }
 
       if (editData.pictureFile) {
-        updateActions.push({
-          action: 'update_group_picture',
-          data: { pictureFile: editData.pictureFile }
-        });
+        console.log('🖼️ Fazendo upload da imagem de perfil para MinIO...');
+        
+        try {
+          const imageUrl = await minioService.uploadFile(editData.pictureFile);
+          console.log('✅ Imagem enviada para MinIO com sucesso:', imageUrl);
+          
+          updateActions.push({
+            action: 'update_group_picture',
+            data: { 
+              imageUrl: imageUrl,
+              fileName: editData.pictureFile.name,
+              fileType: editData.pictureFile.type
+            }
+          });
+        } catch (uploadError) {
+          console.error('❌ Erro no upload da imagem para MinIO:', uploadError);
+          toast({
+            title: "Erro",
+            description: "Falha no upload da imagem de perfil",
+            variant: "destructive"
+          });
+          return;
+        }
       }
 
       if (updateActions.length > 0) {
