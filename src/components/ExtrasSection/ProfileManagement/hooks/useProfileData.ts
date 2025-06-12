@@ -33,6 +33,8 @@ export const useProfileData = (selectedInstance: string, toast: any) => {
         
         if (currentInstance) {
           console.log('✅ Instância encontrada via API:', currentInstance);
+          console.log('📷 URL da foto do perfil:', currentInstance.profilePicUrl);
+          
           setProfileData({
             name: currentInstance.profileName || '',
             status: '',
@@ -43,19 +45,41 @@ export const useProfileData = (selectedInstance: string, toast: any) => {
 
           toast({
             title: "Dados Carregados",
-            description: "Dados do perfil carregados com sucesso",
+            description: `Dados do perfil carregados com sucesso${currentInstance.profilePicUrl ? ' (com foto)' : ' (sem foto)'}`,
           });
         } else {
           console.log('⚠️ Instância não encontrada');
+          // Limpar dados quando instância não for encontrada
+          setProfileData({
+            name: '',
+            status: '',
+            description: '',
+            profilePhoto: null,
+            profilePhotoUrl: ''
+          });
+          
           toast({
             title: "Aviso",
             description: "Instância não encontrada ou desconectada",
             variant: "destructive"
           });
         }
+      } else {
+        console.error('❌ Erro na resposta da API:', response.status);
+        throw new Error(`Erro na API: ${response.status}`);
       }
     } catch (error) {
       console.error('❌ Erro ao carregar dados do perfil:', error);
+      
+      // Limpar dados em caso de erro
+      setProfileData({
+        name: '',
+        status: '',
+        description: '',
+        profilePhoto: null,
+        profilePhotoUrl: ''
+      });
+      
       toast({
         title: "Erro",
         description: "Erro ao carregar dados do perfil",
