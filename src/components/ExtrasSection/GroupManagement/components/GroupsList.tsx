@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Users, Search, Edit, Link, Loader2, Trash2 } from 'lucide-react';
+import { Users, Search, Edit, Link, Loader2, LogOut } from 'lucide-react';
 import { Group } from '../types';
 
 interface GroupsListProps {
@@ -118,8 +118,8 @@ export const GroupsList = ({
                     className="bg-red-600/20 border-red-600/50 text-red-400 hover:bg-red-600/30"
                     onClick={() => onDeleteGroup(group.id, group.name)}
                   >
-                    <Trash2 className="w-4 h-4 mr-1" />
-                    Excluir
+                    <LogOut className="w-4 h-4 mr-1" />
+                    Sair
                   </Button>
                 </div>
               </div>
