@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,29 +55,53 @@ const ProfileManagement = () => {
     try {
       console.log('Carregando dados do perfil para instância:', selectedInstance);
       
-      // Endpoint correto para buscar dados do perfil
-      const response = await fetch(`https://api.novahagencia.com.br/instance/fetchInstance/${selectedInstance}`, {
-        headers: {
-          'apikey': '26bda82495a95caeae71f96534841285',
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Dados do perfil carregados:', data);
+      // Buscar dados da instância na lista de instâncias carregadas
+      const instanceData = instances.find(instance => instance.name === selectedInstance || instance.id === selectedInstance);
+      
+      if (instanceData) {
+        console.log('Dados da instância encontrados:', instanceData);
         
         setProfileData({
-          name: data.profileName || data.pushName || '',
+          name: instanceData.profileName || '',
           status: '', // Status não retornado pela API de instância
           description: '', // Descrição não retornada pela API de instância
           profilePhoto: null,
-          profilePhotoUrl: data.profilePicUrl || ''
+          profilePhotoUrl: instanceData.profilePicUrl || ''
         });
 
         toast({
           title: "Dados Carregados",
           description: "Dados do perfil carregados com sucesso",
         });
+      } else {
+        console.log('Instância não encontrada na lista');
+        
+        // Fallback: tentar buscar dados específicos da instância
+        const response = await fetch(`https://api.novahagencia.com.br/instance/fetchInstances`, {
+          headers: {
+            'apikey': '26bda82495a95caeae71f96534841285',
+          },
+        });
+
+        if (response.ok) {
+          const allInstances = await response.json();
+          const currentInstance = allInstances.find((inst: any) => inst.name === selectedInstance || inst.id === selectedInstance);
+          
+          if (currentInstance) {
+            setProfileData({
+              name: currentInstance.profileName || '',
+              status: '',
+              description: '',
+              profilePhoto: null,
+              profilePhotoUrl: currentInstance.profilePicUrl || ''
+            });
+
+            toast({
+              title: "Dados Carregados",
+              description: "Dados do perfil carregados com sucesso",
+            });
+          }
+        }
       }
     } catch (error) {
       console.error('Erro ao carregar dados do perfil:', error);
@@ -424,13 +447,13 @@ const ProfileManagement = () => {
                 </SelectTrigger>
                 <SelectContent>
                   {instances.map((instance) => (
-                    <SelectItem key={instance.id} value={instance.id}>
+                    <SelectItem key={instance.id} value={instance.name}>
                       <div className="flex items-center gap-2">
                         {instance.name}
                         <span className={`text-xs px-2 py-1 rounded ${
-                          instance.status === 'conectado' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                          instance.connectionStatus === 'open' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
                         }`}>
-                          {instance.status}
+                          {instance.connectionStatus === 'open' ? 'conectado' : 'desconectado'}
                         </span>
                       </div>
                     </SelectItem>
