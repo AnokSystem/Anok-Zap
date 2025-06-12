@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +20,17 @@ interface Instance {
   profilePicUrl?: string;
 }
 
+interface PrivacySettings {
+  readreceipts: 'all' | 'none';
+  profile: 'all' | 'contacts' | 'contact_blacklist' | 'none';
+  status: 'all' | 'contacts' | 'contact_blacklist' | 'none';
+  online: 'all' | 'match_last_seen';
+  last: 'all' | 'contacts' | 'contact_blacklist' | 'none';
+  groupadd: 'all' | 'contacts' | 'contact_blacklist';
+}
+
+const WEBHOOK_URL = 'https://webhook.novahagencia.com.br/webhook/2c8dfd55-c86f-4cd7-bcc9-eef206e16003';
+
 const ProfileManagement = () => {
   const { toast } = useToast();
   const [instances, setInstances] = useState<Instance[]>([]);
@@ -33,13 +43,15 @@ const ProfileManagement = () => {
     profilePhoto: null as File | null,
     profilePhotoUrl: ''
   });
-  const [privacySettings, setPrivacySettings] = useState({
-    lastSeen: 'everyone',
-    profilePhoto: 'everyone',
-    status: 'everyone',
-    readReceipts: true,
-    groups: 'everyone'
+  const [privacySettings, setPrivacySettings] = useState<PrivacySettings>({
+    readreceipts: 'all',
+    profile: 'all',
+    status: 'all',
+    online: 'all',
+    last: 'all',
+    groupadd: 'all'
   });
+  const [isLoadingPrivacy, setIsLoadingPrivacy] = useState(false);
 
   useEffect(() => {
     loadInstances();
@@ -48,6 +60,7 @@ const ProfileManagement = () => {
   useEffect(() => {
     if (selectedInstance) {
       loadProfileData();
+      loadPrivacySettings();
     }
   }, [selectedInstance]);
 
@@ -79,7 +92,6 @@ const ProfileManagement = () => {
     try {
       console.log('🔍 Carregando dados do perfil para instância:', selectedInstance);
       
-      // Buscar dados da instância diretamente via API da Evolution
       const response = await fetch(`https://api.novahagencia.com.br/instance/fetchInstances`, {
         headers: {
           'apikey': '26bda82495a95caeae71f96534841285',
@@ -127,10 +139,84 @@ const ProfileManagement = () => {
     }
   };
 
+  const loadPrivacySettings = async () => {
+    if (!selectedInstance) return;
+    
+    setIsLoadingPrivacy(true);
+    try {
+      console.log('🔒 Carregando configurações de privacidade para:', selectedInstance);
+      
+      const response = await fetch(`https://api.novahagencia.com.br/chat/fetchPrivacySettings/${selectedInstance}`, {
+        headers: {
+          'apikey': '26bda82495a95caeae71f96534841285',
+        },
+      });
+
+      if (response.ok) {
+        const settings = await response.json();
+        console.log('✅ Configurações de privacidade carregadas:', settings);
+        
+        setPrivacySettings({
+          readreceipts: settings.readreceipts || 'all',
+          profile: settings.profile || 'all',
+          status: settings.status || 'all',
+          online: settings.online || 'all',
+          last: settings.last || 'all',
+          groupadd: settings.groupadd || 'all'
+        });
+
+        toast({
+          title: "Configurações Carregadas",
+          description: "Configurações de privacidade carregadas com sucesso",
+        });
+      } else {
+        console.error('❌ Erro ao carregar configurações de privacidade');
+        toast({
+          title: "Erro",
+          description: "Erro ao carregar configurações de privacidade",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('❌ Erro ao carregar configurações de privacidade:', error);
+      toast({
+        title: "Erro",
+        description: "Erro de conexão ao carregar configurações de privacidade",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoadingPrivacy(false);
+    }
+  };
+
+  const sendWebhook = async (action: string, data: any) => {
+    try {
+      console.log('📡 Enviando webhook:', { action, data, instance: selectedInstance });
+      
+      const webhookData = {
+        action,
+        instance: selectedInstance,
+        data,
+        timestamp: new Date().toISOString()
+      };
+
+      await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(webhookData),
+      });
+
+      console.log('✅ Webhook enviado com sucesso');
+    } catch (error) {
+      console.error('❌ Erro ao enviar webhook:', error);
+    }
+  };
+
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validar tipo de arquivo
       if (!file.type.startsWith('image/')) {
         toast({
           title: "Erro",
@@ -140,7 +226,6 @@ const ProfileManagement = () => {
         return;
       }
 
-      // Validar tamanho do arquivo (5MB máximo)
       if (file.size > 5 * 1024 * 1024) {
         toast({
           title: "Erro",
@@ -160,19 +245,20 @@ const ProfileManagement = () => {
   };
 
   const handleUpdateName = async () => {
-    if (!selectedInstance) {
+    if (!selectedInstance || !profileData.name.trim()) {
       toast({
         title: "Erro",
-        description: "Selecione uma instância",
+        description: "Selecione uma instância e digite um nome",
         variant: "destructive"
       });
       return;
     }
 
-    if (!profileData.name.trim()) {
+    const currentInstance = instances.find(i => i.id === selectedInstance);
+    if (currentInstance?.status === 'desconectado') {
       toast({
         title: "Erro",
-        description: "Digite um nome",
+        description: "A instância precisa estar conectada",
         variant: "destructive"
       });
       return;
@@ -194,22 +280,21 @@ const ProfileManagement = () => {
         }),
       });
 
-      console.log('📡 Status da resposta:', response.status);
-
       if (response.ok) {
+        await sendWebhook('update_profile_name', { name: profileData.name });
+        
         toast({
           title: "Nome Atualizado",
           description: `Nome alterado para "${profileData.name}"`,
         });
         
-        // Atualizar lista de instâncias
         await loadInstances();
       } else {
         const errorText = await response.text();
         console.error('❌ Erro na atualização do nome:', errorText);
         toast({
           title: "Erro",
-          description: "Falha ao atualizar nome do perfil. Verifique se a instância está conectada.",
+          description: "Falha ao atualizar nome do perfil",
           variant: "destructive"
         });
       }
@@ -226,19 +311,20 @@ const ProfileManagement = () => {
   };
 
   const handleUpdateStatus = async () => {
-    if (!selectedInstance) {
+    if (!selectedInstance || !profileData.status.trim()) {
       toast({
         title: "Erro",
-        description: "Selecione uma instância",
+        description: "Selecione uma instância e digite um status",
         variant: "destructive"
       });
       return;
     }
 
-    if (!profileData.status.trim()) {
+    const currentInstance = instances.find(i => i.id === selectedInstance);
+    if (currentInstance?.status === 'desconectado') {
       toast({
         title: "Erro",
-        description: "Digite um status",
+        description: "A instância precisa estar conectada",
         variant: "destructive"
       });
       return;
@@ -261,6 +347,8 @@ const ProfileManagement = () => {
       });
 
       if (response.ok) {
+        await sendWebhook('update_profile_status', { status: profileData.status });
+        
         toast({
           title: "Status Atualizado",
           description: "Status do perfil atualizado com sucesso",
@@ -270,7 +358,7 @@ const ProfileManagement = () => {
         console.error('❌ Erro na atualização do status:', errorText);
         toast({
           title: "Erro",
-          description: "Falha ao atualizar status do perfil. Verifique se a instância está conectada.",
+          description: "Falha ao atualizar status do perfil",
           variant: "destructive"
         });
       }
@@ -287,19 +375,20 @@ const ProfileManagement = () => {
   };
 
   const handleUpdatePhoto = async () => {
-    if (!selectedInstance) {
+    if (!selectedInstance || !profileData.profilePhoto) {
       toast({
         title: "Erro",
-        description: "Selecione uma instância",
+        description: "Selecione uma instância e uma foto",
         variant: "destructive"
       });
       return;
     }
 
-    if (!profileData.profilePhoto) {
+    const currentInstance = instances.find(i => i.id === selectedInstance);
+    if (currentInstance?.status === 'desconectado') {
       toast({
         title: "Erro",
-        description: "Selecione uma foto",
+        description: "A instância precisa estar conectada",
         variant: "destructive"
       });
       return;
@@ -313,7 +402,6 @@ const ProfileManagement = () => {
       const formData = new FormData();
       formData.append('picture', profileData.profilePhoto);
 
-      // Corrigindo a URL do endpoint para foto do perfil
       const response = await fetch(`https://api.novahagencia.com.br/chat/updateProfilePicture/${selectedInstance}`, {
         method: 'PUT',
         headers: {
@@ -322,22 +410,19 @@ const ProfileManagement = () => {
         body: formData,
       });
 
-      console.log('📡 Status da resposta do upload:', response.status);
-
       if (response.ok) {
+        await sendWebhook('update_profile_photo', { updated: true });
+        
         toast({
           title: "Foto Atualizada",
           description: "Foto do perfil atualizada com sucesso",
         });
         
-        // Recarregar dados do perfil
         await loadProfileData();
       } else {
         const errorText = await response.text();
         console.error('❌ Erro na atualização da foto:', errorText);
         
-        // Tentar endpoint alternativo
-        console.log('🔄 Tentando endpoint alternativo...');
         const alternativeResponse = await fetch(`https://api.novahagencia.com.br/chat/updateProfilePhoto/${selectedInstance}`, {
           method: 'PUT',
           headers: {
@@ -347,6 +432,8 @@ const ProfileManagement = () => {
         });
 
         if (alternativeResponse.ok) {
+          await sendWebhook('update_profile_photo', { updated: true });
+          
           toast({
             title: "Foto Atualizada",
             description: "Foto do perfil atualizada com sucesso",
@@ -355,7 +442,7 @@ const ProfileManagement = () => {
         } else {
           toast({
             title: "Erro",
-            description: "Falha ao atualizar foto do perfil. Verifique se a instância está conectada e o endpoint da API está correto.",
+            description: "Falha ao atualizar foto do perfil",
             variant: "destructive"
           });
         }
@@ -382,6 +469,16 @@ const ProfileManagement = () => {
       return;
     }
 
+    const currentInstance = instances.find(i => i.id === selectedInstance);
+    if (currentInstance?.status === 'desconectado') {
+      toast({
+        title: "Erro",
+        description: "A instância precisa estar conectada",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsUpdating(true);
 
     try {
@@ -395,6 +492,8 @@ const ProfileManagement = () => {
       });
 
       if (response.ok) {
+        await sendWebhook('remove_profile_photo', { removed: true });
+        
         setProfileData({ ...profileData, profilePhoto: null, profilePhotoUrl: '' });
         toast({
           title: "Foto Removida",
@@ -405,7 +504,7 @@ const ProfileManagement = () => {
         console.error('❌ Erro na remoção da foto:', errorText);
         toast({
           title: "Erro",
-          description: "Falha ao remover foto do perfil. Verifique se a instância está conectada.",
+          description: "Falha ao remover foto do perfil",
           variant: "destructive"
         });
       }
@@ -419,6 +518,77 @@ const ProfileManagement = () => {
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const handleUpdatePrivacySettings = async () => {
+    if (!selectedInstance) {
+      toast({
+        title: "Erro",
+        description: "Selecione uma instância",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const currentInstance = instances.find(i => i.id === selectedInstance);
+    if (currentInstance?.status === 'desconectado') {
+      toast({
+        title: "Erro",
+        description: "A instância precisa estar conectada",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsUpdating(true);
+
+    try {
+      console.log('🔒 Atualizando configurações de privacidade:', privacySettings);
+      
+      const response = await fetch(`https://api.novahagencia.com.br/chat/updatePrivacySettings/${selectedInstance}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': '26bda82495a95caeae71f96534841285',
+        },
+        body: JSON.stringify(privacySettings),
+      });
+
+      if (response.ok) {
+        await sendWebhook('update_privacy_settings', privacySettings);
+        
+        toast({
+          title: "Configurações Atualizadas",
+          description: "Configurações de privacidade atualizadas com sucesso",
+        });
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Erro na atualização das configurações:', errorText);
+        toast({
+          title: "Erro",
+          description: "Falha ao atualizar configurações de privacidade",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('❌ Erro ao atualizar configurações:', error);
+      toast({
+        title: "Erro",
+        description: "Erro de conexão ao atualizar configurações",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const getStatusColor = (status?: string) => {
+    return status === 'conectado' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400';
+  };
+
+  const isInstanceDisconnected = () => {
+    const currentInstance = instances.find(i => i.id === selectedInstance);
+    return currentInstance?.status === 'desconectado';
   };
 
   return (
@@ -444,9 +614,7 @@ const ProfileManagement = () => {
                     <SelectItem key={instance.id} value={instance.id}>
                       <div className="flex items-center gap-2">
                         {instance.name}
-                        <span className={`text-xs px-2 py-1 rounded ${
-                          instance.status === 'conectado' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
-                        }`}>
+                        <span className={`text-xs px-2 py-1 rounded ${getStatusColor(instance.status)}`}>
                           {instance.status}
                         </span>
                       </div>
@@ -477,17 +645,13 @@ const ProfileManagement = () => {
                 <p className="text-gray-400 text-sm">
                   Instância: {instances.find(i => i.id === selectedInstance)?.name}
                 </p>
-                {instances.find(i => i.id === selectedInstance)?.status === 'desconectado' && (
+                {isInstanceDisconnected() && (
                   <p className="text-yellow-400 text-sm mt-1">
                     ⚠️ Para editar o perfil, a instância precisa estar conectada
                   </p>
                 )}
               </div>
-              <div className={`px-3 py-1 rounded text-xs font-medium ${
-                instances.find(i => i.id === selectedInstance)?.status === 'conectado' 
-                  ? 'bg-green-500/20 text-green-400' 
-                  : 'bg-red-500/20 text-red-400'
-              }`}>
+              <div className={`px-3 py-1 rounded text-xs font-medium ${getStatusColor(instances.find(i => i.id === selectedInstance)?.status)}`}>
                 {instances.find(i => i.id === selectedInstance)?.status}
               </div>
             </div>
@@ -530,7 +694,7 @@ const ProfileManagement = () => {
             <Button 
               onClick={handleUpdatePhoto} 
               className="btn-primary flex-1"
-              disabled={isUpdating || !selectedInstance || !profileData.profilePhoto || instances.find(i => i.id === selectedInstance)?.status === 'desconectado'}
+              disabled={isUpdating || !selectedInstance || !profileData.profilePhoto || isInstanceDisconnected()}
             >
               <Camera className="w-4 h-4 mr-2" />
               {isUpdating ? 'Atualizando...' : 'Atualizar Foto'}
@@ -539,7 +703,7 @@ const ProfileManagement = () => {
               variant="destructive" 
               onClick={handleRemovePhoto}
               className="flex-1"
-              disabled={isUpdating || !selectedInstance || instances.find(i => i.id === selectedInstance)?.status === 'desconectado'}
+              disabled={isUpdating || !selectedInstance || isInstanceDisconnected()}
             >
               <Trash2 className="w-4 h-4 mr-2" />
               Remover Foto
@@ -569,7 +733,7 @@ const ProfileManagement = () => {
               <Button 
                 onClick={handleUpdateName} 
                 className="btn-primary"
-                disabled={isUpdating || !selectedInstance || !profileData.name.trim() || instances.find(i => i.id === selectedInstance)?.status === 'desconectado'}
+                disabled={isUpdating || !selectedInstance || !profileData.name.trim() || isInstanceDisconnected()}
               >
                 <Save className="w-4 h-4 mr-2" />
                 {isUpdating ? 'Salvando...' : 'Salvar Nome'}
@@ -589,13 +753,163 @@ const ProfileManagement = () => {
               <Button 
                 onClick={handleUpdateStatus} 
                 className="btn-primary"
-                disabled={isUpdating || !selectedInstance || !profileData.status.trim() || instances.find(i => i.id === selectedInstance)?.status === 'desconectado'}
+                disabled={isUpdating || !selectedInstance || !profileData.status.trim() || isInstanceDisconnected()}
               >
                 <Save className="w-4 h-4 mr-2" />
                 {isUpdating ? 'Salvando...' : 'Salvar Status'}
               </Button>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Configurações de Privacidade */}
+      <Card className="border-gray-600/50 bg-gray-800/30">
+        <CardHeader>
+          <CardTitle className="text-primary-contrast flex items-center gap-2">
+            <Shield className="w-5 h-5" />
+            Configurações de Privacidade
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h4 className="text-primary-contrast font-medium">Configurações Atuais</h4>
+            <Button 
+              variant="outline" 
+              onClick={loadPrivacySettings}
+              className="bg-gray-800 border-gray-600"
+              disabled={!selectedInstance || isLoadingPrivacy}
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingPrivacy ? 'animate-spin' : ''}`} />
+              {isLoadingPrivacy ? 'Carregando...' : 'Atualizar'}
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <Label className="text-gray-300">Confirmação de Leitura</Label>
+              <Select 
+                value={privacySettings.readreceipts} 
+                onValueChange={(value: 'all' | 'none') => 
+                  setPrivacySettings({ ...privacySettings, readreceipts: value })
+                }
+              >
+                <SelectTrigger className="bg-gray-800 border-gray-600">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="none">Ninguém</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-gray-300">Foto do Perfil</Label>
+              <Select 
+                value={privacySettings.profile} 
+                onValueChange={(value: 'all' | 'contacts' | 'contact_blacklist' | 'none') => 
+                  setPrivacySettings({ ...privacySettings, profile: value })
+                }
+              >
+                <SelectTrigger className="bg-gray-800 border-gray-600">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="contacts">Contatos</SelectItem>
+                  <SelectItem value="contact_blacklist">Contatos Exceto</SelectItem>
+                  <SelectItem value="none">Ninguém</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-gray-300">Status</Label>
+              <Select 
+                value={privacySettings.status} 
+                onValueChange={(value: 'all' | 'contacts' | 'contact_blacklist' | 'none') => 
+                  setPrivacySettings({ ...privacySettings, status: value })
+                }
+              >
+                <SelectTrigger className="bg-gray-800 border-gray-600">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="contacts">Contatos</SelectItem>
+                  <SelectItem value="contact_blacklist">Contatos Exceto</SelectItem>
+                  <SelectItem value="none">Ninguém</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-gray-300">Online</Label>
+              <Select 
+                value={privacySettings.online} 
+                onValueChange={(value: 'all' | 'match_last_seen') => 
+                  setPrivacySettings({ ...privacySettings, online: value })
+                }
+              >
+                <SelectTrigger className="bg-gray-800 border-gray-600">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="match_last_seen">Igual ao Visto por Último</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-gray-300">Visto por Último</Label>
+              <Select 
+                value={privacySettings.last} 
+                onValueChange={(value: 'all' | 'contacts' | 'contact_blacklist' | 'none') => 
+                  setPrivacySettings({ ...privacySettings, last: value })
+                }
+              >
+                <SelectTrigger className="bg-gray-800 border-gray-600">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="contacts">Contatos</SelectItem>
+                  <SelectItem value="contact_blacklist">Contatos Exceto</SelectItem>
+                  <SelectItem value="none">Ninguém</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-gray-300">Grupos</Label>
+              <Select 
+                value={privacySettings.groupadd} 
+                onValueChange={(value: 'all' | 'contacts' | 'contact_blacklist') => 
+                  setPrivacySettings({ ...privacySettings, groupadd: value })
+                }
+              >
+                <SelectTrigger className="bg-gray-800 border-gray-600">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="contacts">Contatos</SelectItem>
+                  <SelectItem value="contact_blacklist">Contatos Exceto</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <Button 
+            onClick={handleUpdatePrivacySettings} 
+            className="btn-primary w-full"
+            disabled={isUpdating || !selectedInstance || isInstanceDisconnected()}
+          >
+            <Shield className="w-4 h-4 mr-2" />
+            {isUpdating ? 'Salvando...' : 'Salvar Configurações de Privacidade'}
+          </Button>
         </CardContent>
       </Card>
     </div>
