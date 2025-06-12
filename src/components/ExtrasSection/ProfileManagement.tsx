@@ -29,7 +29,7 @@ interface PrivacySettings {
   groupadd: 'all' | 'contacts' | 'contact_blacklist';
 }
 
-const WEBHOOK_URL = 'https://webhook.novahagencia.com.br/webhook/2c8dfd55-c86f-4cd7-bcc9-eef206e16003';
+const WEBHOOK_URL = 'https://webhook.novahagencia.com.br/webhook/307e0a28-8c14-4fdd-8d64-45c54ac6a247';
 
 const ProfileManagement = () => {
   const { toast } = useToast();
