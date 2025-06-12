@@ -35,7 +35,7 @@ export const useGroupActions = (
         description: "Selecione uma instância",
         variant: "destructive"
       });
-      return;
+      return false;
     }
 
     if (!groupData.name) {
@@ -44,13 +44,13 @@ export const useGroupActions = (
         description: "Nome do grupo é obrigatório",
         variant: "destructive"
       });
-      return;
+      return false;
     }
 
     setIsLoading(true);
     try {
       let participantsList: string[] = [];
-      if (groupData.participants.trim()) {
+      if (groupData.participants && groupData.participants.trim()) {
         const lines = groupData.participants.split('\n');
         participantsList = lines
           .map(line => line.trim())
@@ -373,7 +373,7 @@ export const useGroupActions = (
     }
   };
 
-  const addParticipants = async (groupId: string, participantsData: AddParticipantsData, groupName: string) => {
+  const addParticipants = async (groupId: string, participantsData: AddParticipantsData) => {
     if (!selectedInstance) {
       toast({
         title: "Erro",
@@ -383,7 +383,10 @@ export const useGroupActions = (
       return false;
     }
 
-    if (!participantsData.participants.trim()) {
+    // Verificação mais robusta para evitar erro de undefined
+    const participantsText = participantsData?.participants || '';
+    
+    if (!participantsText.trim()) {
       toast({
         title: "Erro",
         description: "Adicione pelo menos um participante",
@@ -394,7 +397,7 @@ export const useGroupActions = (
 
     setIsLoading(true);
     try {
-      const lines = participantsData.participants.split('\n');
+      const lines = participantsText.split('\n');
       const participantsList = lines
         .map(line => line.trim())
         .filter(line => line)
@@ -417,7 +420,7 @@ export const useGroupActions = (
       
       toast({
         title: "Participantes Adicionados",
-        description: `${participantsList.length} participantes foram adicionados ao grupo "${groupName}"`,
+        description: `${participantsList.length} participantes foram adicionados ao grupo`,
       });
       
       await loadParticipants(groupId);

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InstanceSelector } from './components/InstanceSelector';
 import { CreateGroupModal } from './components/CreateGroupModal';
+import { EditGroupModal } from './components/EditGroupModal';
 import { GroupsList } from './components/GroupsList';
 import { ParticipantsModal } from './components/ParticipantsModal';
 import { ConfirmationDialog } from './components/ConfirmationDialog';
@@ -12,6 +13,7 @@ import { Group, GroupData } from './types';
 
 const GroupManagement = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -84,6 +86,11 @@ const GroupManagement = () => {
     loadParticipants(group.id);
   };
 
+  const handleEditGroup = (group: Group) => {
+    setSelectedGroup(group);
+    setIsEditModalOpen(true);
+  };
+
   const handleCreateGroup = async () => {
     const success = await createGroup(groupData);
     if (success) {
@@ -133,7 +140,7 @@ const GroupManagement = () => {
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         isLoadingGroups={isLoadingGroups}
-        onEditGroup={(group) => console.log('Edit group:', group)}
+        onEditGroup={handleEditGroup}
         onOpenParticipants={handleOpenParticipants}
         onCopyGroupLink={getGroupInviteLink}
         onDeleteGroup={handleDeleteGroup}
@@ -147,6 +154,14 @@ const GroupManagement = () => {
         onCreateGroup={handleCreateGroup}
         isLoading={isLoading}
         disabled={!selectedInstance}
+      />
+
+      <EditGroupModal
+        isOpen={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        group={selectedGroup}
+        onUpdateGroup={updateGroupInfo}
+        isLoading={isLoading}
       />
 
       <ParticipantsModal
