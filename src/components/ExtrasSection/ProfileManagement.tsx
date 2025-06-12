@@ -18,6 +18,29 @@ const ProfileManagement = () => {
   const [selectedInstance, setSelectedInstance] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
 
+  // Move loadInstances function declaration before its usage
+  const loadInstances = async () => {
+    try {
+      console.log('🔄 Carregando instâncias...');
+      const instanceList = await evolutionApiService.getInstances();
+      console.log('✅ Instâncias carregadas:', instanceList);
+      
+      setInstances(instanceList);
+      
+      toast({
+        title: "Instâncias Carregadas",
+        description: `${instanceList.length} instâncias encontradas`,
+      });
+    } catch (error) {
+      console.error('❌ Erro ao carregar instâncias:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar instâncias",
+        variant: "destructive"
+      });
+    }
+  };
+
   const {
     profileData,
     setProfileData,
@@ -60,28 +83,6 @@ const ProfileManagement = () => {
       loadPrivacySettings();
     }
   }, [selectedInstance, loadProfileData, loadPrivacySettings]);
-
-  const loadInstances = async () => {
-    try {
-      console.log('🔄 Carregando instâncias...');
-      const instanceList = await evolutionApiService.getInstances();
-      console.log('✅ Instâncias carregadas:', instanceList);
-      
-      setInstances(instanceList);
-      
-      toast({
-        title: "Instâncias Carregadas",
-        description: `${instanceList.length} instâncias encontradas`,
-      });
-    } catch (error) {
-      console.error('❌ Erro ao carregar instâncias:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao carregar instâncias",
-        variant: "destructive"
-      });
-    }
-  };
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

@@ -1,5 +1,5 @@
-
 import { useCallback } from 'react';
+import { minioService } from '@/services/minio';
 import type { Instance, PrivacySettingsType, ProfileData } from '../types';
 
 const WEBHOOK_URL = 'https://webhook.novahagencia.com.br/webhook/307e0a28-8c14-4fdd-8d64-45c54ac6a247';
@@ -24,7 +24,8 @@ export const useWebhookActions = (
         action,
         instance: selectedInstance,
         data,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        queue: true // Adicionar flag para processamento em fila
       };
 
       const response = await fetch(WEBHOOK_URL, {
@@ -159,46 +160,53 @@ export const useWebhookActions = (
     setIsUpdating(true);
 
     try {
-      console.log('📷 Atualizando foto do perfil via webhook');
+      console.log('📷 Iniciando upload da foto para MinIO...');
       
-      const reader = new FileReader();
-      reader.onload = async () => {
-        try {
-          const base64Data = reader.result as string;
-          
-          await sendWebhookAction('update_profile_photo', { 
-            photo: base64Data,
-            filename: profileData.profilePhoto!.name 
-          });
-          
-          toast({
-            title: "Foto Atualizada",
-            description: "Foto do perfil atualizada com sucesso via webhook",
-          });
-          
-          await loadProfileData();
-        } catch (error) {
-          console.error('❌ Erro ao atualizar foto via webhook:', error);
-          toast({
-            title: "Erro",
-            description: "Erro ao atualizar foto do perfil",
-            variant: "destructive"
-          });
-        } finally {
-          setIsUpdating(false);
-        }
-      };
-      reader.readAsDataURL(profileData.profilePhoto);
+      // 1. Upload da imagem para MinIO
+      const timestamp = Date.now();
+      const fileExtension = profileData.profilePhoto.name.split('.').pop() || 'jpg';
+      const fileName = `profile_photos/${selectedInstance}/profile_${timestamp}.${fileExtension}`;
+      
+      const renamedFile = new File([profileData.profilePhoto], fileName, { 
+        type: profileData.profilePhoto.type 
+      });
+      
+      const imageUrl = await minioService.uploadFile(renamedFile);
+      console.log('✅ Imagem enviada para MinIO:', imageUrl);
+      
+      // 2. Enviar URL via webhook em formato de fila
+      await sendWebhookAction('update_profile_photo', { 
+        imageUrl: imageUrl,
+        fileName: fileName,
+        fileType: profileData.profilePhoto.type,
+        instance: selectedInstance,
+        queueProcessing: true
+      });
+      
+      toast({
+        title: "Foto Enviada para Processamento",
+        description: "Foto enviada para MinIO e adicionada à fila de processamento",
+      });
+      
+      // Limpar foto local após envio
+      setProfileData({ ...profileData, profilePhoto: null });
+      
+      // Aguardar um pouco antes de recarregar
+      setTimeout(async () => {
+        await loadProfileData();
+      }, 2000);
+      
     } catch (error) {
       console.error('❌ Erro ao processar foto:', error);
       toast({
         title: "Erro",
-        description: "Erro ao processar foto",
+        description: "Erro ao fazer upload da foto para MinIO",
         variant: "destructive"
       });
+    } finally {
       setIsUpdating(false);
     }
-  }, [selectedInstance, profileData.profilePhoto, instances, toast, setIsUpdating, sendWebhookAction, loadProfileData]);
+  }, [selectedInstance, profileData.profilePhoto, instances, toast, setIsUpdating, sendWebhookAction, loadProfileData, setProfileData, profileData]);
 
   const handleRemovePhoto = useCallback(async () => {
     if (!selectedInstance) {
@@ -225,12 +233,12 @@ export const useWebhookActions = (
     try {
       console.log('🗑️ Removendo foto do perfil via webhook');
       
-      await sendWebhookAction('remove_profile_photo', {});
+      await sendWebhookAction('remove_profile_photo', { queueProcessing: true });
       
       setProfileData({ ...profileData, profilePhoto: null, profilePhotoUrl: '' });
       toast({
-        title: "Foto Removida",
-        description: "Foto do perfil removida com sucesso via webhook",
+        title: "Remoção Enviada para Processamento",
+        description: "Solicitação de remoção adicionada à fila de processamento",
       });
     } catch (error) {
       console.error('❌ Erro ao remover foto via webhook:', error);
