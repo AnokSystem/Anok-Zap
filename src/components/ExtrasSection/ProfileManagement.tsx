@@ -142,33 +142,43 @@ const ProfileManagement = () => {
     
     setIsLoadingPrivacy(true);
     try {
-      console.log('🔒 Carregando configurações de privacidade para:', selectedInstance);
+      console.log('🔒 Carregando configurações de privacidade via webhook para:', selectedInstance);
       
-      const response = await fetch(`https://api.novahagencia.com.br/chat/fetchPrivacySettings/${selectedInstance}`, {
+      const webhookData = {
+        action: 'fetch_privacy_settings',
+        instance: selectedInstance,
+        timestamp: new Date().toISOString()
+      };
+
+      const response = await fetch(WEBHOOK_URL, {
+        method: 'POST',
         headers: {
-          'apikey': '26bda82495a95caeae71f96534841285',
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify(webhookData),
       });
 
       if (response.ok) {
-        const settings = await response.json();
-        console.log('✅ Configurações de privacidade carregadas:', settings);
+        const result = await response.json();
+        console.log('✅ Configurações de privacidade carregadas via webhook:', result);
         
-        setPrivacySettings({
-          readreceipts: settings.readreceipts || 'all',
-          profile: settings.profile || 'all',
-          status: settings.status || 'all',
-          online: settings.online || 'all',
-          last: settings.last || 'all',
-          groupadd: settings.groupadd || 'all'
-        });
+        if (result.privacySettings) {
+          setPrivacySettings({
+            readreceipts: result.privacySettings.readreceipts || 'all',
+            profile: result.privacySettings.profile || 'all',
+            status: result.privacySettings.status || 'all',
+            online: result.privacySettings.online || 'all',
+            last: result.privacySettings.last || 'all',
+            groupadd: result.privacySettings.groupadd || 'all'
+          });
 
-        toast({
-          title: "Configurações Carregadas",
-          description: "Configurações de privacidade carregadas com sucesso",
-        });
+          toast({
+            title: "Configurações Carregadas",
+            description: "Configurações de privacidade carregadas com sucesso",
+          });
+        }
       } else {
-        console.error('❌ Erro ao carregar configurações de privacidade');
+        console.error('❌ Erro ao carregar configurações de privacidade via webhook');
         toast({
           title: "Erro",
           description: "Erro ao carregar configurações de privacidade",
@@ -176,7 +186,7 @@ const ProfileManagement = () => {
         });
       }
     } catch (error) {
-      console.error('❌ Erro ao carregar configurações de privacidade:', error);
+      console.error('❌ Erro ao carregar configurações de privacidade via webhook:', error);
       toast({
         title: "Erro",
         description: "Erro de conexão ao carregar configurações de privacidade",
@@ -187,9 +197,9 @@ const ProfileManagement = () => {
     }
   };
 
-  const sendWebhook = async (action: string, data: any) => {
+  const sendWebhookAction = async (action: string, data: any) => {
     try {
-      console.log('📡 Enviando webhook:', { action, data, instance: selectedInstance });
+      console.log('📡 Enviando ação via webhook:', { action, data, instance: selectedInstance });
       
       const webhookData = {
         action,
@@ -198,7 +208,7 @@ const ProfileManagement = () => {
         timestamp: new Date().toISOString()
       };
 
-      await fetch(WEBHOOK_URL, {
+      const response = await fetch(WEBHOOK_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -206,9 +216,16 @@ const ProfileManagement = () => {
         body: JSON.stringify(webhookData),
       });
 
-      console.log('✅ Webhook enviado com sucesso');
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Ação executada com sucesso via webhook:', result);
+        return result;
+      } else {
+        throw new Error(`Webhook retornou erro: ${response.status}`);
+      }
     } catch (error) {
-      console.error('❌ Erro ao enviar webhook:', error);
+      console.error('❌ Erro ao executar ação via webhook:', error);
+      throw error;
     }
   };
 
@@ -265,42 +282,21 @@ const ProfileManagement = () => {
     setIsUpdating(true);
 
     try {
-      console.log('📝 Atualizando nome do perfil:', profileData.name);
+      console.log('📝 Atualizando nome do perfil via webhook:', profileData.name);
       
-      const response = await fetch(`https://api.novahagencia.com.br/chat/updateProfileName/${selectedInstance}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': '26bda82495a95caeae71f96534841285',
-        },
-        body: JSON.stringify({
-          name: profileData.name
-        }),
+      await sendWebhookAction('update_profile_name', { name: profileData.name });
+      
+      toast({
+        title: "Nome Atualizado",
+        description: `Nome alterado para "${profileData.name}" via webhook`,
       });
-
-      if (response.ok) {
-        await sendWebhook('update_profile_name', { name: profileData.name });
-        
-        toast({
-          title: "Nome Atualizado",
-          description: `Nome alterado para "${profileData.name}"`,
-        });
-        
-        await loadInstances();
-      } else {
-        const errorText = await response.text();
-        console.error('❌ Erro na atualização do nome:', errorText);
-        toast({
-          title: "Erro",
-          description: "Falha ao atualizar nome do perfil",
-          variant: "destructive"
-        });
-      }
+      
+      await loadInstances();
     } catch (error) {
-      console.error('❌ Erro ao atualizar nome:', error);
+      console.error('❌ Erro ao atualizar nome via webhook:', error);
       toast({
         title: "Erro",
-        description: "Erro de conexão ao atualizar nome",
+        description: "Erro ao atualizar nome do perfil",
         variant: "destructive"
       });
     } finally {
@@ -331,40 +327,19 @@ const ProfileManagement = () => {
     setIsUpdating(true);
 
     try {
-      console.log('📝 Atualizando status do perfil:', profileData.status);
+      console.log('📝 Atualizando status do perfil via webhook:', profileData.status);
       
-      const response = await fetch(`https://api.novahagencia.com.br/chat/updateProfileStatus/${selectedInstance}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': '26bda82495a95caeae71f96534841285',
-        },
-        body: JSON.stringify({
-          status: profileData.status
-        }),
+      await sendWebhookAction('update_profile_status', { status: profileData.status });
+      
+      toast({
+        title: "Status Atualizado",
+        description: "Status do perfil atualizado com sucesso via webhook",
       });
-
-      if (response.ok) {
-        await sendWebhook('update_profile_status', { status: profileData.status });
-        
-        toast({
-          title: "Status Atualizado",
-          description: "Status do perfil atualizado com sucesso",
-        });
-      } else {
-        const errorText = await response.text();
-        console.error('❌ Erro na atualização do status:', errorText);
-        toast({
-          title: "Erro",
-          description: "Falha ao atualizar status do perfil",
-          variant: "destructive"
-        });
-      }
     } catch (error) {
-      console.error('❌ Erro ao atualizar status:', error);
+      console.error('❌ Erro ao atualizar status via webhook:', error);
       toast({
         title: "Erro",
-        description: "Erro de conexão ao atualizar status",
+        description: "Erro ao atualizar status do perfil",
         variant: "destructive"
       });
     } finally {
@@ -395,64 +370,44 @@ const ProfileManagement = () => {
     setIsUpdating(true);
 
     try {
-      console.log('📷 Atualizando foto do perfil');
+      console.log('📷 Atualizando foto do perfil via webhook');
       
-      const formData = new FormData();
-      formData.append('picture', profileData.profilePhoto);
-
-      const response = await fetch(`https://api.novahagencia.com.br/chat/updateProfilePicture/${selectedInstance}`, {
-        method: 'PUT',
-        headers: {
-          'apikey': '26bda82495a95caeae71f96534841285',
-        },
-        body: formData,
-      });
-
-      if (response.ok) {
-        await sendWebhook('update_profile_photo', { updated: true });
-        
-        toast({
-          title: "Foto Atualizada",
-          description: "Foto do perfil atualizada com sucesso",
-        });
-        
-        await loadProfileData();
-      } else {
-        const errorText = await response.text();
-        console.error('❌ Erro na atualização da foto:', errorText);
-        
-        const alternativeResponse = await fetch(`https://api.novahagencia.com.br/chat/updateProfilePhoto/${selectedInstance}`, {
-          method: 'PUT',
-          headers: {
-            'apikey': '26bda82495a95caeae71f96534841285',
-          },
-          body: formData,
-        });
-
-        if (alternativeResponse.ok) {
-          await sendWebhook('update_profile_photo', { updated: true });
+      // Converter arquivo para base64
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const base64Data = reader.result as string;
+          
+          await sendWebhookAction('update_profile_photo', { 
+            photo: base64Data,
+            filename: profileData.profilePhoto!.name 
+          });
           
           toast({
             title: "Foto Atualizada",
-            description: "Foto do perfil atualizada com sucesso",
+            description: "Foto do perfil atualizada com sucesso via webhook",
           });
+          
           await loadProfileData();
-        } else {
+        } catch (error) {
+          console.error('❌ Erro ao atualizar foto via webhook:', error);
           toast({
             title: "Erro",
-            description: "Falha ao atualizar foto do perfil",
+            description: "Erro ao atualizar foto do perfil",
             variant: "destructive"
           });
+        } finally {
+          setIsUpdating(false);
         }
-      }
+      };
+      reader.readAsDataURL(profileData.profilePhoto);
     } catch (error) {
-      console.error('❌ Erro ao atualizar foto:', error);
+      console.error('❌ Erro ao processar foto:', error);
       toast({
         title: "Erro",
-        description: "Erro de conexão ao atualizar foto",
+        description: "Erro ao processar foto",
         variant: "destructive"
       });
-    } finally {
       setIsUpdating(false);
     }
   };
@@ -480,37 +435,20 @@ const ProfileManagement = () => {
     setIsUpdating(true);
 
     try {
-      console.log('🗑️ Removendo foto do perfil');
+      console.log('🗑️ Removendo foto do perfil via webhook');
       
-      const response = await fetch(`https://api.novahagencia.com.br/chat/removeProfilePicture/${selectedInstance}`, {
-        method: 'DELETE',
-        headers: {
-          'apikey': '26bda82495a95caeae71f96534841285',
-        },
+      await sendWebhookAction('remove_profile_photo', {});
+      
+      setProfileData({ ...profileData, profilePhoto: null, profilePhotoUrl: '' });
+      toast({
+        title: "Foto Removida",
+        description: "Foto do perfil removida com sucesso via webhook",
       });
-
-      if (response.ok) {
-        await sendWebhook('remove_profile_photo', { removed: true });
-        
-        setProfileData({ ...profileData, profilePhoto: null, profilePhotoUrl: '' });
-        toast({
-          title: "Foto Removida",
-          description: "Foto do perfil removida com sucesso",
-        });
-      } else {
-        const errorText = await response.text();
-        console.error('❌ Erro na remoção da foto:', errorText);
-        toast({
-          title: "Erro",
-          description: "Falha ao remover foto do perfil",
-          variant: "destructive"
-        });
-      }
     } catch (error) {
-      console.error('❌ Erro ao remover foto:', error);
+      console.error('❌ Erro ao remover foto via webhook:', error);
       toast({
         title: "Erro",
-        description: "Erro de conexão ao remover foto",
+        description: "Erro ao remover foto do perfil",
         variant: "destructive"
       });
     } finally {
@@ -533,7 +471,7 @@ const ProfileManagement = () => {
       toast({
         title: "Erro",
         description: "A instância precisa estar conectada",
-        variant: "destructive"
+        variant: "destructiva"
       });
       return;
     }
@@ -541,38 +479,19 @@ const ProfileManagement = () => {
     setIsUpdating(true);
 
     try {
-      console.log('🔒 Atualizando configurações de privacidade:', privacySettings);
+      console.log('🔒 Atualizando configurações de privacidade via webhook:', privacySettings);
       
-      const response = await fetch(`https://api.novahagencia.com.br/chat/updatePrivacySettings/${selectedInstance}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': '26bda82495a95caeae71f96534841285',
-        },
-        body: JSON.stringify(privacySettings),
+      await sendWebhookAction('update_privacy_settings', privacySettings);
+      
+      toast({
+        title: "Configurações Atualizadas",
+        description: "Configurações de privacidade atualizadas com sucesso via webhook",
       });
-
-      if (response.ok) {
-        await sendWebhook('update_privacy_settings', privacySettings);
-        
-        toast({
-          title: "Configurações Atualizadas",
-          description: "Configurações de privacidade atualizadas com sucesso",
-        });
-      } else {
-        const errorText = await response.text();
-        console.error('❌ Erro na atualização das configurações:', errorText);
-        toast({
-          title: "Erro",
-          description: "Falha ao atualizar configurações de privacidade",
-          variant: "destructive"
-        });
-      }
     } catch (error) {
-      console.error('❌ Erro ao atualizar configurações:', error);
+      console.error('❌ Erro ao atualizar configurações via webhook:', error);
       toast({
         title: "Erro",
-        description: "Erro de conexão ao atualizar configurações",
+        description: "Erro ao atualizar configurações de privacidade",
         variant: "destructive"
       });
     } finally {
