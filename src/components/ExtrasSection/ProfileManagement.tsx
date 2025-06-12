@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,9 +11,19 @@ import { User, Camera, Edit, Save, Trash2, Shield, Eye, EyeOff, Smartphone, Refr
 import { useToast } from "@/hooks/use-toast";
 import { evolutionApiService } from '@/services/evolutionApi';
 
+interface Instance {
+  id: string;
+  name: string;
+  status: string;
+  creationDate: string;
+  connectionStatus?: string;
+  profileName?: string;
+  profilePicUrl?: string;
+}
+
 const ProfileManagement = () => {
   const { toast } = useToast();
-  const [instances, setInstances] = useState<any[]>([]);
+  const [instances, setInstances] = useState<Instance[]>([]);
   const [selectedInstance, setSelectedInstance] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [profileData, setProfileData] = useState({
@@ -46,21 +57,11 @@ const ProfileManagement = () => {
       const instanceList = await evolutionApiService.getInstances();
       console.log('✅ Instâncias carregadas:', instanceList);
       
-      // Mapear instâncias para formato correto
-      const mappedInstances = instanceList.map(instance => ({
-        id: instance.id || instance.name,
-        name: instance.name,
-        connectionStatus: instance.connectionStatus,
-        profileName: instance.profileName,
-        profilePicUrl: instance.profilePicUrl,
-        status: instance.connectionStatus === 'open' ? 'conectado' : 'desconectado'
-      }));
-      
-      setInstances(mappedInstances);
+      setInstances(instanceList);
       
       toast({
         title: "Instâncias Carregadas",
-        description: `${mappedInstances.length} instâncias encontradas`,
+        description: `${instanceList.length} instâncias encontradas`,
       });
     } catch (error) {
       console.error('❌ Erro ao carregar instâncias:', error);
@@ -78,76 +79,46 @@ const ProfileManagement = () => {
     try {
       console.log('🔍 Carregando dados do perfil para instância:', selectedInstance);
       
-      // Buscar dados da instância na lista carregada
-      const instanceData = instances.find(instance => 
-        instance.id === selectedInstance || instance.name === selectedInstance
-      );
-      
-      if (instanceData) {
-        console.log('✅ Dados da instância encontrados:', instanceData);
-        
-        setProfileData({
-          name: instanceData.profileName || '',
-          status: '',
-          description: '',
-          profilePhoto: null,
-          profilePhotoUrl: instanceData.profilePicUrl || ''
-        });
+      // Buscar dados da instância diretamente via API da Evolution
+      const response = await fetch(`https://api.novahagencia.com.br/instance/fetchInstances`, {
+        headers: {
+          'apikey': '26bda82495a95caeae71f96534841285',
+        },
+      });
 
-        toast({
-          title: "Dados Carregados",
-          description: "Dados do perfil carregados com sucesso",
-        });
-      } else {
-        console.log('⚠️ Instância não encontrada na lista local, buscando via API...');
+      if (response.ok) {
+        const allInstances = await response.json();
+        console.log('📡 Instâncias da API:', allInstances);
         
-        // Tentar buscar diretamente via API
-        try {
-          const response = await fetch(`https://api.novahagencia.com.br/instance/fetchInstances`, {
-            headers: {
-              'apikey': '26bda82495a95caeae71f96534841285',
-            },
+        const currentInstance = allInstances.find((inst: any) => 
+          inst.name === selectedInstance || inst.id === selectedInstance
+        );
+        
+        if (currentInstance) {
+          console.log('✅ Instância encontrada via API:', currentInstance);
+          setProfileData({
+            name: currentInstance.profileName || '',
+            status: '',
+            description: '',
+            profilePhoto: null,
+            profilePhotoUrl: currentInstance.profilePicUrl || ''
           });
 
-          if (response.ok) {
-            const allInstances = await response.json();
-            console.log('📡 Instâncias da API:', allInstances);
-            
-            const currentInstance = allInstances.find((inst: any) => 
-              inst.name === selectedInstance || inst.id === selectedInstance
-            );
-            
-            if (currentInstance) {
-              console.log('✅ Instância encontrada via API:', currentInstance);
-              setProfileData({
-                name: currentInstance.profileName || '',
-                status: '',
-                description: '',
-                profilePhoto: null,
-                profilePhotoUrl: currentInstance.profilePicUrl || ''
-              });
-
-              toast({
-                title: "Dados Carregados",
-                description: "Dados do perfil carregados via API",
-              });
-            } else {
-              throw new Error('Instância não encontrada');
-            }
-          } else {
-            throw new Error('Falha na requisição da API');
-          }
-        } catch (apiError) {
-          console.error('❌ Erro ao buscar via API:', apiError);
           toast({
-            title: "Erro",
-            description: "Instância não encontrada",
+            title: "Dados Carregados",
+            description: "Dados do perfil carregados com sucesso",
+          });
+        } else {
+          console.log('⚠️ Instância não encontrada');
+          toast({
+            title: "Aviso",
+            description: "Instância não encontrada ou desconectada",
             variant: "destructive"
           });
         }
       }
     } catch (error) {
-      console.error('❌ Erro geral ao carregar dados do perfil:', error);
+      console.error('❌ Erro ao carregar dados do perfil:', error);
       toast({
         title: "Erro",
         description: "Erro ao carregar dados do perfil",
@@ -238,7 +209,7 @@ const ProfileManagement = () => {
         console.error('❌ Erro na atualização do nome:', errorText);
         toast({
           title: "Erro",
-          description: "Falha ao atualizar nome do perfil",
+          description: "Falha ao atualizar nome do perfil. Verifique se a instância está conectada.",
           variant: "destructive"
         });
       }
@@ -299,7 +270,7 @@ const ProfileManagement = () => {
         console.error('❌ Erro na atualização do status:', errorText);
         toast({
           title: "Erro",
-          description: "Falha ao atualizar status do perfil",
+          description: "Falha ao atualizar status do perfil. Verifique se a instância está conectada.",
           variant: "destructive"
         });
       }
@@ -342,6 +313,7 @@ const ProfileManagement = () => {
       const formData = new FormData();
       formData.append('picture', profileData.profilePhoto);
 
+      // Corrigindo a URL do endpoint para foto do perfil
       const response = await fetch(`https://api.novahagencia.com.br/chat/updateProfilePicture/${selectedInstance}`, {
         method: 'PUT',
         headers: {
@@ -349,6 +321,8 @@ const ProfileManagement = () => {
         },
         body: formData,
       });
+
+      console.log('📡 Status da resposta do upload:', response.status);
 
       if (response.ok) {
         toast({
@@ -361,11 +335,30 @@ const ProfileManagement = () => {
       } else {
         const errorText = await response.text();
         console.error('❌ Erro na atualização da foto:', errorText);
-        toast({
-          title: "Erro",
-          description: "Falha ao atualizar foto do perfil",
-          variant: "destructive"
+        
+        // Tentar endpoint alternativo
+        console.log('🔄 Tentando endpoint alternativo...');
+        const alternativeResponse = await fetch(`https://api.novahagencia.com.br/chat/updateProfilePhoto/${selectedInstance}`, {
+          method: 'PUT',
+          headers: {
+            'apikey': '26bda82495a95caeae71f96534841285',
+          },
+          body: formData,
         });
+
+        if (alternativeResponse.ok) {
+          toast({
+            title: "Foto Atualizada",
+            description: "Foto do perfil atualizada com sucesso",
+          });
+          await loadProfileData();
+        } else {
+          toast({
+            title: "Erro",
+            description: "Falha ao atualizar foto do perfil. Verifique se a instância está conectada e o endpoint da API está correto.",
+            variant: "destructive"
+          });
+        }
       }
     } catch (error) {
       console.error('❌ Erro ao atualizar foto:', error);
@@ -412,7 +405,7 @@ const ProfileManagement = () => {
         console.error('❌ Erro na remoção da foto:', errorText);
         toast({
           title: "Erro",
-          description: "Falha ao remover foto do perfil",
+          description: "Falha ao remover foto do perfil. Verifique se a instância está conectada.",
           variant: "destructive"
         });
       }
@@ -421,97 +414,6 @@ const ProfileManagement = () => {
       toast({
         title: "Erro",
         description: "Erro de conexão ao remover foto",
-        variant: "destructive"
-      });
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleUpdateDescription = async () => {
-    if (!selectedInstance) {
-      toast({
-        title: "Erro",
-        description: "Selecione uma instância",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsUpdating(true);
-
-    try {
-      console.log('Atualizando descrição do perfil:', profileData.description);
-      
-      // Nota: Endpoint pode variar dependendo da API da Evolution
-      const response = await fetch(`https://api.novahagencia.com.br/chat/updateProfileDescription/${selectedInstance}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': '26bda82495a95caeae71f96534841285',
-        },
-        body: JSON.stringify({
-          description: profileData.description
-        }),
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Descrição Atualizada",
-          description: "Descrição do perfil atualizada com sucesso",
-        });
-      } else {
-        throw new Error('Falha na atualização');
-      }
-    } catch (error) {
-      console.error('Erro ao atualizar descrição:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao atualizar descrição do perfil",
-        variant: "destructive"
-      });
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleUpdatePrivacy = async () => {
-    if (!selectedInstance) {
-      toast({
-        title: "Erro",
-        description: "Selecione uma instância",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsUpdating(true);
-
-    try {
-      console.log('Atualizando configurações de privacidade:', privacySettings);
-      
-      const response = await fetch(`https://api.novahagencia.com.br/chat/updatePrivacySettings/${selectedInstance}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': '26bda82495a95caeae71f96534841285',
-        },
-        body: JSON.stringify(privacySettings),
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Privacidade Atualizada",
-          description: "Configurações de privacidade atualizadas",
-        });
-      } else {
-        throw new Error('Falha na atualização');
-      }
-    } catch (error) {
-      console.error('Erro ao atualizar privacidade:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao atualizar configurações de privacidade",
         variant: "destructive"
       });
     } finally {
@@ -565,6 +467,34 @@ const ProfileManagement = () => {
         </CardContent>
       </Card>
 
+      {/* Status da Conexão */}
+      {selectedInstance && (
+        <Card className="border-gray-600/50 bg-gray-800/30">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-primary-contrast font-medium">Status da Instância</h4>
+                <p className="text-gray-400 text-sm">
+                  Instância: {instances.find(i => i.id === selectedInstance)?.name}
+                </p>
+                {instances.find(i => i.id === selectedInstance)?.status === 'desconectado' && (
+                  <p className="text-yellow-400 text-sm mt-1">
+                    ⚠️ Para editar o perfil, a instância precisa estar conectada
+                  </p>
+                )}
+              </div>
+              <div className={`px-3 py-1 rounded text-xs font-medium ${
+                instances.find(i => i.id === selectedInstance)?.status === 'conectado' 
+                  ? 'bg-green-500/20 text-green-400' 
+                  : 'bg-red-500/20 text-red-400'
+              }`}>
+                {instances.find(i => i.id === selectedInstance)?.status}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Foto do Perfil */}
       <Card className="border-gray-600/50 bg-gray-800/30">
         <CardHeader>
@@ -600,7 +530,7 @@ const ProfileManagement = () => {
             <Button 
               onClick={handleUpdatePhoto} 
               className="btn-primary flex-1"
-              disabled={isUpdating || !selectedInstance || !profileData.profilePhoto}
+              disabled={isUpdating || !selectedInstance || !profileData.profilePhoto || instances.find(i => i.id === selectedInstance)?.status === 'desconectado'}
             >
               <Camera className="w-4 h-4 mr-2" />
               {isUpdating ? 'Atualizando...' : 'Atualizar Foto'}
@@ -609,7 +539,7 @@ const ProfileManagement = () => {
               variant="destructive" 
               onClick={handleRemovePhoto}
               className="flex-1"
-              disabled={isUpdating || !selectedInstance}
+              disabled={isUpdating || !selectedInstance || instances.find(i => i.id === selectedInstance)?.status === 'desconectado'}
             >
               <Trash2 className="w-4 h-4 mr-2" />
               Remover Foto
@@ -639,7 +569,7 @@ const ProfileManagement = () => {
               <Button 
                 onClick={handleUpdateName} 
                 className="btn-primary"
-                disabled={isUpdating || !selectedInstance || !profileData.name.trim()}
+                disabled={isUpdating || !selectedInstance || !profileData.name.trim() || instances.find(i => i.id === selectedInstance)?.status === 'desconectado'}
               >
                 <Save className="w-4 h-4 mr-2" />
                 {isUpdating ? 'Salvando...' : 'Salvar Nome'}
@@ -659,7 +589,7 @@ const ProfileManagement = () => {
               <Button 
                 onClick={handleUpdateStatus} 
                 className="btn-primary"
-                disabled={isUpdating || !selectedInstance || !profileData.status.trim()}
+                disabled={isUpdating || !selectedInstance || !profileData.status.trim() || instances.find(i => i.id === selectedInstance)?.status === 'desconectado'}
               >
                 <Save className="w-4 h-4 mr-2" />
                 {isUpdating ? 'Salvando...' : 'Salvar Status'}
@@ -668,29 +598,6 @@ const ProfileManagement = () => {
           </div>
         </CardContent>
       </Card>
-
-      {/* Status da Conexão */}
-      {selectedInstance && (
-        <Card className="border-gray-600/50 bg-gray-800/30">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="text-primary-contrast font-medium">Status da Instância</h4>
-                <p className="text-gray-400 text-sm">
-                  Instância: {instances.find(i => i.id === selectedInstance)?.name}
-                </p>
-              </div>
-              <div className={`px-3 py-1 rounded text-xs font-medium ${
-                instances.find(i => i.id === selectedInstance)?.status === 'conectado' 
-                  ? 'bg-green-500/20 text-green-400' 
-                  : 'bg-red-500/20 text-red-400'
-              }`}>
-                {instances.find(i => i.id === selectedInstance)?.status}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };
