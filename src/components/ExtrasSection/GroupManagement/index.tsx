@@ -15,6 +15,13 @@ const GroupManagement = () => {
   const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [groupData, setGroupData] = useState<GroupData>({
+    name: '',
+    description: '',
+    isPrivate: false,
+    participants: '',
+    profileImage: null
+  });
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
     title: string;
@@ -77,8 +84,18 @@ const GroupManagement = () => {
     loadParticipants(group.id);
   };
 
-  const handleCreateGroup = (groupData: GroupData) => {
-    return createGroup(groupData);
+  const handleCreateGroup = async () => {
+    const success = await createGroup(groupData);
+    if (success) {
+      setIsCreateModalOpen(false);
+      setGroupData({
+        name: '',
+        description: '',
+        isPrivate: false,
+        participants: '',
+        profileImage: null
+      });
+    }
   };
 
   const handleManageParticipant = (participantId: string, action: "add" | "remove" | "promote" | "demote") => {
@@ -125,8 +142,11 @@ const GroupManagement = () => {
       <CreateGroupModal
         isOpen={isCreateModalOpen}
         onOpenChange={setIsCreateModalOpen}
+        groupData={groupData}
+        onGroupDataChange={setGroupData}
         onCreateGroup={handleCreateGroup}
         isLoading={isLoading}
+        disabled={!selectedInstance}
       />
 
       <ParticipantsModal
