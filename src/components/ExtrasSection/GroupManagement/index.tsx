@@ -8,10 +8,9 @@ import { ParticipantsModal } from './components/ParticipantsModal';
 import { ConfirmationDialog } from './components/ConfirmationDialog';
 import { useGroupData } from './hooks/useGroupData';
 import { useGroupActions } from './hooks/useGroupActions';
-import { Group, EditGroupData } from './types';
+import { Group, GroupData } from './types';
 
-export const GroupManagement = () => {
-  const [selectedInstance, setSelectedInstance] = useState('');
+const GroupManagement = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
@@ -30,15 +29,15 @@ export const GroupManagement = () => {
 
   const {
     instances,
+    selectedInstance,
+    setSelectedInstance,
     groups,
     participants,
-    isLoadingInstances,
     isLoadingGroups,
     isLoadingParticipants,
     loadGroups,
     loadParticipants,
-    refreshParticipants
-  } = useGroupData(selectedInstance);
+  } = useGroupData();
 
   const {
     isLoading,
@@ -50,7 +49,7 @@ export const GroupManagement = () => {
     getGroupInviteLink,
     sendMessageToGroup,
     addParticipants,
-  } = useGroupActions(selectedInstance, loadGroups, loadParticipants);
+  } = useGroupActions(selectedInstance, loadGroups, () => selectedGroup && loadParticipants(selectedGroup.id));
 
   const handleDeleteGroup = (groupId: string, groupName: string) => {
     setConfirmDialog({
@@ -78,6 +77,22 @@ export const GroupManagement = () => {
     loadParticipants(group.id);
   };
 
+  const handleCreateGroup = (groupData: GroupData) => {
+    return createGroup(groupData);
+  };
+
+  const handleManageParticipant = (participantId: string, action: "add" | "remove" | "promote" | "demote") => {
+    if (selectedGroup) {
+      return manageParticipant(selectedGroup.id, participantId, action);
+    }
+  };
+
+  const refreshParticipants = () => {
+    if (selectedGroup) {
+      loadParticipants(selectedGroup.id);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card className="border-gray-600/50 bg-gray-800/30">
@@ -88,9 +103,9 @@ export const GroupManagement = () => {
           <InstanceSelector
             instances={instances}
             selectedInstance={selectedInstance}
-            isLoadingInstances={isLoadingInstances}
             onInstanceChange={setSelectedInstance}
-            onCreateGroup={() => setIsCreateModalOpen(true)}
+            onRefresh={loadGroups}
+            isLoadingGroups={isLoadingGroups}
           />
         </CardContent>
       </Card>
@@ -110,7 +125,7 @@ export const GroupManagement = () => {
       <CreateGroupModal
         isOpen={isCreateModalOpen}
         onOpenChange={setIsCreateModalOpen}
-        onCreateGroup={createGroup}
+        onCreateGroup={handleCreateGroup}
         isLoading={isLoading}
       />
 
@@ -122,9 +137,9 @@ export const GroupManagement = () => {
         isLoadingParticipants={isLoadingParticipants}
         isLoading={isLoading}
         onRefreshParticipants={refreshParticipants}
-        onManageParticipant={manageParticipant}
+        onManageParticipant={handleManageParticipant}
         onRemoveAllParticipants={handleRemoveAllParticipants}
-        onAddParticipants={addParticipants}
+        onAddParticipants={(data) => selectedGroup && addParticipants(selectedGroup.id, data)}
       />
 
       <ConfirmationDialog
@@ -137,3 +152,5 @@ export const GroupManagement = () => {
     </div>
   );
 };
+
+export default GroupManagement;
