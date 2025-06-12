@@ -1,14 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { User, Camera, Edit, Save, Trash2, Shield, Eye, EyeOff, Smartphone, RefreshCw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { evolutionApiService } from '@/services/evolutionApi';
+import InstanceSelector from './ProfileManagement/InstanceSelector';
+import ConnectionStatus from './ProfileManagement/ConnectionStatus';
+import PhotoManager from './ProfileManagement/PhotoManager';
+import ProfileInfoEditor from './ProfileManagement/ProfileInfoEditor';
+import PrivacySettings from './ProfileManagement/PrivacySettings';
 
 interface Instance {
   id: string;
@@ -20,7 +18,7 @@ interface Instance {
   profilePicUrl?: string;
 }
 
-interface PrivacySettings {
+interface PrivacySettingsType {
   readreceipts: 'all' | 'none';
   profile: 'all' | 'contacts' | 'contact_blacklist' | 'none';
   status: 'all' | 'contacts' | 'contact_blacklist' | 'none';
@@ -43,7 +41,7 @@ const ProfileManagement = () => {
     profilePhoto: null as File | null,
     profilePhotoUrl: ''
   });
-  const [privacySettings, setPrivacySettings] = useState<PrivacySettings>({
+  const [privacySettings, setPrivacySettings] = useState<PrivacySettingsType>({
     readreceipts: 'all',
     profile: 'all',
     status: 'all',
@@ -593,325 +591,54 @@ const ProfileManagement = () => {
 
   return (
     <div className="space-y-6">
-      {/* Seleção de Instância */}
-      <Card className="border-gray-600/50 bg-gray-800/30">
-        <CardHeader>
-          <CardTitle className="text-primary-contrast flex items-center gap-2">
-            <Smartphone className="w-5 h-5" />
-            Selecionar Instância
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <Label className="text-gray-300">Instância Ativa</Label>
-              <Select value={selectedInstance} onValueChange={setSelectedInstance}>
-                <SelectTrigger className="bg-gray-800 border-gray-600">
-                  <SelectValue placeholder="Escolha uma instância" />
-                </SelectTrigger>
-                <SelectContent>
-                  {instances.map((instance) => (
-                    <SelectItem key={instance.id} value={instance.id}>
-                      <div className="flex items-center gap-2">
-                        {instance.name}
-                        <span className={`text-xs px-2 py-1 rounded ${getStatusColor(instance.status)}`}>
-                          {instance.status}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button 
-              variant="outline" 
-              onClick={loadProfileData}
-              className="bg-gray-800 border-gray-600 mt-6"
-              disabled={!selectedInstance}
-            >
-              <RefreshCw className="w-4 h-4" />
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <InstanceSelector
+        instances={instances}
+        selectedInstance={selectedInstance}
+        onInstanceChange={setSelectedInstance}
+        onRefresh={loadProfileData}
+        getStatusColor={getStatusColor}
+      />
 
-      {/* Status da Conexão */}
-      {selectedInstance && (
-        <Card className="border-gray-600/50 bg-gray-800/30">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="text-primary-contrast font-medium">Status da Instância</h4>
-                <p className="text-gray-400 text-sm">
-                  Instância: {instances.find(i => i.id === selectedInstance)?.name}
-                </p>
-                {isInstanceDisconnected() && (
-                  <p className="text-yellow-400 text-sm mt-1">
-                    ⚠️ Para editar o perfil, a instância precisa estar conectada
-                  </p>
-                )}
-              </div>
-              <div className={`px-3 py-1 rounded text-xs font-medium ${getStatusColor(instances.find(i => i.id === selectedInstance)?.status)}`}>
-                {instances.find(i => i.id === selectedInstance)?.status}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <ConnectionStatus
+        selectedInstance={selectedInstance}
+        instances={instances}
+        getStatusColor={getStatusColor}
+        isInstanceDisconnected={isInstanceDisconnected}
+      />
 
-      {/* Foto do Perfil */}
-      <Card className="border-gray-600/50 bg-gray-800/30">
-        <CardHeader>
-          <CardTitle className="text-primary-contrast flex items-center gap-2">
-            <Camera className="w-5 h-5" />
-            Foto do Perfil
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-6">
-            <div className="w-24 h-24 bg-gray-700 rounded-full flex items-center justify-center overflow-hidden">
-              {profileData.profilePhotoUrl ? (
-                <img src={profileData.profilePhotoUrl} alt="Perfil" className="w-full h-full object-cover" />
-              ) : (
-                <User className="w-12 h-12 text-gray-400" />
-              )}
-            </div>
-            <div className="flex-1">
-              <Label className="text-gray-300">Nova Foto</Label>
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoChange}
-                className="bg-gray-800 border-gray-600"
-              />
-              <p className="text-xs text-gray-400 mt-1">
-                Máximo 5MB - JPG, PNG, WEBP
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex gap-3">
-            <Button 
-              onClick={handleUpdatePhoto} 
-              className="btn-primary flex-1"
-              disabled={isUpdating || !selectedInstance || !profileData.profilePhoto || isInstanceDisconnected()}
-            >
-              <Camera className="w-4 h-4 mr-2" />
-              {isUpdating ? 'Atualizando...' : 'Atualizar Foto'}
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleRemovePhoto}
-              className="flex-1"
-              disabled={isUpdating || !selectedInstance || isInstanceDisconnected()}
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Remover Foto
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <PhotoManager
+        selectedInstance={selectedInstance}
+        profilePhotoUrl={profileData.profilePhotoUrl}
+        onPhotoChange={handlePhotoChange}
+        onUpdatePhoto={handleUpdatePhoto}
+        onRemovePhoto={handleRemovePhoto}
+        isUpdating={isUpdating}
+        isInstanceDisconnected={isInstanceDisconnected}
+        hasPhotoToUpdate={!!profileData.profilePhoto}
+      />
 
-      {/* Informações do Perfil */}
-      <Card className="border-gray-600/50 bg-gray-800/30">
-        <CardHeader>
-          <CardTitle className="text-primary-contrast flex items-center gap-2">
-            <Edit className="w-5 h-5" />
-            Informações do Perfil
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label className="text-gray-300">Nome</Label>
-            <div className="flex gap-3">
-              <Input
-                value={profileData.name}
-                onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
-                placeholder="Digite seu nome"
-                className="bg-gray-800 border-gray-600 flex-1"
-              />
-              <Button 
-                onClick={handleUpdateName} 
-                className="btn-primary"
-                disabled={isUpdating || !selectedInstance || !profileData.name.trim() || isInstanceDisconnected()}
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {isUpdating ? 'Salvando...' : 'Salvar Nome'}
-              </Button>
-            </div>
-          </div>
+      <ProfileInfoEditor
+        selectedInstance={selectedInstance}
+        profileName={profileData.name}
+        profileStatus={profileData.status}
+        onNameChange={(name) => setProfileData({ ...profileData, name })}
+        onStatusChange={(status) => setProfileData({ ...profileData, status })}
+        onUpdateName={handleUpdateName}
+        onUpdateStatus={handleUpdateStatus}
+        isUpdating={isUpdating}
+        isInstanceDisconnected={isInstanceDisconnected}
+      />
 
-          <div>
-            <Label className="text-gray-300">Status</Label>
-            <div className="flex gap-3">
-              <Input
-                value={profileData.status}
-                onChange={(e) => setProfileData({ ...profileData, status: e.target.value })}
-                placeholder="Digite seu status"
-                className="bg-gray-800 border-gray-600 flex-1"
-              />
-              <Button 
-                onClick={handleUpdateStatus} 
-                className="btn-primary"
-                disabled={isUpdating || !selectedInstance || !profileData.status.trim() || isInstanceDisconnected()}
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {isUpdating ? 'Salvando...' : 'Salvar Status'}
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Configurações de Privacidade */}
-      <Card className="border-gray-600/50 bg-gray-800/30">
-        <CardHeader>
-          <CardTitle className="text-primary-contrast flex items-center gap-2">
-            <Shield className="w-5 h-5" />
-            Configurações de Privacidade
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h4 className="text-primary-contrast font-medium">Configurações Atuais</h4>
-            <Button 
-              variant="outline" 
-              onClick={loadPrivacySettings}
-              className="bg-gray-800 border-gray-600"
-              disabled={!selectedInstance || isLoadingPrivacy}
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingPrivacy ? 'animate-spin' : ''}`} />
-              {isLoadingPrivacy ? 'Carregando...' : 'Atualizar'}
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <Label className="text-gray-300">Confirmação de Leitura</Label>
-              <Select 
-                value={privacySettings.readreceipts} 
-                onValueChange={(value: 'all' | 'none') => 
-                  setPrivacySettings({ ...privacySettings, readreceipts: value })
-                }
-              >
-                <SelectTrigger className="bg-gray-800 border-gray-600">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="none">Ninguém</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-3">
-              <Label className="text-gray-300">Foto do Perfil</Label>
-              <Select 
-                value={privacySettings.profile} 
-                onValueChange={(value: 'all' | 'contacts' | 'contact_blacklist' | 'none') => 
-                  setPrivacySettings({ ...privacySettings, profile: value })
-                }
-              >
-                <SelectTrigger className="bg-gray-800 border-gray-600">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="contacts">Contatos</SelectItem>
-                  <SelectItem value="contact_blacklist">Contatos Exceto</SelectItem>
-                  <SelectItem value="none">Ninguém</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-3">
-              <Label className="text-gray-300">Status</Label>
-              <Select 
-                value={privacySettings.status} 
-                onValueChange={(value: 'all' | 'contacts' | 'contact_blacklist' | 'none') => 
-                  setPrivacySettings({ ...privacySettings, status: value })
-                }
-              >
-                <SelectTrigger className="bg-gray-800 border-gray-600">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="contacts">Contatos</SelectItem>
-                  <SelectItem value="contact_blacklist">Contatos Exceto</SelectItem>
-                  <SelectItem value="none">Ninguém</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-3">
-              <Label className="text-gray-300">Online</Label>
-              <Select 
-                value={privacySettings.online} 
-                onValueChange={(value: 'all' | 'match_last_seen') => 
-                  setPrivacySettings({ ...privacySettings, online: value })
-                }
-              >
-                <SelectTrigger className="bg-gray-800 border-gray-600">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="match_last_seen">Igual ao Visto por Último</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-3">
-              <Label className="text-gray-300">Visto por Último</Label>
-              <Select 
-                value={privacySettings.last} 
-                onValueChange={(value: 'all' | 'contacts' | 'contact_blacklist' | 'none') => 
-                  setPrivacySettings({ ...privacySettings, last: value })
-                }
-              >
-                <SelectTrigger className="bg-gray-800 border-gray-600">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="contacts">Contatos</SelectItem>
-                  <SelectItem value="contact_blacklist">Contatos Exceto</SelectItem>
-                  <SelectItem value="none">Ninguém</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-3">
-              <Label className="text-gray-300">Grupos</Label>
-              <Select 
-                value={privacySettings.groupadd} 
-                onValueChange={(value: 'all' | 'contacts' | 'contact_blacklist') => 
-                  setPrivacySettings({ ...privacySettings, groupadd: value })
-                }
-              >
-                <SelectTrigger className="bg-gray-800 border-gray-600">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="contacts">Contatos</SelectItem>
-                  <SelectItem value="contact_blacklist">Contatos Exceto</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <Button 
-            onClick={handleUpdatePrivacySettings} 
-            className="btn-primary w-full"
-            disabled={isUpdating || !selectedInstance || isInstanceDisconnected()}
-          >
-            <Shield className="w-4 h-4 mr-2" />
-            {isUpdating ? 'Salvando...' : 'Salvar Configurações de Privacidade'}
-          </Button>
-        </CardContent>
-      </Card>
+      <PrivacySettings
+        selectedInstance={selectedInstance}
+        privacySettings={privacySettings}
+        onPrivacySettingsChange={setPrivacySettings}
+        onLoadPrivacySettings={loadPrivacySettings}
+        onUpdatePrivacySettings={handleUpdatePrivacySettings}
+        isUpdating={isUpdating}
+        isLoadingPrivacy={isLoadingPrivacy}
+        isInstanceDisconnected={isInstanceDisconnected}
+      />
     </div>
   );
 };
