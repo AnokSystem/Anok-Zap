@@ -174,7 +174,7 @@ const GroupManagement = () => {
         onRefreshParticipants={refreshParticipants}
         onManageParticipant={handleManageParticipant}
         onRemoveAllParticipants={handleRemoveAllParticipants}
-        onAddParticipants={(data) => selectedGroup && addParticipants(selectedGroup.id, data)}
+        onAddParticipants={(data) => selectedGroup && addParticipants(selectedGroup.id, { participants: data })}
       />
 
       <ConfirmationDialog
