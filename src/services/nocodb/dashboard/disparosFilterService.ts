@@ -69,7 +69,7 @@ export class DisparosFilterService extends BaseNocodbService {
     try {
       const clientId = await this.getClientId();
       
-      console.log('📋 Buscando TODOS os disparos para cliente:', clientId);
+      console.log('📋 Buscando TODOS os disparos da tabela myx4lsmm5i02xcd para cliente:', clientId);
       
       const response = await fetch(
         `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=10000&sort=-id`,
@@ -82,7 +82,7 @@ export class DisparosFilterService extends BaseNocodbService {
         const data = await response.json();
         const allDisparos = data.list || [];
         
-        console.log(`📊 ${allDisparos.length} disparos totais na tabela`);
+        console.log(`📊 ${allDisparos.length} disparos totais na tabela myx4lsmm5i02xcd`);
         
         // Filtrar por cliente se necessário
         const filteredDisparos = allDisparos.filter(d => {

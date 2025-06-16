@@ -18,6 +18,11 @@ export class TableDiscoveryService extends BaseNocodbService {
     try {
       console.log('🔍 Descobrindo IDs das tabelas na base:', baseId);
       
+      // Usar os IDs específicos das tabelas fornecidos pelo usuário
+      const disparosTableId = 'myx4lsmm5i02xcd';
+      const notificationsTableId = 'mzup2t8ygoiy5ub';
+      
+      // Verificar se as tabelas existem
       const response = await fetch(
         `${this.config.baseUrl}/api/v1/db/meta/projects/${baseId}/tables`,
         {
@@ -27,7 +32,7 @@ export class TableDiscoveryService extends BaseNocodbService {
 
       if (!response.ok) {
         console.error('❌ Erro ao buscar tabelas:', response.status);
-        return { disparosTableId: null, notificationsTableId: null };
+        return { disparosTableId, notificationsTableId };
       }
 
       const data = await response.json();
@@ -35,43 +40,36 @@ export class TableDiscoveryService extends BaseNocodbService {
       
       console.log('📋 Tabelas encontradas:', tables.map(t => ({ id: t.id, title: t.title, table_name: t.table_name })));
 
-      // Procurar tabela de disparos
-      const disparosTable = tables.find((t: any) => 
-        t.title?.toLowerCase().includes('disparo') ||
-        t.title?.toLowerCase().includes('massa') ||
-        t.table_name?.toLowerCase().includes('disparo') ||
-        t.table_name?.toLowerCase().includes('massa') ||
-        t.id === 'myx4lsmm5i02xcd'
-      );
+      // Verificar se as tabelas específicas existem
+      const disparosTable = tables.find((t: any) => t.id === disparosTableId);
+      const notificationsTable = tables.find((t: any) => t.id === notificationsTableId);
 
-      // Procurar tabela de notificações
-      const notificationsTable = tables.find((t: any) => 
-        t.title?.toLowerCase().includes('notifica') ||
-        t.title?.toLowerCase().includes('plataforma') ||
-        t.table_name?.toLowerCase().includes('notifica') ||
-        t.table_name?.toLowerCase().includes('plataforma') ||
-        t.id === 'mzup2t8ygoiy5ub'
-      );
+      if (disparosTable) {
+        console.log('✅ Tabela de disparos encontrada:', disparosTable.title || disparosTable.table_name);
+      } else {
+        console.log('⚠️ Tabela de disparos com ID myx4lsmm5i02xcd não encontrada');
+      }
+
+      if (notificationsTable) {
+        console.log('✅ Tabela de notificações encontrada:', notificationsTable.title || notificationsTable.table_name);
+      } else {
+        console.log('⚠️ Tabela de notificações com ID mzup2t8ygoiy5ub não encontrada');
+      }
 
       const result = {
-        disparosTableId: disparosTable?.id || null,
-        notificationsTableId: notificationsTable?.id || null
+        disparosTableId: disparosTable ? disparosTableId : null,
+        notificationsTableId: notificationsTable ? notificationsTableId : null
       };
 
       console.log('✅ IDs descobertos:', result);
-      
-      if (!result.disparosTableId) {
-        console.log('⚠️ Tabela de disparos não encontrada, tentando criar...');
-      }
-      
-      if (!result.notificationsTableId) {
-        console.log('⚠️ Tabela de notificações não encontrada, tentando criar...');
-      }
-
       return result;
     } catch (error) {
       console.error('❌ Erro ao descobrir tabelas:', error);
-      return { disparosTableId: null, notificationsTableId: null };
+      // Retornar os IDs mesmo em caso de erro para tentar usar as tabelas
+      return { 
+        disparosTableId: 'myx4lsmm5i02xcd', 
+        notificationsTableId: 'mzup2t8ygoiy5ub' 
+      };
     }
   }
 

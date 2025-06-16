@@ -22,18 +22,32 @@ export class NotificationsDataService extends BaseNocodbService {
       return this.cachedTableId;
     }
 
-    console.log('🔍 Buscando ID da tabela de notificações...');
-    const { notificationsTableId } = await this.tableDiscovery.discoverTableIds(baseId);
+    console.log('🔍 Usando ID fixo da tabela de notificações: mzup2t8ygoiy5ub');
     
-    if (!notificationsTableId) {
-      console.log('⚠️ Tabela de notificações não encontrada, tentando criar...');
-      const newTableId = await this.tableDiscovery.createNotificationsTable(baseId);
-      this.cachedTableId = newTableId;
-      return newTableId;
-    }
+    // Usar o ID específico da tabela fornecido
+    const tableId = 'mzup2t8ygoiy5ub';
+    
+    // Verificar se a tabela existe tentando acessá-la
+    try {
+      const testResponse = await fetch(
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=1`,
+        {
+          headers: this.headers,
+        }
+      );
 
-    this.cachedTableId = notificationsTableId;
-    return notificationsTableId;
+      if (testResponse.ok) {
+        console.log('✅ Tabela de notificações acessível com ID:', tableId);
+        this.cachedTableId = tableId;
+        return tableId;
+      } else {
+        console.log('❌ Tabela de notificações não acessível:', testResponse.status);
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ Erro ao verificar tabela de notificações:', error);
+      return null;
+    }
   }
 
   async getRecentNotifications(baseId: string, limit: number = 10): Promise<any[]> {
@@ -42,12 +56,11 @@ export class NotificationsDataService extends BaseNocodbService {
       const tableId = await this.getNotificationsTableId(baseId);
       
       if (!tableId) {
-        console.error('❌ Não foi possível obter/criar tabela de notificações');
+        console.error('❌ Não foi possível acessar a tabela de notificações mzup2t8ygoiy5ub');
         return [];
       }
 
-      console.log('🔔 Buscando notificações recentes para cliente:', clientId);
-      console.log('🎯 Usando tabela ID:', tableId);
+      console.log('🔔 Buscando notificações recentes da tabela mzup2t8ygoiy5ub para cliente:', clientId);
       
       const response = await fetch(
         `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=${limit}&sort=-id`,
@@ -60,7 +73,8 @@ export class NotificationsDataService extends BaseNocodbService {
         const data = await response.json();
         const allNotifications = data.list || [];
         
-        console.log(`📊 ${allNotifications.length} notificações encontradas na tabela`);
+        console.log(`📊 ${allNotifications.length} notificações encontradas na tabela mzup2t8ygoiy5ub`);
+        console.log('📋 Amostra dos dados:', allNotifications.slice(0, 2));
         
         // Filtrar por cliente se necessário
         const clientNotifications = allNotifications.filter(n => {
@@ -89,11 +103,11 @@ export class NotificationsDataService extends BaseNocodbService {
       const tableId = await this.getNotificationsTableId(baseId);
       
       if (!tableId) {
-        console.error('❌ Não foi possível obter/criar tabela de notificações');
+        console.error('❌ Não foi possível acessar a tabela de notificações mzup2t8ygoiy5ub');
         return [];
       }
 
-      console.log('📋 Buscando TODAS as notificações para cliente:', clientId);
+      console.log('📋 Buscando TODAS as notificações da tabela mzup2t8ygoiy5ub para cliente:', clientId);
       
       const response = await fetch(
         `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=10000&sort=-id`,
@@ -106,7 +120,7 @@ export class NotificationsDataService extends BaseNocodbService {
         const data = await response.json();
         const allNotifications = data.list || [];
         
-        console.log(`📊 ${allNotifications.length} notificações totais na tabela`);
+        console.log(`📊 ${allNotifications.length} notificações totais na tabela mzup2t8ygoiy5ub`);
         
         // Filtrar por cliente se necessário
         const filteredNotifications = allNotifications.filter(n => {
@@ -190,7 +204,7 @@ export class NotificationsDataService extends BaseNocodbService {
         return false;
       }
 
-      console.log('📝 Criando dados de exemplo para notificações...');
+      console.log('📝 Criando dados de exemplo para notificações na tabela mzup2t8ygoiy5ub...');
 
       const sampleData = [
         {

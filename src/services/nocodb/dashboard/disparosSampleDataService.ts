@@ -21,7 +21,7 @@ export class DisparosSampleDataService extends BaseNocodbService {
         return false;
       }
 
-      console.log('📝 Criando dados de exemplo para disparos...');
+      console.log('📝 Criando dados de exemplo para disparos na tabela myx4lsmm5i02xcd...');
 
       const sampleData = [
         {

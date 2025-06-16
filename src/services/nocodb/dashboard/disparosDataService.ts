@@ -28,18 +28,32 @@ export class DisparosDataService extends BaseNocodbService {
       return this.cachedTableId;
     }
 
-    console.log('🔍 Buscando ID da tabela de disparos...');
-    const { disparosTableId } = await this.tableDiscovery.discoverTableIds(baseId);
+    console.log('🔍 Usando ID fixo da tabela de disparos: myx4lsmm5i02xcd');
     
-    if (!disparosTableId) {
-      console.log('⚠️ Tabela de disparos não encontrada, tentando criar...');
-      const newTableId = await this.tableDiscovery.createDisparosTable(baseId);
-      this.cachedTableId = newTableId;
-      return newTableId;
-    }
+    // Usar o ID específico da tabela fornecido
+    const tableId = 'myx4lsmm5i02xcd';
+    
+    // Verificar se a tabela existe tentando acessá-la
+    try {
+      const testResponse = await fetch(
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=1`,
+        {
+          headers: this.headers,
+        }
+      );
 
-    this.cachedTableId = disparosTableId;
-    return disparosTableId;
+      if (testResponse.ok) {
+        console.log('✅ Tabela de disparos acessível com ID:', tableId);
+        this.cachedTableId = tableId;
+        return tableId;
+      } else {
+        console.log('❌ Tabela de disparos não acessível:', testResponse.status);
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ Erro ao verificar tabela de disparos:', error);
+      return null;
+    }
   }
 
   async getRecentDisparos(baseId: string, limit: number = 10): Promise<any[]> {
@@ -48,12 +62,11 @@ export class DisparosDataService extends BaseNocodbService {
       const tableId = await this.getDisparosTableId(baseId);
       
       if (!tableId) {
-        console.error('❌ Não foi possível obter/criar tabela de disparos');
+        console.error('❌ Não foi possível acessar a tabela de disparos myx4lsmm5i02xcd');
         return [];
       }
 
-      console.log('📨 Buscando disparos recentes para cliente:', clientId);
-      console.log('🎯 Usando tabela ID:', tableId);
+      console.log('📨 Buscando disparos recentes da tabela myx4lsmm5i02xcd para cliente:', clientId);
 
       const response = await fetch(
         `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=${limit}&sort=-id`,
@@ -66,7 +79,8 @@ export class DisparosDataService extends BaseNocodbService {
         const data = await response.json();
         const allDisparos = data.list || [];
         
-        console.log(`📊 ${allDisparos.length} disparos encontrados na tabela`);
+        console.log(`📊 ${allDisparos.length} disparos encontrados na tabela myx4lsmm5i02xcd`);
+        console.log('📋 Amostra dos dados:', allDisparos.slice(0, 2));
         
         // Filtrar por cliente se necessário
         const clientDisparos = allDisparos.filter(d => {
@@ -95,11 +109,11 @@ export class DisparosDataService extends BaseNocodbService {
       const tableId = await this.getDisparosTableId(baseId);
       
       if (!tableId) {
-        console.error('❌ Não foi possível obter/criar tabela de disparos');
+        console.error('❌ Não foi possível acessar a tabela de disparos myx4lsmm5i02xcd');
         return [];
       }
 
-      console.log('📋 Buscando TODOS os disparos para cliente:', clientId);
+      console.log('📋 Buscando TODOS os disparos da tabela myx4lsmm5i02xcd para cliente:', clientId);
       
       const response = await fetch(
         `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=10000&sort=-id`,
@@ -112,7 +126,7 @@ export class DisparosDataService extends BaseNocodbService {
         const data = await response.json();
         const allDisparos = data.list || [];
         
-        console.log(`📊 ${allDisparos.length} disparos totais na tabela`);
+        console.log(`📊 ${allDisparos.length} disparos totais na tabela myx4lsmm5i02xcd`);
         
         // Filtrar por cliente se necessário
         const filteredDisparos = allDisparos.filter(d => {
