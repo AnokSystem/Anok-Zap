@@ -1,4 +1,3 @@
-
 import { BaseNocodbService } from './baseService';
 import { NocodbConfig } from './types';
 
@@ -6,6 +5,10 @@ export class DataService extends BaseNocodbService {
   constructor(config: NocodbConfig) {
     super(config);
   }
+
+  // IDs específicos das tabelas
+  private DISPARO_EM_MASSA_TABLE_ID = 'myx4lsmm5i02xcd';
+  private NOTIFICACOES_PLATAFORMAS_TABLE_ID = 'mzup2t8ygoiy5ub';
 
   // Obter client_id do usuário logado (pode ser do localStorage ou contexto)
   private getClientId(): string {
@@ -42,12 +45,9 @@ export class DataService extends BaseNocodbService {
       };
       
       console.log('📝 Dados formatados para salvar:', data);
+      console.log('🎯 Usando tabela específica ID:', this.DISPARO_EM_MASSA_TABLE_ID);
       
-      // Usar o ID específico da tabela "Disparo em Massa"
-      const specificTableId = 'myx4lsmm5i02xcd';
-      console.log('🎯 Usando ID específico da tabela:', specificTableId);
-      
-      const success = await this.saveToTable(baseId, specificTableId, data);
+      const success = await this.saveToTable(baseId, this.DISPARO_EM_MASSA_TABLE_ID, data);
       if (success) {
         console.log('✅ Log de disparo em massa salvo com sucesso na tabela específica');
         return true;
@@ -91,27 +91,9 @@ export class DataService extends BaseNocodbService {
       };
       
       console.log('📝 Dados formatados para salvar:', data);
+      console.log('🎯 Usando tabela específica ID:', this.NOTIFICACOES_PLATAFORMAS_TABLE_ID);
       
-      // Buscar tabela de notificações (NotificacoesPlataformas)
-      const tableId = await this.getTableId(baseId, 'NotificacoesPlataformas');
-      if (!tableId) {
-        console.log('❌ Tabela NotificacoesPlataformas não encontrada na base');
-        
-        // Tentar encontrar pelo título alternativo
-        const alternativeTableId = await this.getTableId(baseId, 'Notificações das Plataformas');
-        if (!alternativeTableId) {
-          console.log('❌ Tabela com título alternativo também não encontrada');
-          return false;
-        }
-        
-        console.log('🎯 Usando tabela com título alternativo:', alternativeTableId);
-        const success = await this.saveToTable(baseId, alternativeTableId, data);
-        return success;
-      }
-      
-      console.log('🎯 ID da tabela encontrado:', tableId);
-      
-      const success = await this.saveToTable(baseId, tableId, data);
+      const success = await this.saveToTable(baseId, this.NOTIFICACOES_PLATAFORMAS_TABLE_ID, data);
       if (success) {
         console.log('✅ Notificação da plataforma salva com sucesso');
         return true;
@@ -252,13 +234,11 @@ export class DataService extends BaseNocodbService {
   async getRecentDisparos(baseId: string, limit: number = 10): Promise<any[]> {
     try {
       const clientId = this.getClientId();
-      const specificTableId = 'myx4lsmm5i02xcd'; // ID específico da tabela Disparo em Massa
       
       console.log('📨 Buscando disparos recentes para cliente:', clientId);
-      console.log('🎯 Usando tabela específica ID:', specificTableId);
+      console.log('🎯 Usando tabela específica ID:', this.DISPARO_EM_MASSA_TABLE_ID);
 
-      // Buscar todos os dados sem filtro primeiro para verificar estrutura
-      const url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${specificTableId}?limit=${limit}&sort=-created_at`;
+      const url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.DISPARO_EM_MASSA_TABLE_ID}?limit=${limit}&sort=-created_at`;
       console.log('📡 URL de busca:', url);
       
       const response = await fetch(url, {

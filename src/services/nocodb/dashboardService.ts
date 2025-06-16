@@ -1,3 +1,4 @@
+
 import { BaseNocodbService } from './baseService';
 import { NocodbConfig } from './types';
 
@@ -6,11 +7,15 @@ export class DashboardService extends BaseNocodbService {
     super(config);
   }
 
+  // IDs específicos das tabelas
+  private DISPARO_EM_MASSA_TABLE_ID = 'myx4lsmm5i02xcd';
+  private NOTIFICACOES_PLATAFORMAS_TABLE_ID = 'mzup2t8ygoiy5ub';
+
   async getDashboardStats(baseId: string): Promise<any> {
     try {
       console.log('📊 Buscando estatísticas do dashboard na base:', baseId);
       
-      // Calcular estatísticas em tempo real da tabela específica
+      // Calcular estatísticas em tempo real das tabelas específicas
       console.log('🔄 Calculando estatísticas em tempo real...');
       return await this.getCalculatedStats(baseId);
     } catch (error) {
@@ -61,30 +66,12 @@ export class DashboardService extends BaseNocodbService {
   async getDisparosStats(baseId: string): Promise<any> {
     try {
       const clientId = await this.getClientId();
-      const specificTableId = 'myx4lsmm5i02xcd'; // ID específico da tabela Disparo em Massa
       
-      console.log('📡 Buscando dados de disparos na tabela específica:', specificTableId);
+      console.log('📡 Buscando dados de disparos na tabela específica:', this.DISPARO_EM_MASSA_TABLE_ID);
       
-      // Primeiro, vamos buscar todos os dados sem filtro para ver a estrutura
-      console.log('🔍 Verificando estrutura da tabela...');
-      const testResponse = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${specificTableId}?limit=1`,
-        {
-          headers: this.headers,
-        }
-      );
-
-      if (!testResponse.ok) {
-        console.log('❌ Erro ao acessar tabela:', testResponse.status, await testResponse.text());
-        return { total: 0, today: 0, successRate: 0, uniqueContacts: 0 };
-      }
-
-      const testData = await testResponse.json();
-      console.log('📋 Estrutura da tabela:', testData.list?.[0] || 'Tabela vazia');
-
-      // Agora buscar todos os dados da tabela
+      // Buscar todos os dados da tabela de Disparo em Massa
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${specificTableId}?limit=1000&sort=-created_at`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.DISPARO_EM_MASSA_TABLE_ID}?limit=1000&sort=-created_at`,
         {
           headers: this.headers,
         }
@@ -148,15 +135,11 @@ export class DashboardService extends BaseNocodbService {
   async getNotificationsStats(baseId: string): Promise<any> {
     try {
       const clientId = await this.getClientId();
-      const tableId = await this.getTableId(baseId, 'NotificacoesPlataformas');
-      if (!tableId) {
-        console.log('❌ Tabela NotificacoesPlataformas não encontrada');
-        return { total: 0, today: 0 };
-      }
-
-      console.log('📡 Buscando dados de notificações na tabela:', tableId);
+      
+      console.log('📡 Buscando dados de notificações na tabela específica:', this.NOTIFICACOES_PLATAFORMAS_TABLE_ID);
+      
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=1000&sort=-created_at`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.NOTIFICACOES_PLATAFORMAS_TABLE_ID}?limit=1000&sort=-created_at`,
         {
           headers: this.headers,
         }
@@ -204,14 +187,8 @@ export class DashboardService extends BaseNocodbService {
       const clientId = await this.getClientId();
       console.log('🔔 Buscando notificações recentes para cliente:', clientId);
       
-      const tableId = await this.getTableId(baseId, 'NotificacoesPlataformas');
-      if (!tableId) {
-        console.log('❌ Tabela NotificacoesPlataformas não encontrada');
-        return [];
-      }
-
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=${limit}&sort=-created_at`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.NOTIFICACOES_PLATAFORMAS_TABLE_ID}?limit=${limit}&sort=-created_at`,
         {
           headers: this.headers,
         }
@@ -244,12 +221,11 @@ export class DashboardService extends BaseNocodbService {
   async getDisparosChartData(baseId: string, days: number = 7): Promise<any[]> {
     try {
       const clientId = await this.getClientId();
-      const specificTableId = 'myx4lsmm5i02xcd'; // ID específico da tabela Disparo em Massa
       
       console.log('📈 Buscando dados do gráfico de disparos para cliente:', clientId);
       
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${specificTableId}?sort=-created_at&limit=1000`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.DISPARO_EM_MASSA_TABLE_ID}?sort=-created_at&limit=1000`,
         {
           headers: this.headers,
         }
@@ -313,11 +289,8 @@ export class DashboardService extends BaseNocodbService {
       const clientId = await this.getClientId();
       console.log('📊 Buscando dados do gráfico de notificações para cliente:', clientId);
       
-      const tableId = await this.getTableId(baseId, 'NotificacoesPlataformas');
-      if (!tableId) return [];
-
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?sort=-created_at&limit=1000`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.NOTIFICACOES_PLATAFORMAS_TABLE_ID}?sort=-created_at&limit=1000`,
         {
           headers: this.headers,
         }
