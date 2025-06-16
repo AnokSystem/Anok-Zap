@@ -90,8 +90,11 @@ export class CoreNocodbService {
         
         if (targetBase) {
           console.log('✅ Base "Notificação Inteligente" encontrada, criando todas as tabelas...');
-          // Garantir que todas as tabelas do dashboard existam
-          await this.createAllTables();
+          
+          // Forçar criação de todas as tabelas na inicialização
+          const tablesCreated = await this.createAllTables();
+          console.log('🏗️ Resultado da criação de tabelas:', tablesCreated);
+          
           return { success: true, bases: discoveredBases, targetBase: targetBaseId };
         } else {
           console.warn('⚠️ Base com ID pddywozzup2sc85 não encontrada');
@@ -107,7 +110,14 @@ export class CoreNocodbService {
   }
 
   async createAllTables() {
-    console.log('🏗️ Criando todas as tabelas na base pddywozzup2sc85...');
+    console.log('🏗️ Iniciando criação forçada de todas as tabelas na base pddywozzup2sc85...');
+    
+    const targetBaseId = this.getTargetBaseId();
+    if (!targetBaseId) {
+      console.log('❌ Base target não encontrada');
+      return false;
+    }
+    
     return await this.tableManager.createAllTables();
   }
 
@@ -294,18 +304,35 @@ export class CoreNocodbService {
 
   async saveMassMessagingLog(campaignData: any) {
     try {
-      await this.tableManager.ensureTableExists('MassMessagingLogs');
+      console.log('💾 Iniciando salvamento de log de campanha...');
+      console.log('📋 Dados da campanha:', campaignData);
+      
+      // Garantir que a tabela existe antes de salvar
+      const tableExists = await this.tableManager.ensureTableExists('MassMessagingLogs');
+      if (!tableExists) {
+        console.log('❌ Falha ao criar/verificar tabela MassMessagingLogs');
+        return false;
+      }
       
       const targetBaseId = this.getTargetBaseId();
       if (targetBaseId) {
-        return await this.dataService.saveMassMessagingLog(targetBaseId, campaignData);
+        console.log('✅ Salvando no NocoDB...');
+        const success = await this.dataService.saveMassMessagingLog(targetBaseId, campaignData);
+        
+        if (success) {
+          console.log('✅ Log salvo com sucesso no NocoDB');
+        } else {
+          console.log('❌ Falha ao salvar no NocoDB');
+        }
+        
+        return success;
       }
       
-      console.log('❌ Falha ao salvar no NocoDB, usando modo desenvolvimento');
-      return true;
+      console.log('❌ Base target não encontrada para salvamento');
+      return false;
     } catch (error) {
-      console.error('Erro geral ao salvar log:', error);
-      return true;
+      console.error('❌ Erro geral ao salvar log:', error);
+      return false;
     }
   }
 

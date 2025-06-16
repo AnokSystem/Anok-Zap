@@ -129,6 +129,56 @@ export const useMassMessaging = () => {
     return true;
   };
 
+  const saveCampaignToNocoDB = async (campaignData: CampaignData, processedCampaigns: any[]) => {
+    try {
+      console.log('💾 Salvando campanha no NocoDB...');
+      
+      // Garantir que as tabelas existem antes de salvar
+      console.log('🔧 Verificando/criando tabela MassMessagingLogs...');
+      const tableExists = await nocodbService.ensureTableExists('MassMessagingLogs');
+      
+      if (!tableExists) {
+        console.log('❌ Não foi possível criar/verificar a tabela MassMessagingLogs');
+        return false;
+      }
+      
+      // Preparar dados para salvar
+      const logData = {
+        campaign_id: `campanha_${Date.now()}`,
+        campaign_name: `Campanha ${new Date().toLocaleString('pt-BR')}`,
+        instance_id: campaignData.instance,
+        instance_name: instances.find(i => i.name === campaignData.instance)?.name || campaignData.instance,
+        message_type: campaignData.messages[0]?.type || 'text',
+        recipient_count: campaignData.recipients.length,
+        sent_count: 0, // Será atualizado pelo webhook
+        error_count: 0,
+        delay: campaignData.delay,
+        status: 'iniciado',
+        start_time: new Date().toISOString(),
+        data_json: JSON.stringify({
+          ...campaignData,
+          processedMessages: processedCampaigns.length,
+          timestamp: new Date().toISOString()
+        })
+      };
+      
+      console.log('📋 Dados para salvar:', logData);
+      
+      const success = await nocodbService.saveMassMessagingLog(logData);
+      
+      if (success) {
+        console.log('✅ Campanha salva no NocoDB com sucesso');
+        return true;
+      } else {
+        console.log('❌ Falha ao salvar campanha no NocoDB');
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Erro ao salvar campanha no NocoDB:', error);
+      return false;
+    }
+  };
+
   const handleSendCampaign = async () => {
     if (!selectedInstance || messages.length === 0 || !recipients.trim()) {
       toast({
@@ -166,6 +216,16 @@ export const useMassMessaging = () => {
         notificationPhone
       };
 
+      // Salvar no NocoDB ANTES de enviar para o webhook
+      console.log('💾 Salvando campanha no NocoDB...');
+      const savedToNocoDB = await saveCampaignToNocoDB(campaignData, processedCampaigns);
+      
+      if (savedToNocoDB) {
+        console.log('✅ Campanha salva no NocoDB');
+      } else {
+        console.log('⚠️ Falha ao salvar no NocoDB, mas continuando com o envio');
+      }
+
       // Adicionar dados processados para o webhook
       const enhancedCampaignData = {
         ...campaignData,
@@ -173,10 +233,11 @@ export const useMassMessaging = () => {
         variablesUsed: messages.some(msg => 
           (msg.type === 'text' && VariableProcessor.getAvailableVariables().some(v => msg.content.includes(v))) ||
           (msg.caption && VariableProcessor.getAvailableVariables().some(v => msg.caption.includes(v)))
-        )
+        ),
+        savedToNocoDB
       };
 
-      console.log('Dados enviados para webhook:', enhancedCampaignData);
+      console.log('📡 Enviando dados para webhook n8n:', enhancedCampaignData);
 
       // Enviar para webhook n8n
       const response = await fetch('https://webhook.novahagencia.com.br/webhook/bb39433b-a53b-484c-8721-f9a66d54f821', {
@@ -188,18 +249,14 @@ export const useMassMessaging = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Falha ao enviar para webhook');
+        throw new Error(`Falha ao enviar para webhook: ${response.status}`);
       }
 
-      // Salvar no NocoDB
-      await nocodbService.saveMassMessagingLog({
-        ...campaignData,
-        processedMessages: processedCampaigns.length
-      });
+      console.log('✅ Webhook enviado com sucesso');
 
       toast({
         title: "Campanha Iniciada",
-        description: `Campanha iniciada com ${processedCampaigns.length} mensagens personalizadas`,
+        description: `Campanha iniciada com ${processedCampaigns.length} mensagens personalizadas${savedToNocoDB ? ' e salva no banco' : ''}`,
       });
 
       // Reset form
@@ -207,10 +264,10 @@ export const useMassMessaging = () => {
       setRecipients('');
       setNotificationPhone('');
     } catch (error) {
-      console.error('Erro ao iniciar campanha:', error);
+      console.error('❌ Erro ao iniciar campanha:', error);
       toast({
         title: "Erro",
-        description: "Falha ao iniciar campanha",
+        description: "Falha ao iniciar campanha. Verifique os logs do console.",
         variant: "destructive",
       });
     } finally {

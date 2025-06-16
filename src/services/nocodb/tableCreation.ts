@@ -9,8 +9,16 @@ export class TableCreation extends TableOperations {
 
   async createTable(baseId: string, schema: TableSchema): Promise<boolean> {
     try {
-      console.log(`Criando tabela ${schema.title} na base ${baseId}...`);
-      console.log('Schema da tabela:', schema);
+      console.log(`🏗️ Criando tabela ${schema.title} na base ${baseId}...`);
+      
+      // Verificar se a tabela já existe antes de tentar criar
+      const tableExists = await this.checkTableExists(baseId, schema.table_name, schema.title);
+      if (tableExists) {
+        console.log(`✅ Tabela ${schema.title} já existe`);
+        return true;
+      }
+      
+      console.log('📋 Schema da tabela:', JSON.stringify(schema, null, 2));
       
       const response = await fetch(`${this.config.baseUrl}/api/v1/db/meta/projects/${baseId}/tables`, {
         method: 'POST',
@@ -26,9 +34,9 @@ export class TableCreation extends TableOperations {
         const errorText = await response.text();
         console.log(`❌ Erro ao criar tabela ${schema.title}:`, response.status, errorText);
         
-        // Se o erro for 400, pode ser que a tabela já existe
-        if (response.status === 400 && errorText.includes('already exists')) {
-          console.log(`ℹ️ Tabela ${schema.title} já existe`);
+        // Se o erro for 400 e mencionar que já existe, considerar como sucesso
+        if (response.status === 400 && (errorText.includes('already exists') || errorText.includes('já existe'))) {
+          console.log(`ℹ️ Tabela ${schema.title} já existe (confirmado por erro 400)`);
           return true;
         }
         
@@ -44,6 +52,7 @@ export class TableCreation extends TableOperations {
   async createAllTables(baseId: string) {
     try {
       console.log('🏗️ Iniciando criação de todas as tabelas necessárias...');
+      console.log('🎯 Base target:', baseId);
       
       if (!baseId) {
         console.log('❌ Base "Notificação Inteligente" não encontrada, não é possível criar tabelas');
@@ -54,17 +63,20 @@ export class TableCreation extends TableOperations {
       
       // Criar cada tabela definida no schema
       for (const [tableName, schema] of Object.entries(TABLE_SCHEMAS)) {
-        console.log(`📋 Criando tabela: ${tableName}...`);
+        console.log(`📋 Criando tabela: ${tableName} (${schema.title})...`);
         
         try {
           const success = await this.createTable(baseId, schema);
           results.push({ tableName, success });
           
           if (success) {
-            console.log(`✅ Tabela ${tableName} criada com sucesso`);
+            console.log(`✅ Tabela ${tableName} criada/verificada com sucesso`);
           } else {
             console.log(`❌ Falha ao criar tabela ${tableName}`);
           }
+          
+          // Pequeno delay entre criações para evitar rate limiting
+          await new Promise(resolve => setTimeout(resolve, 500));
         } catch (error) {
           console.log(`❌ Erro ao criar tabela ${tableName}:`, error);
           results.push({ tableName, success: false, error });
@@ -74,8 +86,8 @@ export class TableCreation extends TableOperations {
       const successCount = results.filter(r => r.success).length;
       const totalCount = results.length;
       
-      console.log(`🎯 Processo concluído: ${successCount}/${totalCount} tabelas criadas com sucesso`);
-      console.log('📊 Resumo:', results);
+      console.log(`🎯 Processo concluído: ${successCount}/${totalCount} tabelas criadas/verificadas com sucesso`);
+      console.log('📊 Resumo detalhado:', results);
       
       return successCount > 0;
     } catch (error) {
@@ -90,6 +102,8 @@ export class TableCreation extends TableOperations {
         console.log('❌ Base não encontrada, não é possível verificar tabela');
         return false;
       }
+
+      console.log(`🔧 Verificando/criando tabela ${tableName} na base ${baseId}...`);
 
       // Verificar se a tabela já existe
       const expectedTitle = TABLE_SCHEMAS[tableName]?.title;
@@ -108,7 +122,15 @@ export class TableCreation extends TableOperations {
       }
       
       console.log(`📋 Criando tabela ${tableName}...`);
-      return await this.createTable(baseId, schema);
+      const created = await this.createTable(baseId, schema);
+      
+      if (created) {
+        console.log(`✅ Tabela ${tableName} criada com sucesso`);
+      } else {
+        console.log(`❌ Falha ao criar tabela ${tableName}`);
+      }
+      
+      return created;
       
     } catch (error) {
       console.log(`❌ Erro ao verificar/criar tabela ${tableName}:`, error);

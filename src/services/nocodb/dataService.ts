@@ -1,4 +1,3 @@
-
 import { BaseNocodbService } from './baseService';
 import { NocodbConfig } from './types';
 
@@ -9,32 +8,44 @@ export class DataService extends BaseNocodbService {
 
   async saveMassMessagingLog(baseId: string, campaignData: any): Promise<boolean> {
     try {
-      console.log('Salvando log de disparo em massa no NocoDB...');
+      console.log('💾 Salvando log de disparo em massa no NocoDB...');
+      console.log('📋 Dados recebidos:', campaignData);
       
       const data = {
-        campaign_id: `campanha_${Date.now()}`,
-        instance_id: campaignData.instance,
-        message_type: campaignData.messages[0]?.type || 'text',
-        recipient_count: campaignData.recipients.length,
-        delay: campaignData.delay,
-        status: 'iniciado',
-        created_at: new Date().toISOString(),
+        campaign_id: campaignData.campaign_id || `campanha_${Date.now()}`,
+        campaign_name: campaignData.campaign_name || `Campanha ${new Date().toLocaleString('pt-BR')}`,
+        instance_id: campaignData.instance_id || campaignData.instance,
+        instance_name: campaignData.instance_name || campaignData.instance,
+        message_type: campaignData.message_type || campaignData.messages?.[0]?.type || 'text',
+        recipient_count: campaignData.recipient_count || campaignData.recipients?.length || 0,
+        sent_count: campaignData.sent_count || 0,
+        error_count: campaignData.error_count || 0,
+        delay: campaignData.delay || 5000,
+        status: campaignData.status || 'iniciado',
+        start_time: campaignData.start_time || new Date().toISOString(),
         data_json: JSON.stringify(campaignData)
       };
       
+      console.log('📝 Dados formatados para salvar:', data);
+      
       const tableId = await this.getTableId(baseId, 'MassMessagingLogs');
-      if (tableId) {
-        const success = await this.saveToTable(baseId, tableId, data);
-        if (success) {
-          console.log('✅ Log de disparo em massa salvo com sucesso');
-          return true;
-        }
+      if (!tableId) {
+        console.log('❌ Tabela MassMessagingLogs não encontrada na base');
+        return false;
       }
       
-      console.log('❌ Falha ao salvar no NocoDB');
-      return false;
+      console.log('🎯 ID da tabela encontrado:', tableId);
+      
+      const success = await this.saveToTable(baseId, tableId, data);
+      if (success) {
+        console.log('✅ Log de disparo em massa salvo com sucesso');
+        return true;
+      } else {
+        console.log('❌ Falha ao salvar no NocoDB');
+        return false;
+      }
     } catch (error) {
-      console.error('Erro geral ao salvar log:', error);
+      console.error('❌ Erro geral ao salvar log:', error);
       return false;
     }
   }
@@ -116,6 +127,9 @@ export class DataService extends BaseNocodbService {
     try {
       const url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}`;
       
+      console.log('📡 Fazendo POST para:', url);
+      console.log('📋 Dados a enviar:', JSON.stringify(data, null, 2));
+      
       const response = await fetch(url, {
         method: 'POST',
         headers: this.headers,
@@ -128,7 +142,7 @@ export class DataService extends BaseNocodbService {
         return true;
       } else {
         const errorText = await response.text();
-        console.log(`❌ Erro ao salvar ${response.status}:`, errorText);
+        console.log(`❌ Erro ao salvar (${response.status}):`, errorText);
         return false;
       }
     } catch (error) {
