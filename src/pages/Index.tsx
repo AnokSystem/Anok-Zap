@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Settings, Users, Bell, MessageSquare, Zap, LogOut, User, BookOpen } from 'lucide-react';
@@ -10,6 +9,7 @@ import ContactManagement from '@/components/ContactManagement';
 import IntelligentNotifications from '@/components/IntelligentNotifications';
 import InstanceManagement from '@/components/InstanceManagement';
 import ExtrasSection from '@/components/ExtrasSection';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -119,7 +119,7 @@ const Index = () => {
               </div>
             </div>
 
-            {/* User info and logout - Redesigned */}
+            {/* User info, theme toggle and logout */}
             <div className="flex items-center space-x-4">
               <div className="card-modern flex items-center space-x-4 px-6 py-3 gradient-subtle border border-purple-light/20 backdrop-blur-lg">
                 <div className="w-10 h-10 gradient-primary rounded-full flex items-center justify-center shadow-purple">
@@ -134,6 +134,8 @@ const Index = () => {
                   </span>
                 </div>
               </div>
+              
+              <ThemeToggle />
               
               <Button
                 onClick={handleLogout}

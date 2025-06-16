@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
@@ -78,6 +79,65 @@
     --shadow-purple-lg: 0 8px 25px rgba(123, 44, 191, 0.2);
     --shadow-form: 0 2px 8px rgba(157, 78, 221, 0.1);
   }
+
+  /* Tema Claro */
+  [data-theme="light"] {
+    --background: 255 255 255; /* Fundo branco */
+    --foreground: 51 51 51; /* Texto cinza escuro #333333 */
+
+    --card: 255 255 255; /* Cards brancos */
+    --card-foreground: 51 51 51; /* Texto dos cards em cinza escuro */
+
+    --popover: 255 255 255;
+    --popover-foreground: 51 51 51;
+
+    --primary: 138 74 243; /* Roxo #8A4AF3 */
+    --primary-foreground: 255 255 255;
+
+    --secondary: 248 250 252; /* Cinza bem claro */
+    --secondary-foreground: 51 51 51;
+
+    --muted: 248 250 252;
+    --muted-foreground: 100 116 139;
+
+    --accent: 138 74 243; /* Roxo #8A4AF3 */
+    --accent-foreground: 255 255 255;
+
+    --destructive: 239 68 68;
+    --destructive-foreground: 255 255 255;
+
+    --border: 226 232 240; /* Bordas suaves */
+    --input: 255 255 255; /* Inputs brancos */
+    --ring: 138 74 243; /* Roxo para focus */
+
+    /* Cores Neutras para Tema Claro */
+    --gray-950: 255 255 255; /* Invertido - fundo branco */
+    --gray-900: 248 250 252; /* Cinza muito claro */
+    --gray-800: 241 245 249; /* Cinza claro */
+    --gray-700: 226 232 240; /* Cinza médio */
+    --gray-600: 148 163 184; /* Cinza */
+    --gray-400: 100 116 139; /* Cinza escuro */
+    --gray-200: 71 85 105; /* Cinza muito escuro */
+    --white: 51 51 51; /* Invertido - texto escuro */
+    
+    /* Gradientes para Tema Claro */
+    --gradient-primary: linear-gradient(135deg, rgb(138, 74, 243) 0%, rgb(168, 85, 247) 100%);
+    --gradient-secondary: linear-gradient(135deg, rgb(168, 85, 247) 0%, rgb(196, 181, 253) 100%);
+    --gradient-subtle: linear-gradient(135deg, rgba(138, 74, 243, 0.05) 0%, rgba(168, 85, 247, 0.02) 100%);
+    --gradient-header: linear-gradient(135deg, rgb(138, 74, 243) 0%, rgb(168, 85, 247) 100%);
+    --gradient-card: linear-gradient(135deg, rgba(138, 74, 243, 0.02) 0%, rgba(255, 255, 255, 0.9) 100%);
+    --gradient-form: linear-gradient(135deg, rgba(138, 74, 243, 0.03) 0%, rgba(255, 255, 255, 0.95) 100%);
+    
+    /* Sombras para Tema Claro */
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.03);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.08), 0 4px 6px rgba(0, 0, 0, 0.03);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.08), 0 10px 10px rgba(0, 0, 0, 0.02);
+    --shadow-purple: 0 4px 14px rgba(138, 74, 243, 0.12);
+    --shadow-purple-lg: 0 8px 25px rgba(138, 74, 243, 0.15);
+    --shadow-form: 0 2px 8px rgba(138, 74, 243, 0.08);
+  }
 }
 
 @layer base {
@@ -87,12 +147,13 @@
 
   body {
     @apply antialiased;
-    background: rgb(var(--gray-950));
+    background: rgb(var(--background));
     color: rgb(var(--foreground)) !important;
     font-family: 'Inter', system-ui, sans-serif;
     font-size: 16px;
     line-height: 1.5;
     min-height: 100vh;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -100,7 +161,7 @@
     font-weight: 600;
     line-height: 1.3;
     letter-spacing: -0.025em;
-    color: rgb(var(--foreground)) !important; /* Garantindo que títulos sejam brancos */
+    color: rgb(var(--foreground)) !important;
   }
 
   h1 {
@@ -117,7 +178,7 @@
 
   p {
     @apply text-base leading-relaxed;
-    color: rgb(var(--foreground)) !important; /* Garantindo que parágrafos sejam brancos */
+    color: rgb(var(--foreground)) !important;
   }
 
   /* Regras globais para eliminar TODAS as cores amarelas */
@@ -125,7 +186,7 @@
     /* Remover qualquer cor amarela específica */
   }
   
-  /* Forçar todos os textos básicos para branco */
+  /* Forçar todos os textos básicos para foreground */
   span, div, label, button, input, textarea, select, a, li, td, th {
     color: inherit !important;
   }
@@ -153,7 +214,7 @@
   .text-amber-400,
   .text-amber-500,
   .text-gold {
-    color: #ffffff !important;
+    color: rgb(var(--foreground)) !important;
   }
 
   /* Sobrescrever qualquer background amarelo em textos */
@@ -166,6 +227,20 @@
 }
 
 @layer utilities {
+  /* Botão de alternância de tema */
+  .theme-toggle-btn {
+    transition: all 0.3s ease;
+    border: 1px solid rgb(var(--border));
+    background: rgb(var(--card));
+    color: rgb(var(--foreground));
+  }
+
+  .theme-toggle-btn:hover {
+    background: rgb(var(--accent));
+    color: rgb(var(--accent-foreground));
+    border-color: rgb(var(--accent));
+  }
+
   /* Gradientes Modernos */
   .gradient-primary {
     background: var(--gradient-primary);
@@ -206,9 +281,9 @@
   }
 
   .card-glass {
-    background: rgba(24, 24, 29, 0.8);
+    background: rgba(var(--card), 0.8);
     backdrop-filter: blur(16px);
-    border: 1px solid rgba(123, 44, 191, 0.1);
+    border: 1px solid rgba(var(--primary), 0.1);
     border-radius: var(--radius);
     box-shadow: var(--shadow-lg);
   }
@@ -224,11 +299,11 @@
     @apply card-modern p-6;
     background: var(--gradient-form);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(157, 78, 221, 0.1);
+    border: 1px solid rgba(var(--accent), 0.1);
   }
 
   .form-card:hover {
-    border-color: rgba(157, 78, 221, 0.2);
+    border-color: rgba(var(--accent), 0.2);
     box-shadow: var(--shadow-form);
   }
 
@@ -236,13 +311,13 @@
   .nav-card {
     @apply relative p-6 rounded-xl transition-all duration-300 cursor-pointer;
     background: var(--gradient-subtle);
-    border: 1px solid rgba(123, 44, 191, 0.1);
+    border: 1px solid rgba(var(--primary), 0.1);
     box-shadow: var(--shadow-sm);
     backdrop-filter: blur(10px);
   }
 
   .nav-card:hover {
-    border-color: rgba(123, 44, 191, 0.3);
+    border-color: rgba(var(--primary), 0.3);
     box-shadow: var(--shadow-purple);
     transform: translateY(-2px);
   }
@@ -264,7 +339,7 @@
   /* Ícones e Labels */
   .nav-icon {
     @apply w-7 h-7 transition-all duration-300;
-    color: rgb(var(--purple-accent));
+    color: rgb(var(--accent));
   }
 
   .nav-card:hover .nav-icon {
@@ -304,7 +379,7 @@
   }
 
   .text-accent {
-    color: rgb(var(--purple-accent));
+    color: rgb(var(--accent));
     font-weight: 500;
   }
 
@@ -338,58 +413,73 @@
 
   /* Header */
   .header-modern {
-    background: rgba(16, 16, 20, 0.95);
+    background: rgba(var(--background), 0.95);
     backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(123, 44, 191, 0.1);
+    border-bottom: 1px solid rgba(var(--primary), 0.1);
+    transition: all 0.3s ease;
   }
 
   /* Inputs Modernos - PADRONIZADOS PARA LARGURA TOTAL */
   .input-modern {
-    @apply w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-foreground placeholder:text-gray-400 focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all duration-200;
+    @apply w-full border rounded-lg px-4 py-3 placeholder:text-gray-400 focus:ring-2 transition-all duration-200;
+    background: rgb(var(--input));
+    border-color: rgb(var(--border));
+    color: rgb(var(--foreground));
     box-shadow: var(--shadow-sm);
   }
 
   .input-modern:focus {
-    box-shadow: var(--shadow-md), 0 0 0 3px rgba(157, 78, 221, 0.1);
+    box-shadow: var(--shadow-md), 0 0 0 3px rgba(var(--accent), 0.1);
     border-color: rgb(var(--accent));
   }
 
   .input-form {
-    @apply w-full bg-gray-800/80 border border-gray-700/50 rounded-lg px-4 py-3 text-foreground placeholder:text-gray-400 transition-all duration-300;
+    @apply w-full border rounded-lg px-4 py-3 placeholder:text-gray-400 transition-all duration-300;
+    background: rgb(var(--input));
+    border-color: rgb(var(--border));
+    color: rgb(var(--foreground));
     backdrop-filter: blur(8px);
     box-shadow: var(--shadow-sm);
   }
 
   .input-form:focus {
-    @apply border-purple-light ring-2 ring-purple-light/20;
-    box-shadow: var(--shadow-form), 0 0 0 3px rgba(192, 132, 252, 0.1);
-    background: rgba(30, 30, 36, 0.95);
+    @apply ring-2;
+    border-color: rgb(var(--accent));
+    ring-color: rgba(var(--accent), 0.2);
+    box-shadow: var(--shadow-form), 0 0 0 3px rgba(var(--accent), 0.1);
+    background: rgb(var(--input));
   }
 
   .input-form:hover {
-    border-color: rgba(157, 78, 221, 0.3);
+    border-color: rgba(var(--accent), 0.3);
   }
 
   /* Textarea Moderno - PADRONIZADO PARA LARGURA TOTAL */
   .textarea-form {
-    @apply w-full bg-gray-800/80 border border-gray-700/50 rounded-lg px-4 py-3 text-foreground placeholder:text-gray-400 transition-all duration-300 min-h-[100px] resize-y;
+    @apply w-full border rounded-lg px-4 py-3 placeholder:text-gray-400 transition-all duration-300 min-h-[100px] resize-y;
+    background: rgb(var(--input));
+    border-color: rgb(var(--border));
+    color: rgb(var(--foreground));
     backdrop-filter: blur(8px);
     box-shadow: var(--shadow-sm);
   }
 
   .textarea-form:focus {
-    @apply border-purple-light ring-2 ring-purple-light/20;
-    box-shadow: var(--shadow-form), 0 0 0 3px rgba(192, 132, 252, 0.1);
-    background: rgba(30, 30, 36, 0.95);
+    @apply ring-2;
+    border-color: rgb(var(--accent));
+    ring-color: rgba(var(--accent), 0.2);
+    box-shadow: var(--shadow-form), 0 0 0 3px rgba(var(--accent), 0.1);
+    background: rgb(var(--input));
   }
 
   .textarea-form:hover {
-    border-color: rgba(157, 78, 221, 0.3);
+    border-color: rgba(var(--accent), 0.3);
   }
 
   /* Labels Modernos */
   .label-form {
-    @apply font-medium text-sm text-foreground mb-2 block;
+    @apply font-medium text-sm mb-2 block;
+    color: rgb(var(--foreground));
     font-family: 'Poppins', system-ui, sans-serif;
     font-weight: 500;
     letter-spacing: -0.01em;
@@ -405,33 +495,41 @@
 
   /* Select Moderno - PADRONIZADO PARA LARGURA TOTAL */
   .select-form {
-    @apply w-full bg-gray-800/80 border border-gray-700/50 rounded-lg px-4 py-3 text-foreground transition-all duration-300;
+    @apply w-full border rounded-lg px-4 py-3 transition-all duration-300;
+    background: rgb(var(--input));
+    border-color: rgb(var(--border));
+    color: rgb(var(--foreground));
     backdrop-filter: blur(8px);
     box-shadow: var(--shadow-sm);
   }
 
   .select-form:focus {
-    @apply border-purple-light ring-2 ring-purple-light/20;
-    box-shadow: var(--shadow-form), 0 0 0 3px rgba(192, 132, 252, 0.1);
-    background: rgba(30, 30, 36, 0.95);
+    @apply ring-2;
+    border-color: rgb(var(--accent));
+    ring-color: rgba(var(--accent), 0.2);
+    box-shadow: var(--shadow-form), 0 0 0 3px rgba(var(--accent), 0.1);
+    background: rgb(var(--input));
   }
 
   .select-form:hover {
-    border-color: rgba(157, 78, 221, 0.3);
+    border-color: rgba(var(--accent), 0.3);
   }
 
   /* Checkbox e Radio Modernos */
   .checkbox-form {
-    @apply w-5 h-5 rounded border-2 border-gray-600 bg-gray-800/80 transition-all duration-200;
+    @apply w-5 h-5 rounded border-2 transition-all duration-200;
+    border-color: rgb(var(--border));
+    background: rgb(var(--input));
   }
 
   .checkbox-form:checked {
-    @apply border-purple-light bg-purple-light;
-    box-shadow: 0 0 0 3px rgba(192, 132, 252, 0.2);
+    border-color: rgb(var(--accent));
+    background: rgb(var(--accent));
+    box-shadow: 0 0 0 3px rgba(var(--accent), 0.2);
   }
 
   .checkbox-form:hover {
-    border-color: rgba(157, 78, 221, 0.5);
+    border-color: rgba(var(--accent), 0.5);
   }
 
   /* Estados de Validação */
@@ -481,7 +579,7 @@
   /* Utilities Extras */
   .glass-effect {
     backdrop-filter: blur(20px);
-    background: rgba(24, 24, 29, 0.6);
+    background: rgba(var(--card), 0.6);
   }
 
   .border-gradient {
@@ -539,7 +637,7 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: rgb(var(--gray-900));
+  background: rgb(var(--muted));
   border-radius: 3px;
 }
 
@@ -554,6 +652,6 @@
 
 /* Selection */
 ::selection {
-  background: rgba(123, 44, 191, 0.3);
+  background: rgba(var(--primary), 0.3);
   color: rgb(var(--foreground));
 }
