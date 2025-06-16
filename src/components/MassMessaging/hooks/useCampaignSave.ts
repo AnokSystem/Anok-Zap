@@ -43,8 +43,9 @@ export const useCampaignSave = () => {
       
       console.log('📋 Dados formatados para NocoDB:', logData);
       
-      // Usar o método correto do nocodbService
-      const success = await nocodbService.saveMassMessagingLog(logData);
+      // Usar o método correto do dataService com baseId
+      const baseId = nocodbService.getDefaultBaseId();
+      const success = await nocodbService.dataService.saveMassMessagingLog(baseId, logData);
       
       if (success) {
         console.log('✅ Campanha salva no NocoDB com sucesso para cliente:', clientId);

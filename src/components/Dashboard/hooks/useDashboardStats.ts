@@ -21,7 +21,8 @@ export const useDashboardStats = () => {
       setIsLoading(true);
       console.log('📊 Buscando estatísticas do dashboard...');
       
-      const data = await nocodbService.getDashboardStats();
+      // Usar o método correto do dashboardService
+      const data = await nocodbService.dashboardService.getDashboardStats(nocodbService.getDefaultBaseId());
       
       if (data) {
         const transformedStats: DashboardStats = {

@@ -22,7 +22,8 @@ export const useRecentDisparos = (limit: number = 10) => {
       setIsLoading(true);
       console.log('📨 Buscando disparos recentes...');
       
-      const data = await nocodbService.getRecentDisparos(limit);
+      // Usar o método correto do dashboardService
+      const data = await nocodbService.dashboardService.getRecentDisparos(nocodbService.getDefaultBaseId(), limit);
       
       if (data && data.length > 0) {
         const transformedDisparos: Disparo[] = data.map((item: any) => ({
