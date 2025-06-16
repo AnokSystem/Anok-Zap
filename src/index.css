@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
@@ -146,13 +147,25 @@
 
   body {
     @apply antialiased;
-    background: rgb(var(--background));
+    background: rgb(var(--background)) !important;
     color: rgb(var(--foreground)) !important;
     font-family: 'Inter', system-ui, sans-serif;
     font-size: 16px;
     line-height: 1.5;
     min-height: 100vh;
     transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Forçar fundo branco no tema claro */
+  [data-theme="light"] body {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+  }
+
+  /* Forçar fundo escuro no tema escuro */
+  [data-theme="dark"] body {
+    background: rgb(16, 16, 20) !important;
+    background-color: rgb(16, 16, 20) !important;
   }
 
   h1, h2, h3, h4, h5, h5 {
