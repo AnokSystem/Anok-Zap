@@ -56,11 +56,16 @@ export class StatsCalculationService extends BaseNocodbService {
       
       console.log('📡 Buscando TODOS os dados de disparos na tabela:', this.DISPARO_EM_MASSA_TABLE_ID);
       
-      // Buscar TODOS os disparos sem filtro restritivo
+      // Adicionar timestamp para evitar cache
+      const timestamp = Date.now();
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.DISPARO_EM_MASSA_TABLE_ID}?limit=10000&sort=-Id`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.DISPARO_EM_MASSA_TABLE_ID}?limit=10000&_t=${timestamp}`,
         {
-          headers: this.headers,
+          headers: {
+            ...this.headers,
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          },
         }
       );
 
@@ -69,11 +74,11 @@ export class StatsCalculationService extends BaseNocodbService {
         const allDisparos = data.list || [];
         
         console.log(`📊 ${allDisparos.length} disparos totais encontrados na tabela`);
+        console.log('📋 Exemplo de dados:', allDisparos.slice(0, 1));
         
-        // Filtro mais flexível para client_id
+        // Filtrar por cliente se necessário
         const clientDisparos = allDisparos.filter(d => {
           if (!d.client_id && !d.Client_id && !d.clientId) {
-            // Se não tem client_id definido, incluir (pode ser disparo geral)
             return true;
           }
           const hasClientId = d.client_id === clientId || 
@@ -90,14 +95,34 @@ export class StatsCalculationService extends BaseNocodbService {
           return createdAt && createdAt.startsWith(today);
         });
 
+        // Calcular estatísticas baseadas nos campos reais da tabela
         const totalSent = clientDisparos.reduce((acc, d) => {
-          const count = parseInt(d.recipient_count || d.recipientCount || d.sent_count || 0);
+          // Buscar diferentes variações dos campos de contagem
+          const count = parseInt(
+            d.recipient_count || 
+            d.recipientCount || 
+            d.sent_count || 
+            d.total_recipients ||
+            d.total_contacts ||
+            0
+          );
           return acc + count;
         }, 0);
 
         const totalSuccess = clientDisparos.reduce((acc, d) => {
-          const sent = parseInt(d.sent_count || d.sentCount || d.recipient_count || 0);
-          const errors = parseInt(d.error_count || d.errorCount || 0);
+          const sent = parseInt(
+            d.sent_count || 
+            d.sentCount || 
+            d.recipient_count || 
+            d.successful_sends ||
+            0
+          );
+          const errors = parseInt(
+            d.error_count || 
+            d.errorCount || 
+            d.failed_sends ||
+            0
+          );
           return acc + Math.max(0, sent - errors);
         }, 0);
 
@@ -128,11 +153,16 @@ export class StatsCalculationService extends BaseNocodbService {
       
       console.log('📡 Buscando TODAS as notificações na tabela:', this.NOTIFICACOES_PLATAFORMAS_TABLE_ID);
       
-      // Buscar TODAS as notificações sem filtro restritivo
+      // Adicionar timestamp para evitar cache
+      const timestamp = Date.now();
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.NOTIFICACOES_PLATAFORMAS_TABLE_ID}?limit=10000&sort=-Id`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.NOTIFICACOES_PLATAFORMAS_TABLE_ID}?limit=10000&_t=${timestamp}`,
         {
-          headers: this.headers,
+          headers: {
+            ...this.headers,
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          },
         }
       );
 
@@ -141,11 +171,11 @@ export class StatsCalculationService extends BaseNocodbService {
         const allNotifications = data.list || [];
         
         console.log(`📊 ${allNotifications.length} notificações totais encontradas na tabela`);
+        console.log('📋 Exemplo de dados:', allNotifications.slice(0, 1));
         
-        // Filtro mais flexível para client_id
+        // Filtrar por cliente se necessário
         const clientNotifications = allNotifications.filter(n => {
           if (!n.client_id && !n.Client_id && !n.clientId) {
-            // Se não tem client_id definido, incluir (pode ser notificação geral)
             return true;
           }
           const hasClientId = n.client_id === clientId || 

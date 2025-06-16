@@ -24,10 +24,8 @@ export class NotificationsDataService extends BaseNocodbService {
 
     console.log('🔍 Usando ID fixo da tabela de notificações: mzup2t8ygoiy5ub');
     
-    // Usar o ID específico da tabela fornecido
     const tableId = 'mzup2t8ygoiy5ub';
     
-    // Verificar se a tabela existe tentando acessá-la
     try {
       const testResponse = await fetch(
         `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=1`,
@@ -62,11 +60,16 @@ export class NotificationsDataService extends BaseNocodbService {
 
       console.log('🔔 Buscando notificações recentes da tabela mzup2t8ygoiy5ub para cliente:', clientId);
       
-      // Usar sort sem campo específico para evitar erro de campo não encontrado
+      // Adicionar timestamp para evitar cache e garantir dados atualizados
+      const timestamp = Date.now();
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=${limit}`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=${limit}&_t=${timestamp}`,
         {
-          headers: this.headers,
+          headers: {
+            ...this.headers,
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          },
         }
       );
 
@@ -75,12 +78,12 @@ export class NotificationsDataService extends BaseNocodbService {
         const allNotifications = data.list || [];
         
         console.log(`📊 ${allNotifications.length} notificações encontradas na tabela mzup2t8ygoiy5ub`);
-        console.log('📋 Amostra dos dados:', allNotifications.slice(0, 2));
+        console.log('📋 Dados brutos da tabela:', allNotifications.slice(0, 2));
         
         // Filtrar por cliente se necessário
         const clientNotifications = allNotifications.filter(n => {
           if (!n.client_id && !n.Client_id && !n.clientId) {
-            return true; // Incluir registros sem client_id
+            return true;
           }
           return n.client_id === clientId || n.Client_id === clientId || n.clientId === clientId;
         });
@@ -110,11 +113,16 @@ export class NotificationsDataService extends BaseNocodbService {
 
       console.log('📋 Buscando TODAS as notificações da tabela mzup2t8ygoiy5ub para cliente:', clientId);
       
-      // Usar sort sem campo específico para evitar erro de campo não encontrado
+      // Adicionar timestamp para evitar cache e garantir dados atualizados
+      const timestamp = Date.now();
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=10000`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=10000&_t=${timestamp}`,
         {
-          headers: this.headers,
+          headers: {
+            ...this.headers,
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          },
         }
       );
 
@@ -123,6 +131,7 @@ export class NotificationsDataService extends BaseNocodbService {
         const allNotifications = data.list || [];
         
         console.log(`📊 ${allNotifications.length} notificações totais na tabela mzup2t8ygoiy5ub`);
+        console.log('📋 Campos disponíveis:', Object.keys(allNotifications[0] || {}));
         
         // Filtrar por cliente se necessário
         const filteredNotifications = allNotifications.filter(n => {

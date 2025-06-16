@@ -34,8 +34,8 @@ export const useDisparosChartData = (days: number = 7) => {
   useEffect(() => {
     fetchData();
     
-    // Atualizar dados a cada 2 minutos
-    const interval = setInterval(fetchData, 2 * 60 * 1000);
+    // Atualizar dados a cada 1 minuto para sincronização mais rápida
+    const interval = setInterval(fetchData, 60 * 1000);
     
     // Escutar evento customizado de atualização do dashboard
     const handleDashboardRefresh = () => {
@@ -86,8 +86,8 @@ export const useNotificationsChartData = (days: number = 7) => {
   useEffect(() => {
     fetchData();
     
-    // Atualizar dados a cada 2 minutos
-    const interval = setInterval(fetchData, 2 * 60 * 1000);
+    // Atualizar dados a cada 1 minuto para sincronização mais rápida
+    const interval = setInterval(fetchData, 60 * 1000);
     
     // Escutar evento customizado de atualização do dashboard
     const handleDashboardRefresh = () => {

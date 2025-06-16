@@ -30,10 +30,8 @@ export class DisparosDataService extends BaseNocodbService {
 
     console.log('🔍 Usando ID fixo da tabela de disparos: myx4lsmm5i02xcd');
     
-    // Usar o ID específico da tabela fornecido
     const tableId = 'myx4lsmm5i02xcd';
     
-    // Verificar se a tabela existe tentando acessá-la
     try {
       const testResponse = await fetch(
         `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=1`,
@@ -68,11 +66,16 @@ export class DisparosDataService extends BaseNocodbService {
 
       console.log('📨 Buscando disparos recentes da tabela myx4lsmm5i02xcd para cliente:', clientId);
 
-      // Usar sort sem campo específico para evitar erro de campo não encontrado
+      // Adicionar timestamp para evitar cache e garantir dados atualizados
+      const timestamp = Date.now();
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=${limit}`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=${limit}&_t=${timestamp}`,
         {
-          headers: this.headers,
+          headers: {
+            ...this.headers,
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          },
         }
       );
 
@@ -81,12 +84,12 @@ export class DisparosDataService extends BaseNocodbService {
         const allDisparos = data.list || [];
         
         console.log(`📊 ${allDisparos.length} disparos encontrados na tabela myx4lsmm5i02xcd`);
-        console.log('📋 Amostra dos dados:', allDisparos.slice(0, 2));
+        console.log('📋 Dados brutos da tabela:', allDisparos.slice(0, 2));
         
         // Filtrar por cliente se necessário
         const clientDisparos = allDisparos.filter(d => {
           if (!d.client_id && !d.Client_id && !d.clientId) {
-            return true; // Incluir registros sem client_id
+            return true;
           }
           return d.client_id === clientId || d.Client_id === clientId || d.clientId === clientId;
         });
@@ -116,11 +119,16 @@ export class DisparosDataService extends BaseNocodbService {
 
       console.log('📋 Buscando TODOS os disparos da tabela myx4lsmm5i02xcd para cliente:', clientId);
       
-      // Usar sort sem campo específico para evitar erro de campo não encontrado
+      // Adicionar timestamp para evitar cache e garantir dados atualizados
+      const timestamp = Date.now();
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=10000`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=10000&_t=${timestamp}`,
         {
-          headers: this.headers,
+          headers: {
+            ...this.headers,
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          },
         }
       );
 
@@ -129,6 +137,7 @@ export class DisparosDataService extends BaseNocodbService {
         const allDisparos = data.list || [];
         
         console.log(`📊 ${allDisparos.length} disparos totais na tabela myx4lsmm5i02xcd`);
+        console.log('📋 Campos disponíveis:', Object.keys(allDisparos[0] || {}));
         
         // Filtrar por cliente se necessário
         const filteredDisparos = allDisparos.filter(d => {

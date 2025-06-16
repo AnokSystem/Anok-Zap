@@ -56,8 +56,8 @@ export const useDashboardStats = () => {
   useEffect(() => {
     fetchStats();
     
-    // Atualizar automaticamente a cada 30 segundos
-    const interval = setInterval(fetchStats, 30000);
+    // Atualizar automaticamente a cada 15 segundos para sincronização mais rápida
+    const interval = setInterval(fetchStats, 15000);
     
     // Escutar evento customizado de atualização do dashboard
     const handleDashboardRefresh = () => {
