@@ -79,9 +79,9 @@
     --shadow-form: 0 2px 8px rgba(157, 78, 221, 0.1);
   }
 
-  /* Tema Claro - Baseado na Imagem Fornecida */
+  /* Tema Claro - Fundo Branco Puro */
   [data-theme="light"] {
-    --background: 250 251 252; /* Fundo muito claro quase branco #fafbfc */
+    --background: 255 255 255; /* Fundo branco puro #ffffff */
     --foreground: 71 85 105; /* Texto principal cinza escuro #475569 */
 
     --card: 255 255 255; /* Cards brancos puros */
@@ -110,7 +110,7 @@
     --ring: 139 69 219; /* Roxo para focus */
 
     /* Cores Neutras para Tema Claro - Exatamente como na imagem */
-    --gray-950: 250 251 252; /* Fundo principal muito claro */
+    --gray-950: 255 255 255; /* Fundo principal branco puro */
     --gray-900: 248 250 252; /* Fundo secundário */
     --gray-800: 241 245 249; /* Bordas suaves */
     --gray-700: 226 232 240; /* Separadores */
@@ -122,10 +122,10 @@
     /* Gradientes para Tema Claro - Mais suaves */
     --gradient-primary: linear-gradient(135deg, rgb(139, 69, 219) 0%, rgb(168, 85, 247) 100%);
     --gradient-secondary: linear-gradient(135deg, rgb(168, 85, 247) 0%, rgba(241, 245, 249, 0.8) 100%);
-    --gradient-subtle: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(250, 251, 252, 0.7) 100%);
-    --gradient-header: linear-gradient(135deg, rgba(250, 251, 252, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
+    --gradient-subtle: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
+    --gradient-header: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
     --gradient-card: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(248, 250, 252, 0.3) 100%);
-    --gradient-form: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(250, 251, 252, 0.5) 100%);
+    --gradient-form: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.5) 100%);
     
     /* Sombras para Tema Claro - Muito suaves */
     --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.02);
