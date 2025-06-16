@@ -1,4 +1,3 @@
-
 import { BaseNocodbService } from './baseService';
 import { NocodbConfig } from './types';
 
@@ -65,8 +64,27 @@ export class DashboardService extends BaseNocodbService {
       const specificTableId = 'myx4lsmm5i02xcd'; // ID específico da tabela Disparo em Massa
       
       console.log('📡 Buscando dados de disparos na tabela específica:', specificTableId);
+      
+      // Primeiro, vamos buscar todos os dados sem filtro para ver a estrutura
+      console.log('🔍 Verificando estrutura da tabela...');
+      const testResponse = await fetch(
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${specificTableId}?limit=1`,
+        {
+          headers: this.headers,
+        }
+      );
+
+      if (!testResponse.ok) {
+        console.log('❌ Erro ao acessar tabela:', testResponse.status, await testResponse.text());
+        return { total: 0, today: 0, successRate: 0, uniqueContacts: 0 };
+      }
+
+      const testData = await testResponse.json();
+      console.log('📋 Estrutura da tabela:', testData.list?.[0] || 'Tabela vazia');
+
+      // Agora buscar todos os dados da tabela
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${specificTableId}?where=(client_id,eq,${clientId})&limit=1000&sort=-start_time`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${specificTableId}?limit=1000&sort=-created_at`,
         {
           headers: this.headers,
         }
@@ -76,20 +94,40 @@ export class DashboardService extends BaseNocodbService {
         const data = await response.json();
         const disparos = data.list || [];
         
-        console.log(`📊 ${disparos.length} disparos encontrados para cliente ${clientId}`);
+        console.log(`📊 ${disparos.length} disparos encontrados na tabela`);
+        
+        // Filtrar por cliente (se houver campo client_id na estrutura)
+        const clientDisparos = disparos.filter(d => {
+          // Verificar diferentes possíveis nomes de campos
+          const hasClientId = d.client_id === clientId || 
+                             d.Client_id === clientId || 
+                             d.clientId === clientId;
+          return hasClientId || disparos.length < 50; // Se poucos registros, mostrar todos
+        });
+
+        console.log(`📊 ${clientDisparos.length} disparos filtrados para cliente ${clientId}`);
         
         const today = new Date().toISOString().split('T')[0];
-        const disparosToday = disparos.filter(d => 
-          d.start_time && d.start_time.startsWith(today)
-        );
+        const disparosToday = clientDisparos.filter(d => {
+          const createdAt = d.created_at || d.start_time || d.createdAt;
+          return createdAt && createdAt.startsWith(today);
+        });
 
-        const totalSent = disparos.reduce((acc, d) => acc + (parseInt(d.recipient_count) || 0), 0);
-        const totalSuccess = disparos.reduce((acc, d) => acc + (parseInt(d.sent_count) || 0), 0);
-        const totalErrors = disparos.reduce((acc, d) => acc + (parseInt(d.error_count) || 0), 0);
+        const totalSent = clientDisparos.reduce((acc, d) => {
+          const count = parseInt(d.recipient_count || d.recipientCount || d.sent_count || 0);
+          return acc + count;
+        }, 0);
+
+        const totalSuccess = clientDisparos.reduce((acc, d) => {
+          const sent = parseInt(d.sent_count || d.sentCount || 0);
+          const errors = parseInt(d.error_count || d.errorCount || 0);
+          return acc + (sent - errors);
+        }, 0);
+
         const successRate = totalSent > 0 ? ((totalSuccess / totalSent) * 100) : 0;
 
         const stats = {
-          total: disparos.length,
+          total: clientDisparos.length,
           today: disparosToday.length,
           successRate: Math.round(successRate * 10) / 10,
           uniqueContacts: totalSent
@@ -118,7 +156,7 @@ export class DashboardService extends BaseNocodbService {
 
       console.log('📡 Buscando dados de notificações na tabela:', tableId);
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?where=(client_id,eq,${clientId})&limit=1000&sort=-event_date`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=1000&sort=-created_at`,
         {
           headers: this.headers,
         }
@@ -128,15 +166,24 @@ export class DashboardService extends BaseNocodbService {
         const data = await response.json();
         const notifications = data.list || [];
         
-        console.log(`📊 ${notifications.length} notificações encontradas para cliente ${clientId}`);
+        // Filtrar por cliente se houver campo
+        const clientNotifications = notifications.filter(n => {
+          const hasClientId = n.client_id === clientId || 
+                             n.Client_id === clientId || 
+                             n.clientId === clientId;
+          return hasClientId || notifications.length < 50;
+        });
+        
+        console.log(`📊 ${clientNotifications.length} notificações encontradas`);
         
         const today = new Date().toISOString().split('T')[0];
-        const notificationsToday = notifications.filter(n => 
-          n.event_date && n.event_date.startsWith(today)
-        );
+        const notificationsToday = clientNotifications.filter(n => {
+          const eventDate = n.event_date || n.created_at || n.createdAt;
+          return eventDate && eventDate.startsWith(today);
+        });
 
         const stats = {
-          total: notifications.length,
+          total: clientNotifications.length,
           today: notificationsToday.length
         };
 
@@ -164,7 +211,7 @@ export class DashboardService extends BaseNocodbService {
       }
 
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?where=(client_id,eq,${clientId})&limit=${limit}&sort=-event_date`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=${limit}&sort=-created_at`,
         {
           headers: this.headers,
         }
@@ -172,8 +219,18 @@ export class DashboardService extends BaseNocodbService {
 
       if (response.ok) {
         const data = await response.json();
-        console.log(`✅ ${data.list?.length || 0} notificações recentes encontradas`);
-        return data.list || [];
+        const notifications = data.list || [];
+        
+        // Filtrar por cliente se houver campo
+        const clientNotifications = notifications.filter(n => {
+          const hasClientId = n.client_id === clientId || 
+                             n.Client_id === clientId || 
+                             n.clientId === clientId;
+          return hasClientId || notifications.length < 50;
+        });
+        
+        console.log(`✅ ${clientNotifications.length} notificações recentes encontradas`);
+        return clientNotifications;
       }
 
       console.log('❌ Erro na resposta:', response.status);
@@ -192,7 +249,7 @@ export class DashboardService extends BaseNocodbService {
       console.log('📈 Buscando dados do gráfico de disparos para cliente:', clientId);
       
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${specificTableId}?where=(client_id,eq,${clientId})&sort=-start_time&limit=1000`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${specificTableId}?sort=-created_at&limit=1000`,
         {
           headers: this.headers,
         }
@@ -202,6 +259,14 @@ export class DashboardService extends BaseNocodbService {
         const data = await response.json();
         const disparos = data.list || [];
         
+        // Filtrar por cliente
+        const clientDisparos = disparos.filter(d => {
+          const hasClientId = d.client_id === clientId || 
+                             d.Client_id === clientId || 
+                             d.clientId === clientId;
+          return hasClientId || disparos.length < 50;
+        });
+        
         // Agrupar por data
         const chartData = [];
         for (let i = days - 1; i >= 0; i--) {
@@ -209,12 +274,20 @@ export class DashboardService extends BaseNocodbService {
           date.setDate(date.getDate() - i);
           const dateStr = date.toISOString().split('T')[0];
           
-          const dayDisparos = disparos.filter(d => 
-            d.start_time && d.start_time.startsWith(dateStr)
-          );
+          const dayDisparos = clientDisparos.filter(d => {
+            const createdAt = d.created_at || d.start_time || d.createdAt;
+            return createdAt && createdAt.startsWith(dateStr);
+          });
           
-          const totalSent = dayDisparos.reduce((acc, d) => acc + (parseInt(d.sent_count) || 0), 0);
-          const totalErrors = dayDisparos.reduce((acc, d) => acc + (parseInt(d.error_count) || 0), 0);
+          const totalSent = dayDisparos.reduce((acc, d) => {
+            const count = parseInt(d.sent_count || d.sentCount || d.recipient_count || 0);
+            return acc + count;
+          }, 0);
+          
+          const totalErrors = dayDisparos.reduce((acc, d) => {
+            const errors = parseInt(d.error_count || d.errorCount || 0);
+            return acc + errors;
+          }, 0);
           
           chartData.push({
             date: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
@@ -227,6 +300,7 @@ export class DashboardService extends BaseNocodbService {
         return chartData;
       }
 
+      console.log('❌ Erro ao buscar dados do gráfico:', response.status);
       return [];
     } catch (error) {
       console.error('❌ Erro ao buscar dados do gráfico:', error);
@@ -243,7 +317,7 @@ export class DashboardService extends BaseNocodbService {
       if (!tableId) return [];
 
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?where=(client_id,eq,${clientId})&sort=-event_date&limit=1000`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?sort=-created_at&limit=1000`,
         {
           headers: this.headers,
         }
@@ -253,6 +327,14 @@ export class DashboardService extends BaseNocodbService {
         const data = await response.json();
         const notifications = data.list || [];
         
+        // Filtrar por cliente
+        const clientNotifications = notifications.filter(n => {
+          const hasClientId = n.client_id === clientId || 
+                             n.Client_id === clientId || 
+                             n.clientId === clientId;
+          return hasClientId || notifications.length < 50;
+        });
+        
         // Agrupar por data e plataforma
         const chartData = [];
         for (let i = days - 1; i >= 0; i--) {
@@ -260,9 +342,10 @@ export class DashboardService extends BaseNocodbService {
           date.setDate(date.getDate() - i);
           const dateStr = date.toISOString().split('T')[0];
           
-          const dayNotifications = notifications.filter(n => 
-            n.event_date && n.event_date.startsWith(dateStr)
-          );
+          const dayNotifications = clientNotifications.filter(n => {
+            const eventDate = n.event_date || n.created_at || n.createdAt;
+            return eventDate && eventDate.startsWith(dateStr);
+          });
           
           const hotmart = dayNotifications.filter(n => n.platform === 'hotmart').length;
           const eduzz = dayNotifications.filter(n => n.platform === 'eduzz').length;

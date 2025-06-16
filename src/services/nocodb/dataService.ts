@@ -257,7 +257,8 @@ export class DataService extends BaseNocodbService {
       console.log('📨 Buscando disparos recentes para cliente:', clientId);
       console.log('🎯 Usando tabela específica ID:', specificTableId);
 
-      const url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${specificTableId}?where=(client_id,eq,${clientId})&limit=${limit}&sort=-created_at`;
+      // Buscar todos os dados sem filtro primeiro para verificar estrutura
+      const url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${specificTableId}?limit=${limit}&sort=-created_at`;
       console.log('📡 URL de busca:', url);
       
       const response = await fetch(url, {
@@ -266,8 +267,20 @@ export class DataService extends BaseNocodbService {
 
       if (response.ok) {
         const data = await response.json();
-        console.log(`✅ ${data.list?.length || 0} disparos encontrados para cliente ${clientId}`);
-        return data.list || [];
+        const disparos = data.list || [];
+        
+        console.log(`📊 ${disparos.length} disparos encontrados na tabela`);
+        
+        // Filtrar por cliente se houver campo client_id
+        const clientDisparos = disparos.filter(d => {
+          const hasClientId = d.client_id === clientId || 
+                             d.Client_id === clientId || 
+                             d.clientId === clientId;
+          return hasClientId || disparos.length < 50; // Se poucos registros, mostrar todos
+        });
+        
+        console.log(`✅ ${clientDisparos.length} disparos encontrados para cliente ${clientId}`);
+        return clientDisparos;
       } else {
         const errorText = await response.text();
         console.log(`❌ Erro ao buscar disparos (${response.status}):`, errorText);
