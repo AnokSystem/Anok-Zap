@@ -72,7 +72,7 @@ export const EditGroupModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-gray-800 border-gray-600 max-w-md">
+      <DialogContent className="bg-white border-gray-300 max-w-md data-[theme=light]:bg-white data-[theme=light]:border-gray-300 data-[theme=dark]:bg-gray-800 data-[theme=dark]:border-gray-600">
         <DialogHeader>
           <DialogTitle className="text-primary-contrast">
             Editar Grupo: {group.name}
@@ -81,28 +81,28 @@ export const EditGroupModal = ({
 
         <div className="space-y-4">
           <div>
-            <Label className="text-gray-300">Nome do Grupo</Label>
+            <Label className="text-gray-700 data-[theme=light]:text-gray-700 data-[theme=dark]:text-gray-300">Nome do Grupo</Label>
             <Input
               value={editData.name}
               onChange={(e) => setEditData(prev => ({ ...prev, name: e.target.value }))}
-              className="bg-gray-700 border-gray-600"
+              className="bg-white border-gray-300 data-[theme=light]:bg-white data-[theme=light]:border-gray-300 data-[theme=dark]:bg-gray-700 data-[theme=dark]:border-gray-600"
               placeholder="Nome do grupo"
             />
           </div>
 
           <div>
-            <Label className="text-gray-300">Descrição</Label>
+            <Label className="text-gray-700 data-[theme=light]:text-gray-700 data-[theme=dark]:text-gray-300">Descrição</Label>
             <Textarea
               value={editData.description}
               onChange={(e) => setEditData(prev => ({ ...prev, description: e.target.value }))}
-              className="bg-gray-700 border-gray-600"
+              className="bg-white border-gray-300 data-[theme=light]:bg-white data-[theme=light]:border-gray-300 data-[theme=dark]:bg-gray-700 data-[theme=dark]:border-gray-600"
               placeholder="Descrição do grupo"
               rows={3}
             />
           </div>
 
           <div>
-            <Label className="text-gray-300">Imagem do Grupo</Label>
+            <Label className="text-gray-700 data-[theme=light]:text-gray-700 data-[theme=dark]:text-gray-300">Imagem do Grupo</Label>
             <div className="flex items-center gap-3">
               <input
                 type="file"
@@ -113,7 +113,7 @@ export const EditGroupModal = ({
               />
               <label
                 htmlFor="group-picture"
-                className="flex items-center gap-2 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg cursor-pointer hover:bg-gray-600 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors data-[theme=light]:bg-white data-[theme=light]:border-gray-300 data-[theme=light]:hover:bg-gray-50 data-[theme=dark]:bg-gray-700 data-[theme=dark]:border-gray-600 data-[theme=dark]:hover:bg-gray-600"
               >
                 <Image className="w-4 h-4" />
                 {editData.pictureFile ? editData.pictureFile.name : 'Escolher arquivo'}
@@ -123,7 +123,7 @@ export const EditGroupModal = ({
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label className="text-gray-300">Apenas Admins Enviam Mensagens</Label>
+              <Label className="text-gray-700 data-[theme=light]:text-gray-700 data-[theme=dark]:text-gray-300">Apenas Admins Enviam Mensagens</Label>
               <Switch
                 checked={editData.isAnnounce}
                 onCheckedChange={(checked) => setEditData(prev => ({ ...prev, isAnnounce: checked }))}
@@ -131,7 +131,7 @@ export const EditGroupModal = ({
             </div>
 
             <div className="flex items-center justify-between">
-              <Label className="text-gray-300">Apenas Admins Editam Informações</Label>
+              <Label className="text-gray-700 data-[theme=light]:text-gray-700 data-[theme=dark]:text-gray-300">Apenas Admins Editam Informações</Label>
               <Switch
                 checked={editData.isRestricted}
                 onCheckedChange={(checked) => setEditData(prev => ({ ...prev, isRestricted: checked }))}
@@ -143,7 +143,7 @@ export const EditGroupModal = ({
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="flex-1 bg-gray-700 border-gray-600"
+              className="flex-1 bg-white border-gray-300 data-[theme=light]:bg-white data-[theme=light]:border-gray-300 data-[theme=dark]:bg-gray-700 data-[theme=dark]:border-gray-600"
               disabled={isLoading}
             >
               Cancelar
