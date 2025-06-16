@@ -1,29 +1,56 @@
 
 import { BaseNocodbService } from '../baseService';
 import { NocodbConfig } from '../types';
+import { TableDiscoveryService } from './tableDiscoveryService';
 
 export class DisparosDataService extends BaseNocodbService {
+  private tableDiscovery: TableDiscoveryService;
+  private cachedTableId: string | null = null;
+
   constructor(config: NocodbConfig) {
     super(config);
+    this.tableDiscovery = new TableDiscoveryService(config);
   }
-
-  // ID específico da tabela de Disparo em Massa
-  private DISPARO_EM_MASSA_TABLE_ID = 'myx4lsmm5i02xcd';
 
   private async getClientId(): Promise<string> {
     const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
     return user.client_id || user.Email?.split('@')[0] || 'default';
   }
 
+  private async getTableId(baseId: string): Promise<string | null> {
+    if (this.cachedTableId) {
+      return this.cachedTableId;
+    }
+
+    console.log('🔍 Buscando ID da tabela de disparos...');
+    const { disparosTableId } = await this.tableDiscovery.discoverTableIds(baseId);
+    
+    if (!disparosTableId) {
+      console.log('⚠️ Tabela de disparos não encontrada, tentando criar...');
+      const newTableId = await this.tableDiscovery.createDisparosTable(baseId);
+      this.cachedTableId = newTableId;
+      return newTableId;
+    }
+
+    this.cachedTableId = disparosTableId;
+    return disparosTableId;
+  }
+
   async getRecentDisparos(baseId: string, limit: number = 10): Promise<any[]> {
     try {
       const clientId = await this.getClientId();
-      console.log('📨 Buscando TODOS os disparos recentes para cliente:', clientId);
-      console.log('🎯 Usando tabela específica ID:', this.DISPARO_EM_MASSA_TABLE_ID);
+      const tableId = await this.getTableId(baseId);
+      
+      if (!tableId) {
+        console.error('❌ Não foi possível obter/criar tabela de disparos');
+        return [];
+      }
 
-      // Buscar todos os disparos da tabela específica
+      console.log('📨 Buscando disparos recentes para cliente:', clientId);
+      console.log('🎯 Usando tabela ID:', tableId);
+
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.DISPARO_EM_MASSA_TABLE_ID}?limit=10000&sort=-Id`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=${limit}&sort=-id`,
         {
           headers: this.headers,
         }
@@ -33,28 +60,18 @@ export class DisparosDataService extends BaseNocodbService {
         const data = await response.json();
         const allDisparos = data.list || [];
         
-        console.log(`📊 ${allDisparos.length} disparos totais encontrados na tabela específica`);
+        console.log(`📊 ${allDisparos.length} disparos encontrados na tabela`);
         
-        // Filtro mais flexível para client_id
+        // Filtrar por cliente se necessário
         const clientDisparos = allDisparos.filter(d => {
-          // Se não há client_id definido, incluir para todos os clientes
           if (!d.client_id && !d.Client_id && !d.clientId) {
-            return true;
+            return true; // Incluir registros sem client_id
           }
-          // Verificar múltiplas variações do campo client_id
-          const hasClientId = d.client_id === clientId || 
-                             d.Client_id === clientId || 
-                             d.clientId === clientId;
-          return hasClientId;
+          return d.client_id === clientId || d.Client_id === clientId || d.clientId === clientId;
         });
         
-        // Aplicar limite apenas após o filtro
-        const limitedDisparos = clientDisparos.slice(0, limit);
-        
-        console.log(`✅ ${limitedDisparos.length} disparos encontrados para cliente ${clientId}`);
-        console.log('📋 Amostra dos dados:', limitedDisparos.slice(0, 2));
-        
-        return limitedDisparos;
+        console.log(`✅ ${clientDisparos.length} disparos para cliente ${clientId}`);
+        return clientDisparos;
       } else {
         const errorText = await response.text();
         console.log(`❌ Erro ao buscar disparos (${response.status}):`, errorText);
@@ -69,10 +86,17 @@ export class DisparosDataService extends BaseNocodbService {
   async getAllDisparos(baseId: string): Promise<any[]> {
     try {
       const clientId = await this.getClientId();
+      const tableId = await this.getTableId(baseId);
+      
+      if (!tableId) {
+        console.error('❌ Não foi possível obter/criar tabela de disparos');
+        return [];
+      }
+
       console.log('📋 Buscando TODOS os disparos para cliente:', clientId);
       
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.DISPARO_EM_MASSA_TABLE_ID}?limit=10000&sort=-Id`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=10000&sort=-id`,
         {
           headers: this.headers,
         }
@@ -153,6 +177,64 @@ export class DisparosDataService extends BaseNocodbService {
     } catch (error) {
       console.error('❌ Erro ao buscar disparos com filtros:', error);
       return [];
+    }
+  }
+
+  async createSampleData(baseId: string): Promise<boolean> {
+    try {
+      const tableId = await this.getTableId(baseId);
+      const clientId = await this.getClientId();
+      
+      if (!tableId) {
+        console.error('❌ Tabela não disponível para criar dados de exemplo');
+        return false;
+      }
+
+      console.log('📝 Criando dados de exemplo para disparos...');
+
+      const sampleData = [
+        {
+          campaign_name: 'Campanha de Boas-vindas',
+          instance_name: 'Instance Principal',
+          instance_id: 'inst_001',
+          recipient_count: 150,
+          sent_count: 148,
+          error_count: 2,
+          status: 'Concluído',
+          message_type: 'text',
+          start_time: new Date().toISOString(),
+          client_id: clientId
+        },
+        {
+          campaign_name: 'Promoção Black Friday',
+          instance_name: 'Instance Secundária',
+          instance_id: 'inst_002',
+          recipient_count: 300,
+          sent_count: 285,
+          error_count: 15,
+          status: 'Concluído',
+          message_type: 'media',
+          start_time: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+          client_id: clientId
+        }
+      ];
+
+      for (const data of sampleData) {
+        await fetch(
+          `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}`,
+          {
+            method: 'POST',
+            headers: this.headers,
+            body: JSON.stringify(data)
+          }
+        );
+      }
+
+      console.log('✅ Dados de exemplo criados para disparos');
+      return true;
+    } catch (error) {
+      console.error('❌ Erro ao criar dados de exemplo:', error);
+      return false;
     }
   }
 }

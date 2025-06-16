@@ -50,6 +50,13 @@ export class CoreNocodbService {
     return await this.dashboardService.getDashboardStats(targetBaseId);
   }
 
+  public async initializeDashboardTables() {
+    await this.ensureInitialized();
+    const targetBaseId = this.getTargetBaseId();
+    if (!targetBaseId) return false;
+    return await this.dashboardService.initializeTables(targetBaseId);
+  }
+
   public async getRecentDisparos(limit: number = 10) {
     await this.ensureInitialized();
     const targetBaseId = this.getTargetBaseId();
