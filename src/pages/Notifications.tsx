@@ -40,7 +40,7 @@ const Notifications = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate('/')}
-                className="text-gray-400 hover:text-white"
+                className="text-gray-400 hover:text-gray-200 data-[theme=light]:text-gray-600 data-[theme=light]:hover:text-gray-800"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Voltar
@@ -66,13 +66,13 @@ const Notifications = () => {
                 variant="outline"
                 size="sm"
                 onClick={handleManualRefresh}
-                className="bg-gray-700/50 border-gray-600 text-gray-200 hover:bg-gray-600/50"
+                className="bg-gray-700/50 border-gray-600 text-gray-200 hover:bg-gray-600/50 data-[theme=light]:bg-white data-[theme=light]:border-gray-300 data-[theme=light]:text-gray-700 data-[theme=light]:hover:bg-gray-50"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Atualizar Agora
               </Button>
               
-              <div className="text-sm text-gray-400">
+              <div className="text-sm text-gray-400 data-[theme=light]:text-gray-600">
                 Última atualização: {lastUpdate.toLocaleTimeString('pt-BR')}
               </div>
             </div>

@@ -200,6 +200,27 @@
     background-color: #ffffff !important;
   }
 
+  /* Páginas específicas - Notificações e Extras */
+  [data-theme="light"] .notifications-page,
+  [data-theme="light"] .extras-section {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+  }
+
+  /* Tabs e componentes específicos */
+  [data-theme="light"] .bg-gray-800\/50 {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+  }
+
+  /* Botões e controles */
+  [data-theme="light"] .bg-gray-700\/50 {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    border-color: #d1d5db !important;
+  }
+
   /* Forçar fundo escuro no tema escuro */
   [data-theme="dark"] body {
     background: rgb(16, 16, 20) !important;
