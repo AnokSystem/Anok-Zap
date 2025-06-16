@@ -68,8 +68,9 @@ export class DisparosDataService extends BaseNocodbService {
 
       console.log('📨 Buscando disparos recentes da tabela myx4lsmm5i02xcd para cliente:', clientId);
 
+      // Usar sort sem campo específico para evitar erro de campo não encontrado
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=${limit}&sort=-id`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=${limit}`,
         {
           headers: this.headers,
         }
@@ -115,8 +116,9 @@ export class DisparosDataService extends BaseNocodbService {
 
       console.log('📋 Buscando TODOS os disparos da tabela myx4lsmm5i02xcd para cliente:', clientId);
       
+      // Usar sort sem campo específico para evitar erro de campo não encontrado
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=10000&sort=-id`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=10000`,
         {
           headers: this.headers,
         }

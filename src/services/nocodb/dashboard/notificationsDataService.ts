@@ -62,8 +62,9 @@ export class NotificationsDataService extends BaseNocodbService {
 
       console.log('🔔 Buscando notificações recentes da tabela mzup2t8ygoiy5ub para cliente:', clientId);
       
+      // Usar sort sem campo específico para evitar erro de campo não encontrado
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=${limit}&sort=-id`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=${limit}`,
         {
           headers: this.headers,
         }
@@ -109,8 +110,9 @@ export class NotificationsDataService extends BaseNocodbService {
 
       console.log('📋 Buscando TODAS as notificações da tabela mzup2t8ygoiy5ub para cliente:', clientId);
       
+      // Usar sort sem campo específico para evitar erro de campo não encontrado
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=10000&sort=-id`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=10000`,
         {
           headers: this.headers,
         }
