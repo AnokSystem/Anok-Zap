@@ -17,7 +17,7 @@ export class NotificationsDataService extends BaseNocodbService {
     return user.client_id || user.Email?.split('@')[0] || 'default';
   }
 
-  private async getTableId(baseId: string): Promise<string | null> {
+  private async getNotificationsTableId(baseId: string): Promise<string | null> {
     if (this.cachedTableId) {
       return this.cachedTableId;
     }
@@ -39,7 +39,7 @@ export class NotificationsDataService extends BaseNocodbService {
   async getRecentNotifications(baseId: string, limit: number = 10): Promise<any[]> {
     try {
       const clientId = await this.getClientId();
-      const tableId = await this.getTableId(baseId);
+      const tableId = await this.getNotificationsTableId(baseId);
       
       if (!tableId) {
         console.error('❌ Não foi possível obter/criar tabela de notificações');
@@ -86,7 +86,7 @@ export class NotificationsDataService extends BaseNocodbService {
   async getAllNotifications(baseId: string): Promise<any[]> {
     try {
       const clientId = await this.getClientId();
-      const tableId = await this.getTableId(baseId);
+      const tableId = await this.getNotificationsTableId(baseId);
       
       if (!tableId) {
         console.error('❌ Não foi possível obter/criar tabela de notificações');
@@ -182,7 +182,7 @@ export class NotificationsDataService extends BaseNocodbService {
 
   async createSampleData(baseId: string): Promise<boolean> {
     try {
-      const tableId = await this.getTableId(baseId);
+      const tableId = await this.getNotificationsTableId(baseId);
       const clientId = await this.getClientId();
       
       if (!tableId) {
