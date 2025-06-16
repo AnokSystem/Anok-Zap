@@ -1,17 +1,12 @@
 
-import { BaseNocodbService } from '../baseService';
+import { ClientService } from './clientService';
 import { NocodbConfig } from '../types';
 
-export class NotificationsService extends BaseNocodbService {
-  constructor(config: NocodbConfig) {
-    super(config);
-  }
-
+export class NotificationsService extends ClientService {
   private NOTIFICACOES_PLATAFORMAS_TABLE_ID = 'mzup2t8ygoiy5ub';
 
-  private getClientId(): string {
-    const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    return user.client_id || user.Email?.split('@')[0] || 'default';
+  constructor(config: NocodbConfig) {
+    super(config);
   }
 
   async saveNotificationFromPlatform(baseId: string, notificationData: any): Promise<boolean> {
@@ -56,39 +51,6 @@ export class NotificationsService extends BaseNocodbService {
       }
     } catch (error) {
       console.error('❌ Erro geral ao salvar notificação:', error);
-      return false;
-    }
-  }
-
-  private async saveToTable(baseId: string, tableId: string, data: any): Promise<boolean> {
-    try {
-      const url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}`;
-      
-      console.log('📡 Fazendo POST para:', url);
-      console.log('📋 Dados a enviar:', JSON.stringify(data, null, 2));
-      
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: this.headers,
-        body: JSON.stringify(data),
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        console.log('✅ Dados salvos com sucesso:', result);
-        return true;
-      } else {
-        const errorText = await response.text();
-        console.log(`❌ Erro ao salvar (${response.status}):`, errorText);
-        
-        console.log('❌ Headers enviados:', this.headers);
-        console.log('❌ URL tentativa:', url);
-        console.log('❌ Dados enviados:', data);
-        
-        return false;
-      }
-    } catch (error) {
-      console.log('❌ Erro interno ao salvar:', error);
       return false;
     }
   }

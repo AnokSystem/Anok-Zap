@@ -1,15 +1,10 @@
 
-import { BaseNocodbService } from '../baseService';
+import { ClientService } from './clientService';
 import { NocodbConfig } from '../types';
 
-export class DataOperationsService extends BaseNocodbService {
+export class DataOperationsService extends ClientService {
   constructor(config: NocodbConfig) {
     super(config);
-  }
-
-  private getClientId(): string {
-    const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    return user.client_id || user.Email?.split('@')[0] || 'default';
   }
 
   async getClientData(baseId: string, tableName: string, limit: number = 100): Promise<any[]> {
@@ -22,7 +17,7 @@ export class DataOperationsService extends BaseNocodbService {
         return [];
       }
 
-      const url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?where=(client_id,eq,${clientId})&limit=${limit}&sort=-created_at`;
+      const url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?where=(client_id,eq,${clientId})&limit=${limit}&sort=-CreatedAt`;
       console.log('📡 Buscando dados do cliente:', url);
       
       const response = await fetch(url, {

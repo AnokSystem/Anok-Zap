@@ -1,17 +1,12 @@
 
-import { BaseNocodbService } from '../baseService';
+import { ClientService } from './clientService';
 import { NocodbConfig } from '../types';
 
-export class MessagingService extends BaseNocodbService {
-  constructor(config: NocodbConfig) {
-    super(config);
-  }
-
+export class MessagingService extends ClientService {
   private DISPARO_EM_MASSA_TABLE_ID = 'myx4lsmm5i02xcd';
 
-  private getClientId(): string {
-    const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    return user.client_id || user.Email?.split('@')[0] || 'default';
+  constructor(config: NocodbConfig) {
+    super(config);
   }
 
   async saveMassMessagingLog(baseId: string, campaignData: any): Promise<boolean> {
@@ -65,7 +60,7 @@ export class MessagingService extends BaseNocodbService {
       console.log('📨 Buscando disparos recentes para cliente:', clientId);
       console.log('🎯 Usando tabela específica ID:', this.DISPARO_EM_MASSA_TABLE_ID);
 
-      const url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.DISPARO_EM_MASSA_TABLE_ID}?limit=${limit}&sort=-created_at`;
+      const url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.DISPARO_EM_MASSA_TABLE_ID}?limit=${limit}&sort=-CreatedAt`;
       console.log('📡 URL de busca:', url);
       
       const response = await fetch(url, {
@@ -95,39 +90,6 @@ export class MessagingService extends BaseNocodbService {
     } catch (error) {
       console.error('❌ Erro ao buscar disparos recentes:', error);
       return [];
-    }
-  }
-
-  private async saveToTable(baseId: string, tableId: string, data: any): Promise<boolean> {
-    try {
-      const url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}`;
-      
-      console.log('📡 Fazendo POST para:', url);
-      console.log('📋 Dados a enviar:', JSON.stringify(data, null, 2));
-      
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: this.headers,
-        body: JSON.stringify(data),
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        console.log('✅ Dados salvos com sucesso:', result);
-        return true;
-      } else {
-        const errorText = await response.text();
-        console.log(`❌ Erro ao salvar (${response.status}):`, errorText);
-        
-        console.log('❌ Headers enviados:', this.headers);
-        console.log('❌ URL tentativa:', url);
-        console.log('❌ Dados enviados:', data);
-        
-        return false;
-      }
-    } catch (error) {
-      console.log('❌ Erro interno ao salvar:', error);
-      return false;
     }
   }
 }
