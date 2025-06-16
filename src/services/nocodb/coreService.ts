@@ -16,6 +16,7 @@ export class CoreNocodbService {
   private dataService: DataService;
   private fallbackService: FallbackService;
   private dashboardService: DashboardService;
+  private TARGET_BASE_ID = 'pddywozzup2sc85'; // ID fixo da base "Notificação Inteligente"
 
   constructor() {
     this.tableManager = new NocodbTableManager(this._config);
@@ -37,7 +38,7 @@ export class CoreNocodbService {
   }
 
   getTargetBaseId(): string | null {
-    return this.tableManager.getTargetBaseId();
+    return this.TARGET_BASE_ID;
   }
 
   async ensureTableExists(tableName: string): Promise<boolean> {
@@ -72,25 +73,29 @@ export class CoreNocodbService {
 
   async testConnection(): Promise<ConnectionTestResult> {
     try {
-      console.log('🔌 Testando conexão com NocoDB...');
+      console.log('🔌 Testando conexão com NocoDB na base pddywozzup2sc85...');
       
       const bases = await this.tableManager.discoverBases();
       const discoveredBases = this.tableManager.getDiscoveredBases();
-      const targetBaseId = this.tableManager.getTargetBaseId();
+      const targetBaseId = this.getTargetBaseId();
       
       console.log('📋 Bases descobertas:', discoveredBases);
-      console.log('🎯 Base target:', targetBaseId);
+      console.log('🎯 Base target (fixa):', targetBaseId);
       
       if (bases && discoveredBases.length > 0) {
         console.log('✅ NocoDB conectado com sucesso');
         
-        if (targetBaseId) {
+        // Verificar se a base específica existe
+        const targetBase = discoveredBases.find(base => base.id === targetBaseId);
+        
+        if (targetBase) {
+          console.log('✅ Base "Notificação Inteligente" encontrada, criando todas as tabelas...');
           // Garantir que todas as tabelas do dashboard existam
           await this.createAllTables();
           return { success: true, bases: discoveredBases, targetBase: targetBaseId };
         } else {
-          console.warn('⚠️ Base "Notificação Inteligente" não encontrada');
-          return { success: false, error: 'Base "Notificação Inteligente" não encontrada' };
+          console.warn('⚠️ Base com ID pddywozzup2sc85 não encontrada');
+          return { success: false, error: 'Base com ID pddywozzup2sc85 não encontrada' };
         }
       }
       
@@ -102,27 +107,28 @@ export class CoreNocodbService {
   }
 
   async createAllTables() {
+    console.log('🏗️ Criando todas as tabelas na base pddywozzup2sc85...');
     return await this.tableManager.createAllTables();
   }
 
   async syncLocalData() {
-    const targetBaseId = this.tableManager.getTargetBaseId();
+    const targetBaseId = this.getTargetBaseId();
     return await this.fallbackService.syncLocalData(targetBaseId, this.saveHotmartNotification.bind(this));
   }
 
   async getDashboardStats() {
     try {
-      console.log('📊 Iniciando busca de estatísticas...');
+      console.log('📊 Iniciando busca de estatísticas na base pddywozzup2sc85...');
       
       await this.tableManager.discoverBases();
-      const targetBaseId = this.tableManager.getTargetBaseId();
+      const targetBaseId = this.getTargetBaseId();
       
       if (!targetBaseId) {
         console.error('❌ Base não encontrada para estatísticas');
         return null;
       }
 
-      console.log('✅ Base encontrada, buscando estatísticas...');
+      console.log('✅ Usando base fixa, buscando estatísticas...');
       
       // Garantir que as tabelas existem
       await this.tableManager.ensureTableExists('DashboardStats');
@@ -141,7 +147,7 @@ export class CoreNocodbService {
       console.log('📨 Iniciando busca de disparos recentes...');
       
       await this.tableManager.discoverBases();
-      const targetBaseId = this.tableManager.getTargetBaseId();
+      const targetBaseId = this.getTargetBaseId();
       
       if (!targetBaseId) {
         console.error('❌ Base não encontrada para disparos');
@@ -161,7 +167,7 @@ export class CoreNocodbService {
       console.log('🔔 Iniciando busca de notificações recentes...');
       
       await this.tableManager.discoverBases();
-      const targetBaseId = this.tableManager.getTargetBaseId();
+      const targetBaseId = this.getTargetBaseId();
       
       if (!targetBaseId) {
         console.error('❌ Base não encontrada para notificações');
@@ -181,7 +187,7 @@ export class CoreNocodbService {
       console.log('📈 Iniciando busca de dados do gráfico...');
       
       await this.tableManager.discoverBases();
-      const targetBaseId = this.tableManager.getTargetBaseId();
+      const targetBaseId = this.getTargetBaseId();
       
       if (!targetBaseId) {
         console.error('❌ Base não encontrada para gráfico');
@@ -201,7 +207,7 @@ export class CoreNocodbService {
       console.log('📊 Iniciando busca de dados do gráfico de notificações...');
       
       await this.tableManager.discoverBases();
-      const targetBaseId = this.tableManager.getTargetBaseId();
+      const targetBaseId = this.getTargetBaseId();
       
       if (!targetBaseId) {
         console.error('❌ Base não encontrada para gráfico');
@@ -222,7 +228,7 @@ export class CoreNocodbService {
       
       await this.tableManager.discoverBases();
       
-      const targetBaseId = this.tableManager.getTargetBaseId();
+      const targetBaseId = this.getTargetBaseId();
       if (!targetBaseId) {
         console.error('❌ Base "Notificação Inteligente" não encontrada');
         
@@ -256,7 +262,7 @@ export class CoreNocodbService {
       await this.tableManager.discoverBases();
       await this.tableManager.ensureTableExists('NotificacoesHotmart');
       
-      const targetBaseId = this.tableManager.getTargetBaseId();
+      const targetBaseId = this.getTargetBaseId();
       if (!targetBaseId) {
         console.error('❌ Base "Notificação Inteligente" não encontrada para salvamento');
         this.fallbackService.saveLocalFallback('hotmart_notifications', notificationData);
@@ -290,7 +296,7 @@ export class CoreNocodbService {
     try {
       await this.tableManager.ensureTableExists('MassMessagingLogs');
       
-      const targetBaseId = this.tableManager.getTargetBaseId();
+      const targetBaseId = this.getTargetBaseId();
       if (targetBaseId) {
         return await this.dataService.saveMassMessagingLog(targetBaseId, campaignData);
       }
@@ -307,7 +313,7 @@ export class CoreNocodbService {
     try {
       await this.tableManager.ensureTableExists('WhatsAppContacts');
       
-      const targetBaseId = this.tableManager.getTargetBaseId();
+      const targetBaseId = this.getTargetBaseId();
       if (targetBaseId) {
         return await this.dataService.saveContacts(targetBaseId, contacts, instanceId);
       }
@@ -323,7 +329,7 @@ export class CoreNocodbService {
     try {
       await this.tableManager.ensureTableExists('WhatsAppInstances');
       
-      const targetBaseId = this.tableManager.getTargetBaseId();
+      const targetBaseId = this.getTargetBaseId();
       if (targetBaseId) {
         return await this.dataService.saveInstance(targetBaseId, instanceData);
       }

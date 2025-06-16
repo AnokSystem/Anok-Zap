@@ -5,7 +5,7 @@ export class TableDiscovery {
   private config: NocodbConfig;
   private headers: Record<string, string>;
   private discoveredBases: DiscoveredBase[] = [];
-  private targetBaseId: string | null = null;
+  private targetBaseId: string | null = 'pddywozzup2sc85'; // ID fixo da base "Notificação Inteligente"
 
   constructor(config: NocodbConfig) {
     this.config = config;
@@ -29,18 +29,15 @@ export class TableDiscovery {
         console.log('Bases descobertas:', data);
         this.discoveredBases = data.list || [];
         
-        // Procurar especificamente pela base "Notificação Inteligente"
-        const notificationBase = this.discoveredBases.find(base => 
-          base.title === 'Notificação Inteligente' || 
-          base.title.toLowerCase().includes('notificação') ||
-          base.title.toLowerCase().includes('notificacao')
-        );
+        // Verificar se a base específica existe
+        const targetBase = this.discoveredBases.find(base => base.id === 'pddywozzup2sc85');
         
-        if (notificationBase) {
-          this.targetBaseId = notificationBase.id;
-          console.log('✅ Base "Notificação Inteligente" encontrada:', notificationBase);
+        if (targetBase) {
+          console.log('✅ Base "Notificação Inteligente" encontrada:', targetBase);
+          this.targetBaseId = 'pddywozzup2sc85';
         } else {
-          console.log('❌ Base "Notificação Inteligente" não encontrada nas bases disponíveis');
+          console.log('❌ Base com ID pddywozzup2sc85 não encontrada nas bases disponíveis');
+          console.log('📋 Bases disponíveis:', this.discoveredBases.map(b => `${b.title} (${b.id})`));
         }
         
         return data;
