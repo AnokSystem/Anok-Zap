@@ -1,27 +1,8 @@
+
 import { useState, useEffect } from 'react';
-import { nocodbService } from '@/services/nocodb';
-
-interface DisparoFilters {
-  dateFrom?: string;
-  dateTo?: string;
-  status?: string;
-  instanceId?: string;
-  campaignName?: string;
-  searchTerm?: string;
-}
-
-interface Disparo {
-  id: string;
-  campaignName: string;
-  instanceName: string;
-  recipientCount: number;
-  status: 'enviado' | 'pendente' | 'erro' | 'enviando' | 'concluido' | 'cancelado';
-  createdAt: string;
-  messageType: string;
-  sentCount?: number;
-  errorCount?: number;
-  contactsReached?: number; // Novo campo para contatos únicos alcançados
-}
+import { Disparo, DisparoFilters } from './useAdvancedDisparos/types';
+import { applyDisparoFilters } from './useAdvancedDisparos/filterService';
+import { fetchAllDisparos } from './useAdvancedDisparos/dataFetcher';
 
 export const useAdvancedDisparos = () => {
   const [disparos, setDisparos] = useState<Disparo[]>([]);
@@ -30,104 +11,11 @@ export const useAdvancedDisparos = () => {
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<DisparoFilters>({});
 
-  const fetchAllDisparos = async () => {
+  const loadDisparos = async () => {
     try {
       setIsLoading(true);
-      console.log('📨 Buscando TODOS os disparos da tabela específica...');
-      
-      const data = await nocodbService.getAllDisparos();
-      
-      if (data && data.length > 0) {
-        console.log('📋 Dados brutos recebidos do NocoDB (todos):', data);
-        
-        const transformedDisparos: Disparo[] = data.map((item: any) => {
-          console.log('🔍 Processando item completo:', item);
-          
-          // Mapear usando os nomes exatos dos campos conforme console logs
-          const campaignName = item['Nome da Campanha'] || 
-                             item.campaign_name || 
-                             item.Campaign_name || 
-                             item.CampaignName || 
-                             item.nome_campanha ||
-                             item.campanha ||
-                             `Campanha ${item.ID || item.Id || item.id || 'N/A'}`;
-          
-          const instanceName = item['Nome da Instância'] || 
-                              item['ID da Instância'] ||
-                              item.instance_name || 
-                              item.Instance_name || 
-                              item.InstanceName ||
-                              item.instance_id || 
-                              item.Instance_id ||
-                              item.instanceId ||
-                              item.instancia ||
-                              'Instância não identificada';
-          
-          const recipientCount = Number(item['Total de Destinatários'] || 
-                                       item.recipient_count || 
-                                       item.Recipient_count ||
-                                       item.RecipientCount ||
-                                       item.total_recipients ||
-                                       item.destinatarios ||
-                                       0);
-          
-          const sentCount = Number(item['Mensagens Enviadas'] || 
-                                  item.sent_count || 
-                                  item.Sent_count ||
-                                  item.SentCount ||
-                                  item.enviados ||
-                                  0);
-          
-          const errorCount = Number(item.Erros || 
-                                   item.error_count || 
-                                   item.Error_count ||
-                                   item.ErrorCount ||
-                                   item.erros ||
-                                   0);
-
-          const status = mapStatus(item.Status || item.status || 'pendente');
-          
-          // Calcular contatos únicos alcançados baseado no status e dados
-          let contactsReached = 0;
-          if (status === 'concluido') {
-            contactsReached = recipientCount;
-          } else if (status === 'enviando' || status === 'enviado') {
-            // Para campanhas em andamento, estimar baseado nas mensagens enviadas
-            // Assumindo que cada contato recebe múltiplas mensagens da campanha
-            contactsReached = Math.min(sentCount, recipientCount);
-          } else if (status === 'erro' || status === 'cancelado') {
-            // Para erros, ver quantos contatos foram alcançados antes do erro
-            contactsReached = Math.min(sentCount, recipientCount);
-          }
-          
-          return {
-            id: String(item.ID || item.Id || item.id || Math.random()),
-            campaignName,
-            instanceName,
-            recipientCount,
-            sentCount,
-            errorCount,
-            contactsReached,
-            status,
-            createdAt: item['Hora de Início'] ||
-                      item['Criado em'] ||
-                      item.start_time || 
-                      item.Start_time ||
-                      item.CreatedAt || 
-                      item.created_at || 
-                      item.Created_at ||
-                      item.data_criacao ||
-                      new Date().toISOString(),
-            messageType: item['Tipo de Mensagem'] || item.message_type || item.Message_type || item.tipo_mensagem || 'text'
-          };
-        });
-        
-        console.log('✅ Todos os disparos transformados:', transformedDisparos);
-        setDisparos(transformedDisparos);
-      } else {
-        console.log('⚠️ Nenhum disparo encontrado na tabela específica');
-        setDisparos([]);
-      }
+      const data = await fetchAllDisparos();
+      setDisparos(data);
       setError(null);
     } catch (err) {
       console.error('❌ Erro ao buscar disparos:', err);
@@ -138,84 +26,11 @@ export const useAdvancedDisparos = () => {
     }
   };
 
-  const mapStatus = (status: string): 'enviado' | 'pendente' | 'erro' | 'enviando' | 'concluido' | 'cancelado' => {
-    const statusLower = status.toLowerCase();
-    switch (statusLower) {
-      case 'concluido':
-      case 'finalizado':
-      case 'completed':
-      case 'complete':
-        return 'concluido';
-      case 'iniciado':
-      case 'enviando':
-      case 'sending':
-      case 'em_andamento':
-        return 'enviando';
-      case 'erro':
-      case 'falha':
-      case 'error':
-      case 'failed':
-        return 'erro';
-      case 'cancelado':
-      case 'cancelled':
-      case 'canceled':
-        return 'cancelado';
-      case 'enviado':
-      case 'sent':
-        return 'enviado';
-      default:
-        return 'pendente';
-    }
-  };
-
-  const applyFilters = (filtersToApply: DisparoFilters) => {
-    let filtered = [...disparos];
-
-    if (filtersToApply.dateFrom) {
-      filtered = filtered.filter(d => 
-        new Date(d.createdAt) >= new Date(filtersToApply.dateFrom!)
-      );
-    }
-
-    if (filtersToApply.dateTo) {
-      filtered = filtered.filter(d => 
-        new Date(d.createdAt) <= new Date(filtersToApply.dateTo!)
-      );
-    }
-
-    if (filtersToApply.status) {
-      filtered = filtered.filter(d => 
-        d.status.toLowerCase().includes(filtersToApply.status!.toLowerCase())
-      );
-    }
-
-    if (filtersToApply.instanceId) {
-      filtered = filtered.filter(d => 
-        d.instanceName.toLowerCase().includes(filtersToApply.instanceId!.toLowerCase())
-      );
-    }
-
-    if (filtersToApply.campaignName) {
-      filtered = filtered.filter(d => 
-        d.campaignName.toLowerCase().includes(filtersToApply.campaignName!.toLowerCase())
-      );
-    }
-
-    if (filtersToApply.searchTerm) {
-      const searchLower = filtersToApply.searchTerm.toLowerCase();
-      filtered = filtered.filter(d => 
-        d.campaignName.toLowerCase().includes(searchLower) ||
-        d.instanceName.toLowerCase().includes(searchLower)
-      );
-    }
-
-    setFilteredDisparos(filtered);
-    console.log(`🔍 ${filtered.length} disparos após aplicar filtros`);
-  };
-
   const updateFilters = (newFilters: DisparoFilters) => {
     setFilters(newFilters);
-    applyFilters(newFilters);
+    const filtered = applyDisparoFilters(disparos, newFilters);
+    setFilteredDisparos(filtered);
+    console.log(`🔍 ${filtered.length} disparos após aplicar filtros`);
   };
 
   const clearFilters = () => {
@@ -224,15 +39,15 @@ export const useAdvancedDisparos = () => {
   };
 
   useEffect(() => {
-    fetchAllDisparos();
+    loadDisparos();
     
     // Atualizar dados a cada 10 segundos
-    const interval = setInterval(fetchAllDisparos, 10000);
+    const interval = setInterval(loadDisparos, 10000);
     
     // Escutar evento customizado de atualização do dashboard
     const handleDashboardRefresh = () => {
       console.log('🔄 Evento de refresh recebido, atualizando disparos...');
-      fetchAllDisparos();
+      loadDisparos();
     };
     
     window.addEventListener('dashboardRefresh', handleDashboardRefresh);
@@ -244,8 +59,9 @@ export const useAdvancedDisparos = () => {
   }, []);
 
   useEffect(() => {
-    applyFilters(filters);
-  }, [disparos]);
+    const filtered = applyDisparoFilters(disparos, filters);
+    setFilteredDisparos(filtered);
+  }, [disparos, filters]);
 
   return {
     disparos: filteredDisparos.length > 0 ? filteredDisparos : disparos,
@@ -255,7 +71,10 @@ export const useAdvancedDisparos = () => {
     filters,
     updateFilters,
     clearFilters,
-    refetch: fetchAllDisparos,
+    refetch: loadDisparos,
     hasFilters: Object.keys(filters).some(key => filters[key as keyof DisparoFilters])
   };
 };
+
+// Re-export types for backward compatibility
+export type { Disparo, DisparoFilters } from './useAdvancedDisparos/types';
