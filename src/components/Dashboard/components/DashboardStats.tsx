@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageSquare, Bell, TrendingUp, Users, Clock, CheckCircle2 } from 'lucide-react';
@@ -10,7 +9,7 @@ export const DashboardStats = () => {
   const statCards = [
     {
       title: 'Total de Disparos',
-      value: stats?.totalDisparos || 0,
+      value: stats?.total_disparos || 0,
       icon: MessageSquare,
       color: 'text-blue-400',
       bgColor: 'bg-blue-500/20',
@@ -18,7 +17,7 @@ export const DashboardStats = () => {
     },
     {
       title: 'Notificações Ativas',
-      value: stats?.totalNotifications || 0,
+      value: stats?.total_notifications || 0,
       icon: Bell,
       color: 'text-green-400',
       bgColor: 'bg-green-500/20',
@@ -26,7 +25,7 @@ export const DashboardStats = () => {
     },
     {
       title: 'Taxa de Sucesso',
-      value: `${stats?.successRate || 0}%`,
+      value: `${stats?.success_rate || 0}%`,
       icon: CheckCircle2,
       color: 'text-purple-400',
       bgColor: 'bg-purple-500/20',
@@ -34,7 +33,7 @@ export const DashboardStats = () => {
     },
     {
       title: 'Contatos Únicos',
-      value: stats?.uniqueContacts || 0,
+      value: stats?.unique_contacts || 0,
       icon: Users,
       color: 'text-orange-400',
       bgColor: 'bg-orange-500/20',
