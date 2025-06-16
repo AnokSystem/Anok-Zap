@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
@@ -156,8 +155,28 @@
     transition: background-color 0.3s ease, color 0.3s ease;
   }
 
-  /* Forçar fundo branco no tema claro */
+  /* Forçar fundo branco no tema claro para TODA a aplicação */
+  [data-theme="light"] {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+  }
+
   [data-theme="light"] body {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+  }
+
+  [data-theme="light"] #root {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+  }
+
+  [data-theme="light"] .min-h-screen {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+  }
+
+  [data-theme="light"] .bg-gray-950 {
     background: #ffffff !important;
     background-color: #ffffff !important;
   }
