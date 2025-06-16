@@ -26,7 +26,7 @@ export const DashboardFilters = ({
   const [localFilters, setLocalFilters] = useState(filters);
 
   const handleFilterChange = (key: string, value: string) => {
-    const newFilters = { ...localFilters, [key]: value || undefined };
+    const newFilters = { ...localFilters, [key]: value === 'all' ? undefined : value };
     setLocalFilters(newFilters);
   };
 
@@ -132,12 +132,12 @@ export const DashboardFilters = ({
                 {/* Tipo de evento */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300">Tipo de Evento</label>
-                  <Select value={localFilters.eventType || ''} onValueChange={(value) => handleFilterChange('eventType', value)}>
+                  <Select value={localFilters.eventType || 'all'} onValueChange={(value) => handleFilterChange('eventType', value)}>
                     <SelectTrigger className="bg-gray-800 border-gray-600 text-gray-300">
                       <SelectValue placeholder="Todos os tipos" />
                     </SelectTrigger>
                     <SelectContent className="bg-gray-800 border-gray-600">
-                      <SelectItem value="">Todos os tipos</SelectItem>
+                      <SelectItem value="all">Todos os tipos</SelectItem>
                       <SelectItem value="purchase">Compra</SelectItem>
                       <SelectItem value="subscription">Assinatura</SelectItem>
                       <SelectItem value="cancel">Cancelamento</SelectItem>
@@ -149,12 +149,12 @@ export const DashboardFilters = ({
                 {/* Plataforma */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300">Plataforma</label>
-                  <Select value={localFilters.platform || ''} onValueChange={(value) => handleFilterChange('platform', value)}>
+                  <Select value={localFilters.platform || 'all'} onValueChange={(value) => handleFilterChange('platform', value)}>
                     <SelectTrigger className="bg-gray-800 border-gray-600 text-gray-300">
                       <SelectValue placeholder="Todas as plataformas" />
                     </SelectTrigger>
                     <SelectContent className="bg-gray-800 border-gray-600">
-                      <SelectItem value="">Todas as plataformas</SelectItem>
+                      <SelectItem value="all">Todas as plataformas</SelectItem>
                       <SelectItem value="hotmart">Hotmart</SelectItem>
                       <SelectItem value="eduzz">Eduzz</SelectItem>
                       <SelectItem value="monetizze">Monetizze</SelectItem>
@@ -165,12 +165,12 @@ export const DashboardFilters = ({
                 {/* Status */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300">Status</label>
-                  <Select value={localFilters.status || ''} onValueChange={(value) => handleFilterChange('status', value)}>
+                  <Select value={localFilters.status || 'all'} onValueChange={(value) => handleFilterChange('status', value)}>
                     <SelectTrigger className="bg-gray-800 border-gray-600 text-gray-300">
                       <SelectValue placeholder="Todos os status" />
                     </SelectTrigger>
                     <SelectContent className="bg-gray-800 border-gray-600">
-                      <SelectItem value="">Todos os status</SelectItem>
+                      <SelectItem value="all">Todos os status</SelectItem>
                       <SelectItem value="approved">Aprovado</SelectItem>
                       <SelectItem value="pending">Pendente</SelectItem>
                       <SelectItem value="cancelled">Cancelado</SelectItem>
@@ -183,12 +183,12 @@ export const DashboardFilters = ({
                 {/* Status do disparo */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300">Status</label>
-                  <Select value={localFilters.status || ''} onValueChange={(value) => handleFilterChange('status', value)}>
+                  <Select value={localFilters.status || 'all'} onValueChange={(value) => handleFilterChange('status', value)}>
                     <SelectTrigger className="bg-gray-800 border-gray-600 text-gray-300">
                       <SelectValue placeholder="Todos os status" />
                     </SelectTrigger>
                     <SelectContent className="bg-gray-800 border-gray-600">
-                      <SelectItem value="">Todos os status</SelectItem>
+                      <SelectItem value="all">Todos os status</SelectItem>
                       <SelectItem value="concluido">Concluído</SelectItem>
                       <SelectItem value="enviando">Enviando</SelectItem>
                       <SelectItem value="pendente">Pendente</SelectItem>
