@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { evolutionApiService } from '@/services/evolutionApi';
@@ -133,36 +132,28 @@ export const useMassMessaging = () => {
     try {
       console.log('💾 Salvando campanha no NocoDB...');
       
-      // Garantir que as tabelas existem antes de salvar
-      console.log('🔧 Verificando/criando tabela MassMessagingLogs...');
-      const tableExists = await nocodbService.ensureTableExists('MassMessagingLogs');
-      
-      if (!tableExists) {
-        console.log('❌ Não foi possível criar/verificar a tabela MassMessagingLogs');
-        return false;
-      }
-      
-      // Preparar dados para salvar
+      // Preparar dados para salvar no formato correto
       const logData = {
         campaign_id: `campanha_${Date.now()}`,
         campaign_name: `Campanha ${new Date().toLocaleString('pt-BR')}`,
+        instance: campaignData.instance,
         instance_id: campaignData.instance,
         instance_name: instances.find(i => i.name === campaignData.instance)?.name || campaignData.instance,
         message_type: campaignData.messages[0]?.type || 'text',
+        messages: campaignData.messages,
+        recipients: campaignData.recipients,
         recipient_count: campaignData.recipients.length,
         sent_count: 0, // Será atualizado pelo webhook
         error_count: 0,
         delay: campaignData.delay,
         status: 'iniciado',
         start_time: new Date().toISOString(),
-        data_json: JSON.stringify({
-          ...campaignData,
-          processedMessages: processedCampaigns.length,
-          timestamp: new Date().toISOString()
-        })
+        notificationPhone: campaignData.notificationPhone,
+        processedCampaigns: processedCampaigns,
+        timestamp: new Date().toISOString()
       };
       
-      console.log('📋 Dados para salvar:', logData);
+      console.log('📋 Dados para salvar no NocoDB:', logData);
       
       const success = await nocodbService.saveMassMessagingLog(logData);
       

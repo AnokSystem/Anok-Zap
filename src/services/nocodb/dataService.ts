@@ -31,7 +31,17 @@ export class DataService extends BaseNocodbService {
       const tableId = await this.getTableId(baseId, 'MassMessagingLogs');
       if (!tableId) {
         console.log('❌ Tabela MassMessagingLogs não encontrada na base');
-        return false;
+        
+        // Tentar encontrar pelo título alternativo
+        const alternativeTableId = await this.getTableId(baseId, 'Logs de Disparo em Massa');
+        if (!alternativeTableId) {
+          console.log('❌ Tabela com título alternativo também não encontrada');
+          return false;
+        }
+        
+        console.log('🎯 Usando tabela com título alternativo:', alternativeTableId);
+        const success = await this.saveToTable(baseId, alternativeTableId, data);
+        return success;
       }
       
       console.log('🎯 ID da tabela encontrado:', tableId);
@@ -143,6 +153,12 @@ export class DataService extends BaseNocodbService {
       } else {
         const errorText = await response.text();
         console.log(`❌ Erro ao salvar (${response.status}):`, errorText);
+        
+        // Log mais detalhado do erro
+        console.log('❌ Headers enviados:', this.headers);
+        console.log('❌ URL tentativa:', url);
+        console.log('❌ Dados enviados:', data);
+        
         return false;
       }
     } catch (error) {

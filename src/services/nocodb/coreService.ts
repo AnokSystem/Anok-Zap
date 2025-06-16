@@ -17,6 +17,7 @@ export class CoreNocodbService {
   private fallbackService: FallbackService;
   private dashboardService: DashboardService;
   private TARGET_BASE_ID = 'pddywozzup2sc85'; // ID fixo da base "Notificação Inteligente"
+  private initialized = false;
 
   constructor() {
     this.tableManager = new NocodbTableManager(this._config);
@@ -41,7 +42,24 @@ export class CoreNocodbService {
     return this.TARGET_BASE_ID;
   }
 
+  private async ensureInitialized(): Promise<void> {
+    if (this.initialized) return;
+    
+    console.log('🔧 Inicializando NocoDB Service...');
+    
+    // Descobrir bases disponíveis
+    await this.tableManager.discoverBases();
+    
+    // Forçar criação de todas as tabelas na base target
+    console.log('🏗️ Criando todas as tabelas necessárias...');
+    await this.tableManager.createAllTables();
+    
+    this.initialized = true;
+    console.log('✅ NocoDB Service inicializado com sucesso');
+  }
+
   async ensureTableExists(tableName: string): Promise<boolean> {
+    await this.ensureInitialized();
     return await this.tableManager.ensureTableExists(tableName);
   }
 
@@ -58,7 +76,10 @@ export class CoreNocodbService {
         const table = tables.find((t: any) => 
           t.table_name === tableName || 
           t.title === tableName ||
-          (tableName === 'Usuarios' && t.title === 'Usuários')
+          (tableName === 'Usuarios' && t.title === 'Usuários') ||
+          (tableName === 'DashboardStats' && t.title === 'Estatísticas Dashboard') ||
+          (tableName === 'MassMessagingLogs' && t.title === 'Logs de Disparo em Massa') ||
+          (tableName === 'NotificacoesHotmart' && t.title === 'Notificações Hotmart')
         );
         
         return table?.id || null;
@@ -73,28 +94,21 @@ export class CoreNocodbService {
 
   async testConnection(): Promise<ConnectionTestResult> {
     try {
-      console.log('🔌 Testando conexão com NocoDB na base pddywozzup2sc85...');
+      console.log('🔌 Testando conexão com NocoDB...');
+      
+      await this.ensureInitialized();
       
       const bases = await this.tableManager.discoverBases();
       const discoveredBases = this.tableManager.getDiscoveredBases();
       const targetBaseId = this.getTargetBaseId();
       
-      console.log('📋 Bases descobertas:', discoveredBases);
-      console.log('🎯 Base target (fixa):', targetBaseId);
-      
       if (bases && discoveredBases.length > 0) {
         console.log('✅ NocoDB conectado com sucesso');
         
-        // Verificar se a base específica existe
         const targetBase = discoveredBases.find(base => base.id === targetBaseId);
         
         if (targetBase) {
-          console.log('✅ Base "Notificação Inteligente" encontrada, criando todas as tabelas...');
-          
-          // Forçar criação de todas as tabelas na inicialização
-          const tablesCreated = await this.createAllTables();
-          console.log('🏗️ Resultado da criação de tabelas:', tablesCreated);
-          
+          console.log('✅ Base "Notificação Inteligente" encontrada e tabelas criadas');
           return { success: true, bases: discoveredBases, targetBase: targetBaseId };
         } else {
           console.warn('⚠️ Base com ID pddywozzup2sc85 não encontrada');
@@ -110,14 +124,7 @@ export class CoreNocodbService {
   }
 
   async createAllTables() {
-    console.log('🏗️ Iniciando criação forçada de todas as tabelas na base pddywozzup2sc85...');
-    
-    const targetBaseId = this.getTargetBaseId();
-    if (!targetBaseId) {
-      console.log('❌ Base target não encontrada');
-      return false;
-    }
-    
+    await this.ensureInitialized();
     return await this.tableManager.createAllTables();
   }
 
@@ -128,9 +135,9 @@ export class CoreNocodbService {
 
   async getDashboardStats() {
     try {
-      console.log('📊 Iniciando busca de estatísticas na base pddywozzup2sc85...');
+      console.log('📊 Iniciando busca de estatísticas...');
       
-      await this.tableManager.discoverBases();
+      await this.ensureInitialized();
       const targetBaseId = this.getTargetBaseId();
       
       if (!targetBaseId) {
@@ -138,13 +145,7 @@ export class CoreNocodbService {
         return null;
       }
 
-      console.log('✅ Usando base fixa, buscando estatísticas...');
-      
-      // Garantir que as tabelas existem
-      await this.tableManager.ensureTableExists('DashboardStats');
-      await this.tableManager.ensureTableExists('MassMessagingLogs');
-      await this.tableManager.ensureTableExists('NotificacoesHotmart');
-      
+      console.log('✅ Buscando estatísticas na base:', targetBaseId);
       return await this.dashboardService.getDashboardStats(targetBaseId);
     } catch (error) {
       console.error('❌ Erro ao buscar estatísticas do dashboard:', error);
@@ -156,7 +157,7 @@ export class CoreNocodbService {
     try {
       console.log('📨 Iniciando busca de disparos recentes...');
       
-      await this.tableManager.discoverBases();
+      await this.ensureInitialized();
       const targetBaseId = this.getTargetBaseId();
       
       if (!targetBaseId) {
@@ -164,7 +165,6 @@ export class CoreNocodbService {
         return [];
       }
 
-      await this.tableManager.ensureTableExists('MassMessagingLogs');
       return await this.dashboardService.getRecentDisparos(targetBaseId, limit);
     } catch (error) {
       console.error('❌ Erro ao buscar disparos recentes:', error);
@@ -176,7 +176,7 @@ export class CoreNocodbService {
     try {
       console.log('🔔 Iniciando busca de notificações recentes...');
       
-      await this.tableManager.discoverBases();
+      await this.ensureInitialized();
       const targetBaseId = this.getTargetBaseId();
       
       if (!targetBaseId) {
@@ -184,7 +184,6 @@ export class CoreNocodbService {
         return [];
       }
 
-      await this.tableManager.ensureTableExists('NotificacoesHotmart');
       return await this.dashboardService.getRecentNotifications(targetBaseId, limit);
     } catch (error) {
       console.error('❌ Erro ao buscar notificações recentes:', error);
@@ -196,7 +195,7 @@ export class CoreNocodbService {
     try {
       console.log('📈 Iniciando busca de dados do gráfico...');
       
-      await this.tableManager.discoverBases();
+      await this.ensureInitialized();
       const targetBaseId = this.getTargetBaseId();
       
       if (!targetBaseId) {
@@ -204,7 +203,6 @@ export class CoreNocodbService {
         return [];
       }
 
-      await this.tableManager.ensureTableExists('MassMessagingLogs');
       return await this.dashboardService.getDisparosChartData(targetBaseId, days);
     } catch (error) {
       console.error('❌ Erro ao buscar dados do gráfico de disparos:', error);
@@ -216,7 +214,7 @@ export class CoreNocodbService {
     try {
       console.log('📊 Iniciando busca de dados do gráfico de notificações...');
       
-      await this.tableManager.discoverBases();
+      await this.ensureInitialized();
       const targetBaseId = this.getTargetBaseId();
       
       if (!targetBaseId) {
@@ -224,7 +222,6 @@ export class CoreNocodbService {
         return [];
       }
 
-      await this.tableManager.ensureTableExists('NotificacoesHotmart');
       return await this.dashboardService.getNotificationsChartData(targetBaseId, days);
     } catch (error) {
       console.error('❌ Erro ao buscar dados do gráfico de notificações:', error);
@@ -236,23 +233,15 @@ export class CoreNocodbService {
     try {
       console.log('🔄 Iniciando busca de notificações...');
       
-      await this.tableManager.discoverBases();
+      await this.ensureInitialized();
       
       const targetBaseId = this.getTargetBaseId();
       if (!targetBaseId) {
         console.error('❌ Base "Notificação Inteligente" não encontrada');
-        
-        const bases = this.tableManager.getDiscoveredBases();
-        console.log('📋 Bases disponíveis:', bases.map(b => b.title));
-        
         return [];
       }
       
       console.log('✅ Base target encontrada:', targetBaseId);
-      
-      console.log('🔧 Verificando se a tabela existe...');
-      await this.tableManager.ensureTableExists('NotificacoesHotmart');
-      
       console.log('📡 Buscando notificações...');
       const notifications = await this.notificationService.getHotmartNotifications(targetBaseId);
       console.log(`✅ ${notifications.length} notificações encontradas`);
@@ -269,8 +258,7 @@ export class CoreNocodbService {
       console.log('💾 Iniciando salvamento de notificação...');
       console.log('📋 Dados a salvar:', notificationData);
       
-      await this.tableManager.discoverBases();
-      await this.tableManager.ensureTableExists('NotificacoesHotmart');
+      await this.ensureInitialized();
       
       const targetBaseId = this.getTargetBaseId();
       if (!targetBaseId) {
@@ -307,16 +295,11 @@ export class CoreNocodbService {
       console.log('💾 Iniciando salvamento de log de campanha...');
       console.log('📋 Dados da campanha:', campaignData);
       
-      // Garantir que a tabela existe antes de salvar
-      const tableExists = await this.tableManager.ensureTableExists('MassMessagingLogs');
-      if (!tableExists) {
-        console.log('❌ Falha ao criar/verificar tabela MassMessagingLogs');
-        return false;
-      }
+      await this.ensureInitialized();
       
       const targetBaseId = this.getTargetBaseId();
       if (targetBaseId) {
-        console.log('✅ Salvando no NocoDB...');
+        console.log('✅ Salvando log no NocoDB...');
         const success = await this.dataService.saveMassMessagingLog(targetBaseId, campaignData);
         
         if (success) {
@@ -338,7 +321,7 @@ export class CoreNocodbService {
 
   async saveContacts(contacts: any[], instanceId: string) {
     try {
-      await this.tableManager.ensureTableExists('WhatsAppContacts');
+      await this.ensureInitialized();
       
       const targetBaseId = this.getTargetBaseId();
       if (targetBaseId) {
@@ -354,7 +337,7 @@ export class CoreNocodbService {
 
   async saveInstance(instanceData: any) {
     try {
-      await this.tableManager.ensureTableExists('WhatsAppInstances');
+      await this.ensureInitialized();
       
       const targetBaseId = this.getTargetBaseId();
       if (targetBaseId) {
