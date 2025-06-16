@@ -1,4 +1,3 @@
-
 export interface NocodbConfig {
   baseUrl: string;
   apiToken: string;
@@ -15,6 +14,7 @@ export interface ConnectionTestResult {
   error?: string;
   bases?: DiscoveredBase[];
   targetBase?: string;
+  tablesVerified?: boolean;
 }
 
 export interface TableColumn {
