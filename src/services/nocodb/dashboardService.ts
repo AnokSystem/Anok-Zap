@@ -1,4 +1,3 @@
-
 import { BaseNocodbService } from './baseService';
 import { NocodbConfig } from './types';
 
@@ -132,8 +131,14 @@ export class DashboardService extends BaseNocodbService {
     }
   }
 
+  private async getClientId(): string {
+    const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    return user.client_id || user.Email?.split('@')[0] || 'default';
+  }
+
   async getDisparosStats(baseId: string): Promise<any> {
     try {
+      const clientId = await this.getClientId();
       const tableId = await this.getTableId(baseId, 'MassMessagingLogs');
       if (!tableId) {
         console.log('❌ Tabela MassMessagingLogs não encontrada');
@@ -142,7 +147,7 @@ export class DashboardService extends BaseNocodbService {
 
       console.log('📡 Buscando dados de disparos na tabela:', tableId);
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=1000&sort=-start_time`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?where=(client_id,eq,${clientId})&limit=1000&sort=-start_time`,
         {
           headers: this.headers,
         }
@@ -152,7 +157,7 @@ export class DashboardService extends BaseNocodbService {
         const data = await response.json();
         const disparos = data.list || [];
         
-        console.log(`📊 ${disparos.length} disparos encontrados`);
+        console.log(`📊 ${disparos.length} disparos encontrados para cliente ${clientId}`);
         
         const today = new Date().toISOString().split('T')[0];
         const disparosToday = disparos.filter(d => 
@@ -184,15 +189,16 @@ export class DashboardService extends BaseNocodbService {
 
   async getNotificationsStats(baseId: string): Promise<any> {
     try {
-      const tableId = await this.getTableId(baseId, 'NotificacoesHotmart');
+      const clientId = await this.getClientId();
+      const tableId = await this.getTableId(baseId, 'NotificacoesPlataformas');
       if (!tableId) {
-        console.log('❌ Tabela NotificacoesHotmart não encontrada');
+        console.log('❌ Tabela NotificacoesPlataformas não encontrada');
         return { total: 0, today: 0 };
       }
 
       console.log('📡 Buscando dados de notificações na tabela:', tableId);
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=1000&sort=-event_date`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?where=(client_id,eq,${clientId})&limit=1000&sort=-event_date`,
         {
           headers: this.headers,
         }
@@ -202,7 +208,7 @@ export class DashboardService extends BaseNocodbService {
         const data = await response.json();
         const notifications = data.list || [];
         
-        console.log(`📊 ${notifications.length} notificações encontradas`);
+        console.log(`📊 ${notifications.length} notificações encontradas para cliente ${clientId}`);
         
         const today = new Date().toISOString().split('T')[0];
         const notificationsToday = notifications.filter(n => 
@@ -228,7 +234,8 @@ export class DashboardService extends BaseNocodbService {
 
   async getRecentDisparos(baseId: string, limit: number = 10): Promise<any[]> {
     try {
-      console.log('📨 Buscando disparos recentes...');
+      const clientId = await this.getClientId();
+      console.log('📨 Buscando disparos recentes para cliente:', clientId);
       
       const tableId = await this.getTableId(baseId, 'MassMessagingLogs');
       if (!tableId) {
@@ -237,7 +244,7 @@ export class DashboardService extends BaseNocodbService {
       }
 
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=${limit}&sort=-start_time`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?where=(client_id,eq,${clientId})&limit=${limit}&sort=-start_time`,
         {
           headers: this.headers,
         }
@@ -259,16 +266,17 @@ export class DashboardService extends BaseNocodbService {
 
   async getRecentNotifications(baseId: string, limit: number = 10): Promise<any[]> {
     try {
-      console.log('🔔 Buscando notificações recentes...');
+      const clientId = await this.getClientId();
+      console.log('🔔 Buscando notificações recentes para cliente:', clientId);
       
-      const tableId = await this.getTableId(baseId, 'NotificacoesHotmart');
+      const tableId = await this.getTableId(baseId, 'NotificacoesPlataformas');
       if (!tableId) {
-        console.log('❌ Tabela NotificacoesHotmart não encontrada');
+        console.log('❌ Tabela NotificacoesPlataformas não encontrada');
         return [];
       }
 
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=${limit}&sort=-event_date`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?where=(client_id,eq,${clientId})&limit=${limit}&sort=-event_date`,
         {
           headers: this.headers,
         }
@@ -290,13 +298,14 @@ export class DashboardService extends BaseNocodbService {
 
   async getDisparosChartData(baseId: string, days: number = 7): Promise<any[]> {
     try {
-      console.log('📈 Buscando dados do gráfico de disparos...');
+      const clientId = await this.getClientId();
+      console.log('📈 Buscando dados do gráfico de disparos para cliente:', clientId);
       
       const tableId = await this.getTableId(baseId, 'MassMessagingLogs');
       if (!tableId) return [];
 
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?sort=-start_time&limit=1000`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?where=(client_id,eq,${clientId})&sort=-start_time&limit=1000`,
         {
           headers: this.headers,
         }
@@ -340,13 +349,14 @@ export class DashboardService extends BaseNocodbService {
 
   async getNotificationsChartData(baseId: string, days: number = 7): Promise<any[]> {
     try {
-      console.log('📊 Buscando dados do gráfico de notificações...');
+      const clientId = await this.getClientId();
+      console.log('📊 Buscando dados do gráfico de notificações para cliente:', clientId);
       
-      const tableId = await this.getTableId(baseId, 'NotificacoesHotmart');
+      const tableId = await this.getTableId(baseId, 'NotificacoesPlataformas');
       if (!tableId) return [];
 
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?sort=-event_date&limit=1000`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?where=(client_id,eq,${clientId})&sort=-event_date&limit=1000`,
         {
           headers: this.headers,
         }
