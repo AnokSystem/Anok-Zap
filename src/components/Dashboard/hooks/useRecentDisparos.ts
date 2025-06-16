@@ -22,7 +22,7 @@ export const useRecentDisparos = (limit: number = 10) => {
       setIsLoading(true);
       console.log('📨 Buscando disparos recentes...');
       
-      // Usar o método público correto
+      // Usar o método específico que acessa a tabela correta
       const data = await nocodbService.getRecentDisparos(limit);
       
       if (data && data.length > 0) {
@@ -38,9 +38,9 @@ export const useRecentDisparos = (limit: number = 10) => {
         
         setDisparos(transformedDisparos);
         setError(null);
-        console.log(`✅ ${transformedDisparos.length} disparos carregados`);
+        console.log(`✅ ${transformedDisparos.length} disparos carregados da tabela específica`);
       } else {
-        console.log('⚠️ Nenhum disparo encontrado');
+        console.log('⚠️ Nenhum disparo encontrado na tabela específica');
         setDisparos([]);
         setError(null);
       }

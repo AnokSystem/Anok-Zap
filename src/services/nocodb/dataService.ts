@@ -1,3 +1,4 @@
+
 import { BaseNocodbService } from './baseService';
 import { NocodbConfig } from './types';
 
@@ -42,31 +43,16 @@ export class DataService extends BaseNocodbService {
       
       console.log('📝 Dados formatados para salvar:', data);
       
-      // Buscar tabela de disparos (MassMessagingLogs)
-      const tableId = await this.getTableId(baseId, 'MassMessagingLogs');
-      if (!tableId) {
-        console.log('❌ Tabela MassMessagingLogs não encontrada na base');
-        
-        // Tentar encontrar pelo título alternativo
-        const alternativeTableId = await this.getTableId(baseId, 'Disparos em Massa');
-        if (!alternativeTableId) {
-          console.log('❌ Tabela com título alternativo também não encontrada');
-          return false;
-        }
-        
-        console.log('🎯 Usando tabela com título alternativo:', alternativeTableId);
-        const success = await this.saveToTable(baseId, alternativeTableId, data);
-        return success;
-      }
+      // Usar o ID específico da tabela "Disparo em Massa"
+      const specificTableId = 'myx4lsmm5i02xcd';
+      console.log('🎯 Usando ID específico da tabela:', specificTableId);
       
-      console.log('🎯 ID da tabela encontrado:', tableId);
-      
-      const success = await this.saveToTable(baseId, tableId, data);
+      const success = await this.saveToTable(baseId, specificTableId, data);
       if (success) {
-        console.log('✅ Log de disparo em massa salvo com sucesso');
+        console.log('✅ Log de disparo em massa salvo com sucesso na tabela específica');
         return true;
       } else {
-        console.log('❌ Falha ao salvar no NocoDB');
+        console.log('❌ Falha ao salvar na tabela específica');
         return false;
       }
     } catch (error) {
@@ -258,6 +244,37 @@ export class DataService extends BaseNocodbService {
       }
     } catch (error) {
       console.error('❌ Erro ao buscar dados do cliente:', error);
+      return [];
+    }
+  }
+
+  // Método específico para buscar disparos usando o ID correto da tabela
+  async getRecentDisparos(baseId: string, limit: number = 10): Promise<any[]> {
+    try {
+      const clientId = this.getClientId();
+      const specificTableId = 'myx4lsmm5i02xcd'; // ID específico da tabela Disparo em Massa
+      
+      console.log('📨 Buscando disparos recentes para cliente:', clientId);
+      console.log('🎯 Usando tabela específica ID:', specificTableId);
+
+      const url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${specificTableId}?where=(client_id,eq,${clientId})&limit=${limit}&sort=-created_at`;
+      console.log('📡 URL de busca:', url);
+      
+      const response = await fetch(url, {
+        headers: this.headers,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`✅ ${data.list?.length || 0} disparos encontrados para cliente ${clientId}`);
+        return data.list || [];
+      } else {
+        const errorText = await response.text();
+        console.log(`❌ Erro ao buscar disparos (${response.status}):`, errorText);
+        return [];
+      }
+    } catch (error) {
+      console.error('❌ Erro ao buscar disparos recentes:', error);
       return [];
     }
   }

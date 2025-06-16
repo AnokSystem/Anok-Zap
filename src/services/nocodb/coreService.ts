@@ -54,7 +54,7 @@ export class CoreNocodbService {
     await this.ensureInitialized();
     const targetBaseId = this.getTargetBaseId();
     if (!targetBaseId) return [];
-    return await this.dashboardService.getRecentDisparos(targetBaseId, limit);
+    return await this.dataService.getRecentDisparos(targetBaseId, limit);
   }
 
   public async getRecentNotifications(limit: number = 10) {
