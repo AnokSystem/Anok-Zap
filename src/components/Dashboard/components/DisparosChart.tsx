@@ -38,7 +38,7 @@ export const DisparosChart = () => {
     );
   }
 
-  if (error) {
+  if (error || data.length === 0) {
     return (
       <Card className="card-modern">
         <CardHeader>
@@ -49,7 +49,10 @@ export const DisparosChart = () => {
         </CardHeader>
         <CardContent>
           <div className="h-[300px] w-full flex items-center justify-center">
-            <div className="text-red-400">Erro ao carregar dados</div>
+            <div className="text-center">
+              <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-400">Nenhum disparo encontrado</p>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -57,8 +60,8 @@ export const DisparosChart = () => {
   }
 
   const totalDisparos = data.reduce((acc, item) => acc + (item.disparos || 0), 0);
-  const previousTotal = totalDisparos * 0.88; // Simular crescimento de 12%
-  const growthPercentage = totalDisparos > 0 ? ((totalDisparos - previousTotal) / previousTotal * 100).toFixed(0) : 0;
+  const totalSucesso = data.reduce((acc, item) => acc + (item.sucesso || 0), 0);
+  const successRate = totalDisparos > 0 ? ((totalSucesso / totalDisparos) * 100).toFixed(1) : '0';
 
   return (
     <Card className="card-modern">
@@ -68,7 +71,7 @@ export const DisparosChart = () => {
           Disparos nos Últimos 7 Dias
           <div className="ml-auto flex items-center gap-1 text-green-400">
             <TrendingUp className="w-4 h-4" />
-            <span className="text-sm">+{growthPercentage}%</span>
+            <span className="text-sm">{successRate}% sucesso</span>
           </div>
         </CardTitle>
       </CardHeader>

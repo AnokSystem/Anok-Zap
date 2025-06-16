@@ -19,9 +19,8 @@ export const useDashboardStats = () => {
   const fetchStats = async () => {
     try {
       setIsLoading(true);
-      console.log('📊 Buscando estatísticas do dashboard...');
+      console.log('📊 Buscando estatísticas reais do dashboard...');
       
-      // Usar o método público correto
       const data = await nocodbService.getDashboardStats();
       
       if (data) {
@@ -36,26 +35,22 @@ export const useDashboardStats = () => {
         
         setStats(transformedStats);
         setError(null);
-        console.log('✅ Estatísticas carregadas:', transformedStats);
+        console.log('✅ Estatísticas reais carregadas:', transformedStats);
       } else {
-        // Fallback para dados mock se não conseguir conectar
-        console.log('⚠️ Usando dados mock como fallback');
-        const mockStats: DashboardStats = {
-          totalDisparos: 1247,
-          totalNotifications: 89,
-          successRate: 97.5,
-          uniqueContacts: 456,
-          disparosToday: 23,
-          notificationsToday: 8
-        };
-        setStats(mockStats);
+        console.log('⚠️ Nenhuma estatística encontrada no NocoDB');
+        setStats({
+          totalDisparos: 0,
+          totalNotifications: 0,
+          successRate: 0,
+          uniqueContacts: 0,
+          disparosToday: 0,
+          notificationsToday: 0
+        });
         setError(null);
       }
     } catch (err) {
       console.error('❌ Erro ao buscar estatísticas:', err);
       setError('Erro ao carregar estatísticas');
-      
-      // Fallback para dados zerados em caso de erro
       setStats({
         totalDisparos: 0,
         totalNotifications: 0,

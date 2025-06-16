@@ -42,7 +42,7 @@ export const NotificationsChart = () => {
     );
   }
 
-  if (error) {
+  if (error || data.length === 0) {
     return (
       <Card className="card-modern">
         <CardHeader>
@@ -53,7 +53,10 @@ export const NotificationsChart = () => {
         </CardHeader>
         <CardContent>
           <div className="h-[300px] w-full flex items-center justify-center">
-            <div className="text-red-400">Erro ao carregar dados</div>
+            <div className="text-center">
+              <Bell className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-400">Nenhuma notificação encontrada</p>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -63,8 +66,6 @@ export const NotificationsChart = () => {
   const totalNotifications = data.reduce((acc, item) => 
     acc + (item.hotmart || 0) + (item.eduzz || 0) + (item.monetizze || 0), 0
   );
-  const previousTotal = totalNotifications * 0.92; // Simular crescimento de 8%
-  const growthPercentage = totalNotifications > 0 ? ((totalNotifications - previousTotal) / previousTotal * 100).toFixed(0) : 0;
 
   return (
     <Card className="card-modern">
@@ -72,9 +73,8 @@ export const NotificationsChart = () => {
         <CardTitle className="flex items-center gap-2 text-primary-contrast">
           <Bell className="w-5 h-5 text-green-400" />
           Notificações por Plataforma
-          <div className="ml-auto flex items-center gap-1 text-green-400">
-            <TrendingUp className="w-4 h-4" />
-            <span className="text-sm">+{growthPercentage}%</span>
+          <div className="ml-auto flex items-center gap-1 text-blue-400">
+            <span className="text-sm">Total: {totalNotifications}</span>
           </div>
         </CardTitle>
       </CardHeader>
