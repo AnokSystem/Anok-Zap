@@ -97,8 +97,8 @@ export class CoreNocodbService {
 
   private async verifyEssentialTables(): Promise<void> {
     const essentialTables = [
-      'NotificacoesHotmart',
-      'MassMessagingLogs', 
+      'MassMessagingLogs',      // Tabela para disparos automáticos
+      'NotificacoesPlataformas', // Tabela para notificações das plataformas
       'WhatsAppContacts',
       'WhatsAppInstances',
       'DashboardStats',
@@ -138,8 +138,10 @@ export class CoreNocodbService {
           t.title === tableName ||
           (tableName === 'Usuarios' && t.title === 'Usuários') ||
           (tableName === 'DashboardStats' && t.title === 'Estatísticas Dashboard') ||
-          (tableName === 'MassMessagingLogs' && t.title === 'Logs de Disparo em Massa') ||
-          (tableName === 'NotificacoesHotmart' && t.title === 'Notificações Hotmart')
+          (tableName === 'MassMessagingLogs' && t.title === 'Disparos em Massa') ||
+          (tableName === 'NotificacoesPlataformas' && t.title === 'Notificações das Plataformas') ||
+          (tableName === 'WhatsAppContacts' && t.title === 'Contatos WhatsApp') ||
+          (tableName === 'WhatsAppInstances' && t.title === 'Instâncias WhatsApp')
         );
         
         return table?.id || null;
@@ -194,8 +196,8 @@ export class CoreNocodbService {
 
   private async verifyAllTables(): Promise<boolean> {
     const tableNames = [
-      'NotificacoesHotmart',
-      'MassMessagingLogs',
+      'MassMessagingLogs',      // Tabela para disparos automáticos
+      'NotificacoesPlataformas', // Tabela para notificações das plataformas
       'WhatsAppContacts',
       'WhatsAppInstances', 
       'DashboardStats',

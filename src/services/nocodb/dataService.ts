@@ -1,4 +1,3 @@
-
 import { BaseNocodbService } from './baseService';
 import { NocodbConfig } from './types';
 
@@ -43,12 +42,13 @@ export class DataService extends BaseNocodbService {
       
       console.log('📝 Dados formatados para salvar:', data);
       
+      // Buscar tabela de disparos (MassMessagingLogs)
       const tableId = await this.getTableId(baseId, 'MassMessagingLogs');
       if (!tableId) {
         console.log('❌ Tabela MassMessagingLogs não encontrada na base');
         
         // Tentar encontrar pelo título alternativo
-        const alternativeTableId = await this.getTableId(baseId, 'Logs de Disparo em Massa');
+        const alternativeTableId = await this.getTableId(baseId, 'Disparos em Massa');
         if (!alternativeTableId) {
           console.log('❌ Tabela com título alternativo também não encontrada');
           return false;
@@ -71,6 +71,70 @@ export class DataService extends BaseNocodbService {
       }
     } catch (error) {
       console.error('❌ Erro geral ao salvar log:', error);
+      return false;
+    }
+  }
+
+  async saveNotificationFromPlatform(baseId: string, notificationData: any): Promise<boolean> {
+    try {
+      console.log('💾 Salvando notificação da plataforma no NocoDB...');
+      console.log('📋 Dados recebidos:', notificationData);
+      
+      const clientId = this.getClientId();
+      console.log('🏢 Client ID identificado:', clientId);
+      
+      const data = {
+        client_id: clientId,
+        platform: notificationData.platform || 'hotmart',
+        event_type: notificationData.event_type || notificationData.eventType || 'purchase',
+        transaction_id: notificationData.transaction_id || notificationData.transactionId,
+        product_id: notificationData.product_id || notificationData.productId,
+        product_name: notificationData.product_name || notificationData.productName,
+        customer_name: notificationData.customer_name || notificationData.customerName,
+        customer_email: notificationData.customer_email || notificationData.customerEmail,
+        customer_phone: notificationData.customer_phone || notificationData.customerPhone,
+        value: notificationData.value || notificationData.amount || 0,
+        currency: notificationData.currency || 'BRL',
+        commission_value: notificationData.commission_value || notificationData.commissionValue || 0,
+        status: notificationData.status || 'approved',
+        event_date: notificationData.event_date || notificationData.eventDate || new Date().toISOString(),
+        processed: false,
+        webhook_data: JSON.stringify(notificationData),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      console.log('📝 Dados formatados para salvar:', data);
+      
+      // Buscar tabela de notificações (NotificacoesPlataformas)
+      const tableId = await this.getTableId(baseId, 'NotificacoesPlataformas');
+      if (!tableId) {
+        console.log('❌ Tabela NotificacoesPlataformas não encontrada na base');
+        
+        // Tentar encontrar pelo título alternativo
+        const alternativeTableId = await this.getTableId(baseId, 'Notificações das Plataformas');
+        if (!alternativeTableId) {
+          console.log('❌ Tabela com título alternativo também não encontrada');
+          return false;
+        }
+        
+        console.log('🎯 Usando tabela com título alternativo:', alternativeTableId);
+        const success = await this.saveToTable(baseId, alternativeTableId, data);
+        return success;
+      }
+      
+      console.log('🎯 ID da tabela encontrado:', tableId);
+      
+      const success = await this.saveToTable(baseId, tableId, data);
+      if (success) {
+        console.log('✅ Notificação da plataforma salva com sucesso');
+        return true;
+      } else {
+        console.log('❌ Falha ao salvar no NocoDB');
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Erro geral ao salvar notificação:', error);
       return false;
     }
   }
