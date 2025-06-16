@@ -6,6 +6,7 @@ export interface NocodbConfig {
 export interface DiscoveredBase {
   id: string;
   name: string;
+  title: string;
 }
 
 export interface ConnectionTestResult {
