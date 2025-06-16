@@ -42,6 +42,49 @@ export class CoreNocodbService {
     return this.TARGET_BASE_ID;
   }
 
+  // Métodos públicos para acesso aos serviços
+  public async getDashboardStats() {
+    await this.ensureInitialized();
+    const targetBaseId = this.getTargetBaseId();
+    if (!targetBaseId) return null;
+    return await this.dashboardService.getDashboardStats(targetBaseId);
+  }
+
+  public async getRecentDisparos(limit: number = 10) {
+    await this.ensureInitialized();
+    const targetBaseId = this.getTargetBaseId();
+    if (!targetBaseId) return [];
+    return await this.dashboardService.getRecentDisparos(targetBaseId, limit);
+  }
+
+  public async getRecentNotifications(limit: number = 10) {
+    await this.ensureInitialized();
+    const targetBaseId = this.getTargetBaseId();
+    if (!targetBaseId) return [];
+    return await this.dashboardService.getRecentNotifications(targetBaseId, limit);
+  }
+
+  public async getDisparosChartData(days: number = 7) {
+    await this.ensureInitialized();
+    const targetBaseId = this.getTargetBaseId();
+    if (!targetBaseId) return [];
+    return await this.dashboardService.getDisparosChartData(targetBaseId, days);
+  }
+
+  public async getNotificationsChartData(days: number = 7) {
+    await this.ensureInitialized();
+    const targetBaseId = this.getTargetBaseId();
+    if (!targetBaseId) return [];
+    return await this.dashboardService.getNotificationsChartData(targetBaseId, days);
+  }
+
+  public async saveMassMessagingLog(campaignData: any) {
+    await this.ensureInitialized();
+    const targetBaseId = this.getTargetBaseId();
+    if (!targetBaseId) return false;
+    return await this.dataService.saveMassMessagingLog(targetBaseId, campaignData);
+  }
+
   private async ensureInitialized(): Promise<void> {
     if (this.initialized) return;
     
@@ -229,102 +272,6 @@ export class CoreNocodbService {
     return await this.fallbackService.syncLocalData(targetBaseId, this.saveHotmartNotification.bind(this));
   }
 
-  async getDashboardStats() {
-    try {
-      console.log('📊 Iniciando busca de estatísticas...');
-      
-      await this.ensureInitialized();
-      const targetBaseId = this.getTargetBaseId();
-      
-      if (!targetBaseId) {
-        console.error('❌ Base não encontrada para estatísticas');
-        return null;
-      }
-
-      console.log('✅ Buscando estatísticas na base:', targetBaseId);
-      return await this.dashboardService.getDashboardStats(targetBaseId);
-    } catch (error) {
-      console.error('❌ Erro ao buscar estatísticas do dashboard:', error);
-      return null;
-    }
-  }
-
-  async getRecentDisparos(limit: number = 10) {
-    try {
-      console.log('📨 Iniciando busca de disparos recentes...');
-      
-      await this.ensureInitialized();
-      const targetBaseId = this.getTargetBaseId();
-      
-      if (!targetBaseId) {
-        console.error('❌ Base não encontrada para disparos');
-        return [];
-      }
-
-      return await this.dashboardService.getRecentDisparos(targetBaseId, limit);
-    } catch (error) {
-      console.error('❌ Erro ao buscar disparos recentes:', error);
-      return [];
-    }
-  }
-
-  async getRecentNotifications(limit: number = 10) {
-    try {
-      console.log('🔔 Iniciando busca de notificações recentes...');
-      
-      await this.ensureInitialized();
-      const targetBaseId = this.getTargetBaseId();
-      
-      if (!targetBaseId) {
-        console.error('❌ Base não encontrada para notificações');
-        return [];
-      }
-
-      return await this.dashboardService.getRecentNotifications(targetBaseId, limit);
-    } catch (error) {
-      console.error('❌ Erro ao buscar notificações recentes:', error);
-      return [];
-    }
-  }
-
-  async getDisparosChartData(days: number = 7) {
-    try {
-      console.log('📈 Iniciando busca de dados do gráfico...');
-      
-      await this.ensureInitialized();
-      const targetBaseId = this.getTargetBaseId();
-      
-      if (!targetBaseId) {
-        console.error('❌ Base não encontrada para gráfico');
-        return [];
-      }
-
-      return await this.dashboardService.getDisparosChartData(targetBaseId, days);
-    } catch (error) {
-      console.error('❌ Erro ao buscar dados do gráfico de disparos:', error);
-      return [];
-    }
-  }
-
-  async getNotificationsChartData(days: number = 7) {
-    try {
-      console.log('📊 Iniciando busca de dados do gráfico de notificações...');
-      
-      await this.ensureInitialized();
-      const targetBaseId = this.getTargetBaseId();
-      
-      if (!targetBaseId) {
-        console.error('❌ Base não encontrada para gráfico');
-        return [];
-      }
-
-      return await this.dashboardService.getNotificationsChartData(targetBaseId, days);
-    } catch (error) {
-      console.error('❌ Erro ao buscar dados do gráfico de notificações:', error);
-      return [];
-    }
-  }
-
   async getHotmartNotifications(): Promise<any[]> {
     try {
       console.log('🔄 Iniciando busca de notificações...');
@@ -384,35 +331,6 @@ export class CoreNocodbService {
 
   async deleteNotification(baseId: string, recordId: string): Promise<boolean> {
     return await this.notificationService.deleteNotification(baseId, recordId);
-  }
-
-  async saveMassMessagingLog(campaignData: any) {
-    try {
-      console.log('💾 Iniciando salvamento de log de campanha...');
-      console.log('📋 Dados da campanha:', campaignData);
-      
-      await this.ensureInitialized();
-      
-      const targetBaseId = this.getTargetBaseId();
-      if (targetBaseId) {
-        console.log('✅ Salvando log no NocoDB...');
-        const success = await this.dataService.saveMassMessagingLog(targetBaseId, campaignData);
-        
-        if (success) {
-          console.log('✅ Log salvo com sucesso no NocoDB');
-        } else {
-          console.log('❌ Falha ao salvar no NocoDB');
-        }
-        
-        return success;
-      }
-      
-      console.log('❌ Base target não encontrada para salvamento');
-      return false;
-    } catch (error) {
-      console.error('❌ Erro geral ao salvar log:', error);
-      return false;
-    }
   }
 
   async saveContacts(contacts: any[], instanceId: string) {

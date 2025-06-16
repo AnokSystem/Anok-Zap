@@ -23,8 +23,8 @@ export const useRecentNotifications = (limit: number = 10) => {
       setIsLoading(true);
       console.log('🔔 Buscando notificações recentes...');
       
-      // Usar o método correto do dashboardService
-      const data = await nocodbService.dashboardService.getRecentNotifications(nocodbService.getDefaultBaseId(), limit);
+      // Usar o método público correto
+      const data = await nocodbService.getRecentNotifications(limit);
       
       if (data && data.length > 0) {
         const transformedNotifications: Notification[] = data.map((item: any) => ({

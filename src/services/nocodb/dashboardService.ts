@@ -131,7 +131,7 @@ export class DashboardService extends BaseNocodbService {
     }
   }
 
-  private async getClientId(): string {
+  private async getClientId(): Promise<string> {
     const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
     return user.client_id || user.Email?.split('@')[0] || 'default';
   }

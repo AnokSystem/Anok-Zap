@@ -13,8 +13,8 @@ export const useDisparosChartData = (days: number = 7) => {
         setIsLoading(true);
         console.log('📈 Buscando dados do gráfico de disparos...');
         
-        // Usar o método correto do dashboardService
-        const chartData = await nocodbService.dashboardService.getDisparosChartData(nocodbService.getDefaultBaseId(), days);
+        // Usar o método público correto
+        const chartData = await nocodbService.getDisparosChartData(days);
         
         if (chartData && chartData.length > 0) {
           setData(chartData);
@@ -65,8 +65,8 @@ export const useNotificationsChartData = (days: number = 7) => {
         setIsLoading(true);
         console.log('📊 Buscando dados do gráfico de notificações...');
         
-        // Usar o método correto do dashboardService
-        const chartData = await nocodbService.dashboardService.getNotificationsChartData(nocodbService.getDefaultBaseId(), days);
+        // Usar o método público correto
+        const chartData = await nocodbService.getNotificationsChartData(days);
         
         if (chartData && chartData.length > 0) {
           setData(chartData);
