@@ -21,7 +21,7 @@ export const useRecentNotifications = (limit: number = 10) => {
   const fetchNotifications = async () => {
     try {
       setIsLoading(true);
-      console.log('🔔 Buscando notificações recentes...');
+      console.log('🔔 Buscando TODAS as notificações recentes...');
       
       // Usar o método público correto
       const data = await nocodbService.getRecentNotifications(limit);
@@ -34,7 +34,7 @@ export const useRecentNotifications = (limit: number = 10) => {
           clientName: item.customer_name || 'Cliente não identificado',
           clientEmail: item.customer_email || 'email@naoidentificado.com',
           value: item.value || 0,
-          createdAt: item.event_date || item.created_at || new Date().toISOString(),
+          createdAt: item.event_date || item.CreatedAt || item.created_at || new Date().toISOString(),
           productName: item.product_name || 'Produto não identificado'
         }));
         
@@ -61,7 +61,18 @@ export const useRecentNotifications = (limit: number = 10) => {
     // Atualizar dados a cada 30 segundos
     const interval = setInterval(fetchNotifications, 30000);
     
-    return () => clearInterval(interval);
+    // Escutar evento customizado de atualização do dashboard
+    const handleDashboardRefresh = () => {
+      console.log('🔄 Evento de refresh recebido, atualizando notificações...');
+      fetchNotifications();
+    };
+    
+    window.addEventListener('dashboardRefresh', handleDashboardRefresh);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('dashboardRefresh', handleDashboardRefresh);
+    };
   }, [limit]);
 
   return {

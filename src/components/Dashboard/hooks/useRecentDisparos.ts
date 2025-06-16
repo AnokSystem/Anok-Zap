@@ -20,7 +20,7 @@ export const useRecentDisparos = (limit: number = 10) => {
   const fetchDisparos = async () => {
     try {
       setIsLoading(true);
-      console.log('📨 Buscando disparos recentes...');
+      console.log('📨 Buscando TODOS os disparos recentes...');
       
       // Usar o método específico que acessa a tabela correta
       const data = await nocodbService.getRecentDisparos(limit);
@@ -29,10 +29,10 @@ export const useRecentDisparos = (limit: number = 10) => {
         const transformedDisparos: Disparo[] = data.map((item: any) => ({
           id: item.Id || item.id || String(Math.random()),
           campaignName: item.campaign_name || 'Campanha sem nome',
-          instanceName: item.instance_name || 'Instância não identificada',
-          recipientCount: item.recipient_count || 0,
+          instanceName: item.instance_name || item.instance_id || 'Instância não identificada',
+          recipientCount: item.recipient_count || item.sent_count || 0,
           status: mapStatus(item.status),
-          createdAt: item.start_time || item.created_at || new Date().toISOString(),
+          createdAt: item.start_time || item.CreatedAt || item.created_at || new Date().toISOString(),
           messageType: item.message_type || 'text'
         }));
         
@@ -57,15 +57,22 @@ export const useRecentDisparos = (limit: number = 10) => {
     switch (status) {
       case 'concluido':
       case 'finalizado':
+      case 'completed':
         return 'concluido';
       case 'iniciado':
       case 'enviando':
+      case 'sending':
         return 'enviando';
       case 'erro':
       case 'falha':
+      case 'error':
         return 'erro';
       case 'cancelado':
+      case 'cancelled':
         return 'cancelado';
+      case 'enviado':
+      case 'sent':
+        return 'enviado';
       default:
         return 'pendente';
     }
@@ -77,7 +84,18 @@ export const useRecentDisparos = (limit: number = 10) => {
     // Atualizar dados a cada 30 segundos
     const interval = setInterval(fetchDisparos, 30000);
     
-    return () => clearInterval(interval);
+    // Escutar evento customizado de atualização do dashboard
+    const handleDashboardRefresh = () => {
+      console.log('🔄 Evento de refresh recebido, atualizando disparos...');
+      fetchDisparos();
+    };
+    
+    window.addEventListener('dashboardRefresh', handleDashboardRefresh);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('dashboardRefresh', handleDashboardRefresh);
+    };
   }, [limit]);
 
   return {

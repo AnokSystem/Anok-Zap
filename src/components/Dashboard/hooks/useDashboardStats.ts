@@ -3,62 +3,51 @@ import { useState, useEffect } from 'react';
 import { nocodbService } from '@/services/nocodb';
 
 interface DashboardStats {
-  totalDisparos: number;
-  totalNotifications: number;
-  successRate: number;
-  uniqueContacts: number;
-  disparosToday: number;
-  notificationsToday: number;
+  total_disparos: number;
+  total_notifications: number;
+  success_rate: number;
+  unique_contacts: number;
+  disparos_today: number;
+  notifications_today: number;
 }
 
 export const useDashboardStats = () => {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [stats, setStats] = useState<DashboardStats>({
+    total_disparos: 0,
+    total_notifications: 0,
+    success_rate: 0,
+    unique_contacts: 0,
+    disparos_today: 0,
+    notifications_today: 0
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchStats = async () => {
     try {
       setIsLoading(true);
-      console.log('📊 Buscando estatísticas reais do dashboard...');
+      console.log('📊 Buscando estatísticas atualizadas do dashboard...');
       
       const data = await nocodbService.getDashboardStats();
       
       if (data) {
-        const transformedStats: DashboardStats = {
-          totalDisparos: data.total_disparos || 0,
-          totalNotifications: data.total_notifications || 0,
-          successRate: data.success_rate || 0,
-          uniqueContacts: data.unique_contacts || 0,
-          disparosToday: data.disparos_today || 0,
-          notificationsToday: data.notifications_today || 0
-        };
-        
-        setStats(transformedStats);
-        setError(null);
-        console.log('✅ Estatísticas reais carregadas:', transformedStats);
-      } else {
-        console.log('⚠️ Nenhuma estatística encontrada no NocoDB');
         setStats({
-          totalDisparos: 0,
-          totalNotifications: 0,
-          successRate: 0,
-          uniqueContacts: 0,
-          disparosToday: 0,
-          notificationsToday: 0
+          total_disparos: data.total_disparos || 0,
+          total_notifications: data.total_notifications || 0,
+          success_rate: data.success_rate || 0,
+          unique_contacts: data.unique_contacts || 0,
+          disparos_today: data.disparos_today || 0,
+          notifications_today: data.notifications_today || 0
         });
+        setError(null);
+        console.log('✅ Estatísticas atualizadas:', data);
+      } else {
+        console.log('⚠️ Nenhuma estatística retornada');
         setError(null);
       }
     } catch (err) {
       console.error('❌ Erro ao buscar estatísticas:', err);
       setError('Erro ao carregar estatísticas');
-      setStats({
-        totalDisparos: 0,
-        totalNotifications: 0,
-        successRate: 0,
-        uniqueContacts: 0,
-        disparosToday: 0,
-        notificationsToday: 0
-      });
     } finally {
       setIsLoading(false);
     }
@@ -67,10 +56,21 @@ export const useDashboardStats = () => {
   useEffect(() => {
     fetchStats();
     
-    // Atualizar estatísticas a cada 30 segundos
+    // Atualizar automaticamente a cada 30 segundos
     const interval = setInterval(fetchStats, 30000);
     
-    return () => clearInterval(interval);
+    // Escutar evento customizado de atualização do dashboard
+    const handleDashboardRefresh = () => {
+      console.log('🔄 Evento de refresh recebido, atualizando estatísticas...');
+      fetchStats();
+    };
+    
+    window.addEventListener('dashboardRefresh', handleDashboardRefresh);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('dashboardRefresh', handleDashboardRefresh);
+    };
   }, []);
 
   return {

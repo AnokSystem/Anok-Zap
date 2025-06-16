@@ -25,10 +25,10 @@ export class MessagingService extends ClientService {
         instance_name: campaignData.instance_name || campaignData.instance,
         message_type: campaignData.message_type || campaignData.messages?.[0]?.type || 'text',
         recipient_count: campaignData.recipient_count || campaignData.recipients?.length || 0,
-        sent_count: campaignData.sent_count || 0,
+        sent_count: campaignData.sent_count || campaignData.recipient_count || campaignData.recipients?.length || 0,
         error_count: campaignData.error_count || 0,
         delay: campaignData.delay || 5000,
-        status: campaignData.status || 'iniciado',
+        status: campaignData.status || 'concluido',
         start_time: campaignData.start_time || new Date().toISOString(),
         notification_phone: campaignData.notificationPhone,
         data_json: JSON.stringify(campaignData),
@@ -42,6 +42,13 @@ export class MessagingService extends ClientService {
       const success = await this.saveToTable(baseId, this.DISPARO_EM_MASSA_TABLE_ID, data);
       if (success) {
         console.log('✅ Log de disparo em massa salvo com sucesso na tabela específica');
+        
+        // Forçar atualização do cache/dados no dashboard
+        setTimeout(() => {
+          console.log('🔄 Disparando evento de atualização do dashboard...');
+          window.dispatchEvent(new CustomEvent('dashboardRefresh'));
+        }, 1000);
+        
         return true;
       } else {
         console.log('❌ Falha ao salvar na tabela específica');
@@ -57,10 +64,11 @@ export class MessagingService extends ClientService {
     try {
       const clientId = this.getClientId();
       
-      console.log('📨 Buscando disparos recentes para cliente:', clientId);
+      console.log('📨 Buscando TODOS os disparos recentes para cliente:', clientId);
       console.log('🎯 Usando tabela específica ID:', this.DISPARO_EM_MASSA_TABLE_ID);
 
-      const url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.DISPARO_EM_MASSA_TABLE_ID}?limit=${limit}&sort=-CreatedAt`;
+      // Buscar TODOS os disparos sem filtro restritivo
+      const url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.DISPARO_EM_MASSA_TABLE_ID}?limit=10000&sort=-Id`;
       console.log('📡 URL de busca:', url);
       
       const response = await fetch(url, {
@@ -69,19 +77,26 @@ export class MessagingService extends ClientService {
 
       if (response.ok) {
         const data = await response.json();
-        const disparos = data.list || [];
+        const allDisparos = data.list || [];
         
-        console.log(`📊 ${disparos.length} disparos encontrados na tabela`);
+        console.log(`📊 ${allDisparos.length} disparos totais encontrados na tabela`);
         
-        const clientDisparos = disparos.filter(d => {
+        // Filtro mais flexível para client_id
+        const clientDisparos = allDisparos.filter(d => {
+          if (!d.client_id && !d.Client_id && !d.clientId) {
+            return true; // Incluir disparos sem client_id
+          }
           const hasClientId = d.client_id === clientId || 
                              d.Client_id === clientId || 
                              d.clientId === clientId;
-          return hasClientId || disparos.length < 50;
+          return hasClientId;
         });
         
-        console.log(`✅ ${clientDisparos.length} disparos encontrados para cliente ${clientId}`);
-        return clientDisparos;
+        // Aplicar limite apenas após o filtro
+        const limitedDisparos = clientDisparos.slice(0, limit);
+        
+        console.log(`✅ ${limitedDisparos.length} disparos encontrados para cliente ${clientId}`);
+        return limitedDisparos;
       } else {
         const errorText = await response.text();
         console.log(`❌ Erro ao buscar disparos (${response.status}):`, errorText);
