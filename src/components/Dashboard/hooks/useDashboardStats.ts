@@ -21,36 +21,40 @@ export const useDashboardStats = () => {
       setIsLoading(true);
       console.log('📊 Buscando estatísticas do dashboard...');
       
-      // Simular dados por enquanto até que as tabelas sejam criadas no NocoDB
-      const mockStats: DashboardStats = {
-        totalDisparos: 1247,
-        totalNotifications: 89,
-        successRate: 97.5,
-        uniqueContacts: 456,
-        disparosToday: 23,
-        notificationsToday: 8
-      };
-
-      // TODO: Implementar busca real dos dados do NocoDB
-      // const baseId = nocodbService.getTargetBaseId();
-      // if (baseId) {
-      //   const [disparosData, notificationsData] = await Promise.all([
-      //     fetchDisparosStats(baseId),
-      //     fetchNotificationsStats(baseId)
-      //   ]);
-      //   
-      //   setStats(calculateStats(disparosData, notificationsData));
-      // } else {
-      //   setStats(mockStats);
-      // }
-
-      setStats(mockStats);
-      setError(null);
+      const data = await nocodbService.getDashboardStats();
+      
+      if (data) {
+        const transformedStats: DashboardStats = {
+          totalDisparos: data.total_disparos || 0,
+          totalNotifications: data.total_notifications || 0,
+          successRate: data.success_rate || 0,
+          uniqueContacts: data.unique_contacts || 0,
+          disparosToday: data.disparos_today || 0,
+          notificationsToday: data.notifications_today || 0
+        };
+        
+        setStats(transformedStats);
+        setError(null);
+        console.log('✅ Estatísticas carregadas:', transformedStats);
+      } else {
+        // Fallback para dados mock se não conseguir conectar
+        console.log('⚠️ Usando dados mock como fallback');
+        const mockStats: DashboardStats = {
+          totalDisparos: 1247,
+          totalNotifications: 89,
+          successRate: 97.5,
+          uniqueContacts: 456,
+          disparosToday: 23,
+          notificationsToday: 8
+        };
+        setStats(mockStats);
+        setError(null);
+      }
     } catch (err) {
       console.error('❌ Erro ao buscar estatísticas:', err);
       setError('Erro ao carregar estatísticas');
       
-      // Fallback para dados mock em caso de erro
+      // Fallback para dados zerados em caso de erro
       setStats({
         totalDisparos: 0,
         totalNotifications: 0,

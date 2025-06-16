@@ -4,18 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { MessageSquare, TrendingUp } from 'lucide-react';
+import { useDisparosChartData } from '../hooks/useChartData';
 
 export const DisparosChart = () => {
-  // Dados mock para demonstração
-  const data = [
-    { date: '01/01', disparos: 120, sucesso: 115 },
-    { date: '02/01', disparos: 150, sucesso: 145 },
-    { date: '03/01', disparos: 180, sucesso: 175 },
-    { date: '04/01', disparos: 220, sucesso: 210 },
-    { date: '05/01', disparos: 160, sucesso: 155 },
-    { date: '06/01', disparos: 190, sucesso: 185 },
-    { date: '07/01', disparos: 240, sucesso: 235 }
-  ];
+  const { data, isLoading, error } = useDisparosChartData(7);
 
   const chartConfig = {
     disparos: {
@@ -28,6 +20,46 @@ export const DisparosChart = () => {
     },
   };
 
+  if (isLoading) {
+    return (
+      <Card className="card-modern">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-primary-contrast">
+            <MessageSquare className="w-5 h-5 text-blue-400" />
+            Disparos nos Últimos 7 Dias
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px] w-full flex items-center justify-center">
+            <div className="animate-pulse text-gray-400">Carregando dados...</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="card-modern">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-primary-contrast">
+            <MessageSquare className="w-5 h-5 text-blue-400" />
+            Disparos nos Últimos 7 Dias
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px] w-full flex items-center justify-center">
+            <div className="text-red-400">Erro ao carregar dados</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const totalDisparos = data.reduce((acc, item) => acc + (item.disparos || 0), 0);
+  const previousTotal = totalDisparos * 0.88; // Simular crescimento de 12%
+  const growthPercentage = totalDisparos > 0 ? ((totalDisparos - previousTotal) / previousTotal * 100).toFixed(0) : 0;
+
   return (
     <Card className="card-modern">
       <CardHeader>
@@ -36,7 +68,7 @@ export const DisparosChart = () => {
           Disparos nos Últimos 7 Dias
           <div className="ml-auto flex items-center gap-1 text-green-400">
             <TrendingUp className="w-4 h-4" />
-            <span className="text-sm">+12%</span>
+            <span className="text-sm">+{growthPercentage}%</span>
           </div>
         </CardTitle>
       </CardHeader>

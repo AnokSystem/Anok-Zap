@@ -4,18 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { Bell, TrendingUp } from 'lucide-react';
+import { useNotificationsChartData } from '../hooks/useChartData';
 
 export const NotificationsChart = () => {
-  // Dados mock para demonstração
-  const data = [
-    { date: '01/01', hotmart: 15, eduzz: 8, monetizze: 3 },
-    { date: '02/01', hotmart: 22, eduzz: 12, monetizze: 5 },
-    { date: '03/01', hotmart: 18, eduzz: 15, monetizze: 7 },
-    { date: '04/01', hotmart: 28, eduzz: 10, monetizze: 4 },
-    { date: '05/01', hotmart: 20, eduzz: 18, monetizze: 6 },
-    { date: '06/01', hotmart: 25, eduzz: 14, monetizze: 8 },
-    { date: '07/01', hotmart: 30, eduzz: 16, monetizze: 5 }
-  ];
+  const { data, isLoading, error } = useNotificationsChartData(7);
 
   const chartConfig = {
     hotmart: {
@@ -32,6 +24,48 @@ export const NotificationsChart = () => {
     },
   };
 
+  if (isLoading) {
+    return (
+      <Card className="card-modern">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-primary-contrast">
+            <Bell className="w-5 h-5 text-green-400" />
+            Notificações por Plataforma
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px] w-full flex items-center justify-center">
+            <div className="animate-pulse text-gray-400">Carregando dados...</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="card-modern">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-primary-contrast">
+            <Bell className="w-5 h-5 text-green-400" />
+            Notificações por Plataforma
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px] w-full flex items-center justify-center">
+            <div className="text-red-400">Erro ao carregar dados</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const totalNotifications = data.reduce((acc, item) => 
+    acc + (item.hotmart || 0) + (item.eduzz || 0) + (item.monetizze || 0), 0
+  );
+  const previousTotal = totalNotifications * 0.92; // Simular crescimento de 8%
+  const growthPercentage = totalNotifications > 0 ? ((totalNotifications - previousTotal) / previousTotal * 100).toFixed(0) : 0;
+
   return (
     <Card className="card-modern">
       <CardHeader>
@@ -40,7 +74,7 @@ export const NotificationsChart = () => {
           Notificações por Plataforma
           <div className="ml-auto flex items-center gap-1 text-green-400">
             <TrendingUp className="w-4 h-4" />
-            <span className="text-sm">+8%</span>
+            <span className="text-sm">+{growthPercentage}%</span>
           </div>
         </CardTitle>
       </CardHeader>

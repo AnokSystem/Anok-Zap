@@ -3,6 +3,7 @@ import { NocodbTableManager } from './tableManager';
 import { NotificationService } from './notificationService';
 import { DataService } from './dataService';
 import { FallbackService } from './fallbackService';
+import { DashboardService } from './dashboardService';
 
 export class CoreNocodbService {
   private _config: NocodbConfig = {
@@ -14,12 +15,14 @@ export class CoreNocodbService {
   private notificationService: NotificationService;
   private dataService: DataService;
   private fallbackService: FallbackService;
+  private dashboardService: DashboardService;
 
   constructor() {
     this.tableManager = new NocodbTableManager(this._config);
     this.notificationService = new NotificationService(this._config);
     this.dataService = new DataService(this._config);
     this.fallbackService = new FallbackService();
+    this.dashboardService = new DashboardService(this._config);
   }
 
   get config() {
@@ -82,6 +85,8 @@ export class CoreNocodbService {
         console.log('✅ NocoDB conectado com sucesso');
         
         if (targetBaseId) {
+          // Garantir que todas as tabelas do dashboard existam
+          await this.createAllTables();
           return { success: true, bases: discoveredBases, targetBase: targetBaseId };
         } else {
           console.warn('⚠️ Base "Notificação Inteligente" não encontrada');
@@ -105,7 +110,112 @@ export class CoreNocodbService {
     return await this.fallbackService.syncLocalData(targetBaseId, this.saveHotmartNotification.bind(this));
   }
 
-  // Delegate notification methods
+  async getDashboardStats() {
+    try {
+      console.log('📊 Iniciando busca de estatísticas...');
+      
+      await this.tableManager.discoverBases();
+      const targetBaseId = this.tableManager.getTargetBaseId();
+      
+      if (!targetBaseId) {
+        console.error('❌ Base não encontrada para estatísticas');
+        return null;
+      }
+
+      console.log('✅ Base encontrada, buscando estatísticas...');
+      
+      // Garantir que as tabelas existem
+      await this.tableManager.ensureTableExists('DashboardStats');
+      await this.tableManager.ensureTableExists('MassMessagingLogs');
+      await this.tableManager.ensureTableExists('NotificacoesHotmart');
+      
+      return await this.dashboardService.getDashboardStats(targetBaseId);
+    } catch (error) {
+      console.error('❌ Erro ao buscar estatísticas do dashboard:', error);
+      return null;
+    }
+  }
+
+  async getRecentDisparos(limit: number = 10) {
+    try {
+      console.log('📨 Iniciando busca de disparos recentes...');
+      
+      await this.tableManager.discoverBases();
+      const targetBaseId = this.tableManager.getTargetBaseId();
+      
+      if (!targetBaseId) {
+        console.error('❌ Base não encontrada para disparos');
+        return [];
+      }
+
+      await this.tableManager.ensureTableExists('MassMessagingLogs');
+      return await this.dashboardService.getRecentDisparos(targetBaseId, limit);
+    } catch (error) {
+      console.error('❌ Erro ao buscar disparos recentes:', error);
+      return [];
+    }
+  }
+
+  async getRecentNotifications(limit: number = 10) {
+    try {
+      console.log('🔔 Iniciando busca de notificações recentes...');
+      
+      await this.tableManager.discoverBases();
+      const targetBaseId = this.tableManager.getTargetBaseId();
+      
+      if (!targetBaseId) {
+        console.error('❌ Base não encontrada para notificações');
+        return [];
+      }
+
+      await this.tableManager.ensureTableExists('NotificacoesHotmart');
+      return await this.dashboardService.getRecentNotifications(targetBaseId, limit);
+    } catch (error) {
+      console.error('❌ Erro ao buscar notificações recentes:', error);
+      return [];
+    }
+  }
+
+  async getDisparosChartData(days: number = 7) {
+    try {
+      console.log('📈 Iniciando busca de dados do gráfico...');
+      
+      await this.tableManager.discoverBases();
+      const targetBaseId = this.tableManager.getTargetBaseId();
+      
+      if (!targetBaseId) {
+        console.error('❌ Base não encontrada para gráfico');
+        return [];
+      }
+
+      await this.tableManager.ensureTableExists('MassMessagingLogs');
+      return await this.dashboardService.getDisparosChartData(targetBaseId, days);
+    } catch (error) {
+      console.error('❌ Erro ao buscar dados do gráfico de disparos:', error);
+      return [];
+    }
+  }
+
+  async getNotificationsChartData(days: number = 7) {
+    try {
+      console.log('📊 Iniciando busca de dados do gráfico de notificações...');
+      
+      await this.tableManager.discoverBases();
+      const targetBaseId = this.tableManager.getTargetBaseId();
+      
+      if (!targetBaseId) {
+        console.error('❌ Base não encontrada para gráfico');
+        return [];
+      }
+
+      await this.tableManager.ensureTableExists('NotificacoesHotmart');
+      return await this.dashboardService.getNotificationsChartData(targetBaseId, days);
+    } catch (error) {
+      console.error('❌ Erro ao buscar dados do gráfico de notificações:', error);
+      return [];
+    }
+  }
+
   async getHotmartNotifications(): Promise<any[]> {
     try {
       console.log('🔄 Iniciando busca de notificações...');
@@ -172,12 +282,10 @@ export class CoreNocodbService {
     }
   }
 
-  // Novo método público para deletar notificações
   async deleteNotification(baseId: string, recordId: string): Promise<boolean> {
     return await this.notificationService.deleteNotification(baseId, recordId);
   }
 
-  // Delegate data service methods
   async saveMassMessagingLog(campaignData: any) {
     try {
       await this.tableManager.ensureTableExists('MassMessagingLogs');
