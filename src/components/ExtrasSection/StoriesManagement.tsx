@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -190,7 +191,7 @@ const StoriesManagement = () => {
   return (
     <div className="space-y-6">
       {/* Seleção de Instâncias */}
-      <Card className="border-gray-600/50 bg-gray-800/30">
+      <Card className="border-gray-200 bg-white data-[theme=light]:border-gray-200 data-[theme=light]:bg-white data-[theme=dark]:border-gray-600/50 data-[theme=dark]:bg-gray-800/30">
         <CardHeader>
           <CardTitle className="text-primary-contrast flex items-center gap-2">
             <Smartphone className="w-5 h-5" />
@@ -200,13 +201,13 @@ const StoriesManagement = () => {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {instances.map((instance) => (
-              <div key={instance.id} className="flex items-center space-x-2 p-3 bg-gray-700/30 rounded-lg">
+              <div key={instance.id} className="flex items-center space-x-2 p-3 bg-white border border-gray-200 rounded-lg data-[theme=light]:bg-white data-[theme=light]:border-gray-200 data-[theme=dark]:bg-gray-700/30 data-[theme=dark]:border-gray-600">
                 <Checkbox
                   id={instance.id}
                   checked={selectedInstances.includes(instance.id)}
                   onCheckedChange={() => handleInstanceToggle(instance.id)}
                 />
-                <Label htmlFor={instance.id} className="text-gray-300 flex-1 cursor-pointer">
+                <Label htmlFor={instance.id} className="text-gray-700 flex-1 cursor-pointer data-[theme=light]:text-gray-700 data-[theme=dark]:text-gray-300">
                   {instance.name}
                   <span className={`ml-2 text-xs px-2 py-1 rounded ${
                     instance.status === 'conectado' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
@@ -218,8 +219,8 @@ const StoriesManagement = () => {
             ))}
           </div>
           {selectedInstances.length > 0 && (
-            <div className="mt-3 p-2 bg-purple-accent/10 rounded border border-purple-accent/20">
-              <p className="text-sm text-purple-300">
+            <div className="mt-3 p-2 bg-purple-50 border border-purple-200 rounded data-[theme=light]:bg-purple-50 data-[theme=light]:border-purple-200 data-[theme=dark]:bg-purple-accent/10 data-[theme=dark]:border-purple-accent/20">
+              <p className="text-sm text-purple-700 data-[theme=light]:text-purple-700 data-[theme=dark]:text-purple-300">
                 {selectedInstances.length} instância(s) selecionada(s)
               </p>
             </div>
@@ -228,7 +229,7 @@ const StoriesManagement = () => {
       </Card>
 
       {/* Configuração do Story */}
-      <Card className="border-gray-600/50 bg-gray-800/30">
+      <Card className="border-gray-200 bg-white data-[theme=light]:border-gray-200 data-[theme=light]:bg-white data-[theme=dark]:border-gray-600/50 data-[theme=dark]:bg-gray-800/30">
         <CardHeader>
           <CardTitle className="text-primary-contrast flex items-center gap-2">
             <Image className="w-5 h-5" />
@@ -238,9 +239,9 @@ const StoriesManagement = () => {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label className="text-gray-300">Tipo de Story</Label>
+              <Label className="text-gray-700 data-[theme=light]:text-gray-700 data-[theme=dark]:text-gray-300">Tipo de Story</Label>
               <Select value={storyData.type} onValueChange={(value) => setStoryData({ ...storyData, type: value })}>
-                <SelectTrigger className="bg-gray-800 border-gray-600">
+                <SelectTrigger className="bg-white border-gray-300 data-[theme=light]:bg-white data-[theme=light]:border-gray-300 data-[theme=dark]:bg-gray-800 data-[theme=dark]:border-gray-600">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -261,13 +262,13 @@ const StoriesManagement = () => {
             </div>
 
             <div>
-              <Label className="text-gray-300">Arquivo</Label>
+              <Label className="text-gray-700 data-[theme=light]:text-gray-700 data-[theme=dark]:text-gray-300">Arquivo</Label>
               <div className="flex items-center gap-2">
                 <Input
                   type="file"
                   accept={storyData.type === 'image' ? 'image/*' : 'video/*'}
                   onChange={handleFileChange}
-                  className="bg-gray-800 border-gray-600"
+                  className="bg-white border-gray-300 data-[theme=light]:bg-white data-[theme=light]:border-gray-300 data-[theme=dark]:bg-gray-800 data-[theme=dark]:border-gray-600"
                 />
                 <Upload className="w-4 h-4 text-gray-400" />
               </div>
@@ -275,12 +276,12 @@ const StoriesManagement = () => {
           </div>
 
           <div>
-            <Label className="text-gray-300">Legenda (Opcional)</Label>
+            <Label className="text-gray-700 data-[theme=light]:text-gray-700 data-[theme=dark]:text-gray-300">Legenda (Opcional)</Label>
             <Textarea
               value={storyData.caption}
               onChange={(e) => setStoryData({ ...storyData, caption: e.target.value })}
               placeholder="Digite uma legenda para o story..."
-              className="bg-gray-800 border-gray-600 text-gray-200"
+              className="bg-white border-gray-300 text-gray-700 data-[theme=light]:bg-white data-[theme=light]:border-gray-300 data-[theme=light]:text-gray-700 data-[theme=dark]:bg-gray-800 data-[theme=dark]:border-gray-600 data-[theme=dark]:text-gray-200"
               rows={3}
             />
           </div>
@@ -288,7 +289,7 @@ const StoriesManagement = () => {
       </Card>
 
       {/* Agendamento */}
-      <Card className="border-gray-600/50 bg-gray-800/30">
+      <Card className="border-gray-200 bg-white data-[theme=light]:border-gray-200 data-[theme=light]:bg-white data-[theme=dark]:border-gray-600/50 data-[theme=dark]:bg-gray-800/30">
         <CardHeader>
           <CardTitle className="text-primary-contrast flex items-center gap-2">
             <Clock className="w-5 h-5" />
@@ -302,30 +303,30 @@ const StoriesManagement = () => {
               checked={storyData.schedule}
               onCheckedChange={(checked) => setStoryData({ ...storyData, schedule: !!checked })}
             />
-            <Label htmlFor="schedule" className="text-gray-300 flex items-center gap-2">
+            <Label htmlFor="schedule" className="text-gray-700 flex items-center gap-2 data-[theme=light]:text-gray-700 data-[theme=dark]:text-gray-300">
               <Calendar className="w-4 h-4" />
               Agendar Story
             </Label>
           </div>
 
           {storyData.schedule && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-700/30 rounded-lg">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 border border-gray-200 rounded-lg data-[theme=light]:bg-gray-50 data-[theme=light]:border-gray-200 data-[theme=dark]:bg-gray-700/30 data-[theme=dark]:border-gray-600">
               <div>
-                <Label className="text-gray-300">Data</Label>
+                <Label className="text-gray-700 data-[theme=light]:text-gray-700 data-[theme=dark]:text-gray-300">Data</Label>
                 <Input
                   type="date"
                   value={storyData.scheduleDate}
                   onChange={(e) => setStoryData({ ...storyData, scheduleDate: e.target.value })}
-                  className="bg-gray-800 border-gray-600"
+                  className="bg-white border-gray-300 data-[theme=light]:bg-white data-[theme=light]:border-gray-300 data-[theme=dark]:bg-gray-800 data-[theme=dark]:border-gray-600"
                 />
               </div>
               <div>
-                <Label className="text-gray-300">Horário</Label>
+                <Label className="text-gray-700 data-[theme=light]:text-gray-700 data-[theme=dark]:text-gray-300">Horário</Label>
                 <Input
                   type="time"
                   value={storyData.scheduleTime}
                   onChange={(e) => setStoryData({ ...storyData, scheduleTime: e.target.value })}
-                  className="bg-gray-800 border-gray-600"
+                  className="bg-white border-gray-300 data-[theme=light]:bg-white data-[theme=light]:border-gray-300 data-[theme=dark]:bg-gray-800 data-[theme=dark]:border-gray-600"
                 />
               </div>
             </div>
@@ -351,7 +352,7 @@ const StoriesManagement = () => {
               </Button>
             )}
             
-            <Button variant="outline" className="flex-1 bg-gray-800 border-gray-600">
+            <Button variant="outline" className="flex-1 bg-white border-gray-300 data-[theme=light]:bg-white data-[theme=light]:border-gray-300 data-[theme=dark]:bg-gray-800 data-[theme=dark]:border-gray-600">
               <PauseCircle className="w-4 h-4 mr-2" />
               Salvar Rascunho
             </Button>
