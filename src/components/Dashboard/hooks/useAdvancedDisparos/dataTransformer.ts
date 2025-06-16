@@ -31,7 +31,13 @@ export const mapStatus = (status: string): 'enviado' | 'pendente' | 'erro' | 'en
   }
 };
 
-export const calculateContactsReached = (status: string, sentCount: number, recipientCount: number): number => {
+export const calculateContactsReached = (status: string, sentCount: number, recipientCount: number, contactsReachedFromDB?: number): number => {
+  // Se temos o valor direto do banco de dados, usar ele
+  if (contactsReachedFromDB !== undefined && contactsReachedFromDB !== null) {
+    return contactsReachedFromDB;
+  }
+
+  // Fallback para cálculo baseado no status
   if (status === 'concluido') {
     return recipientCount;
   } else if (status === 'enviando' || status === 'enviado') {
@@ -86,8 +92,31 @@ export const transformDisparoData = (item: any): Disparo => {
                            item.erros ||
                            0);
 
+  // Mapear campo de contatos alcançados do NocoDB
+  const contactsReachedFromDB = Number(item['Contatos Alcançados'] || 
+                                      item['Contatos_Alcancados'] ||
+                                      item.contatos_alcancados ||
+                                      item.contacts_reached ||
+                                      item.Contacts_reached ||
+                                      item.ContactsReached ||
+                                      item.contatos_reached ||
+                                      null);
+
   const status = mapStatus(item.Status || item.status || 'pendente');
-  const contactsReached = calculateContactsReached(status, sentCount, recipientCount);
+  const contactsReached = calculateContactsReached(
+    status, 
+    sentCount, 
+    recipientCount, 
+    isNaN(contactsReachedFromDB) ? undefined : contactsReachedFromDB
+  );
+  
+  console.log('✅ Contatos alcançados calculado:', {
+    contactsReachedFromDB,
+    contactsReached,
+    status,
+    sentCount,
+    recipientCount
+  });
   
   return {
     id: String(item.ID || item.Id || item.id || Math.random()),
