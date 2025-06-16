@@ -79,25 +79,25 @@
     --shadow-form: 0 2px 8px rgba(157, 78, 221, 0.1);
   }
 
-  /* Tema Claro - Baseado na Imagem */
+  /* Tema Claro - Baseado na Imagem Fornecida */
   [data-theme="light"] {
-    --background: 248 250 252; /* Fundo cinza muito claro #f8fafc */
-    --foreground: 51 65 85; /* Texto cinza escuro #334155 */
+    --background: 250 251 252; /* Fundo muito claro quase branco #fafbfc */
+    --foreground: 71 85 105; /* Texto principal cinza escuro #475569 */
 
-    --card: 255 255 255; /* Cards brancos */
-    --card-foreground: 51 65 85; /* Texto dos cards em cinza escuro */
+    --card: 255 255 255; /* Cards brancos puros */
+    --card-foreground: 71 85 105; /* Texto dos cards em cinza escuro */
 
     --popover: 255 255 255;
-    --popover-foreground: 51 65 85;
+    --popover-foreground: 71 85 105;
 
-    --primary: 139 69 219; /* Roxo ajustado para tema claro #8b45db */
+    --primary: 139 69 219; /* Roxo mantido */
     --primary-foreground: 255 255 255;
 
-    --secondary: 248 250 252; /* Cinza bem claro */
-    --secondary-foreground: 51 65 85;
+    --secondary: 248 250 252; /* Cinza muito claro para fundos secundários */
+    --secondary-foreground: 71 85 105;
 
-    --muted: 241 245 249; /* Cinza mais claro #f1f5f9 */
-    --muted-foreground: 100 116 139; /* Cinza médio #64748b */
+    --muted: 248 250 252; /* Cinza muito claro #f8fafc */
+    --muted-foreground: 100 116 139; /* Cinza médio para textos secundários #64748b */
 
     --accent: 139 69 219; /* Roxo para acentos */
     --accent-foreground: 255 255 255;
@@ -105,37 +105,37 @@
     --destructive: 239 68 68;
     --destructive-foreground: 255 255 255;
 
-    --border: 226 232 240; /* Bordas suaves #e2e8f0 */
+    --border: 241 245 249; /* Bordas muito suaves #f1f5f9 */
     --input: 255 255 255; /* Inputs brancos */
     --ring: 139 69 219; /* Roxo para focus */
 
-    /* Cores Neutras para Tema Claro */
-    --gray-950: 248 250 252; /* Fundo claro */
-    --gray-900: 241 245 249; /* Cinza muito claro */
-    --gray-800: 226 232 240; /* Cinza claro */
-    --gray-700: 203 213 225; /* Cinza médio */
-    --gray-600: 148 163 184; /* Cinza */
-    --gray-400: 100 116 139; /* Cinza mais escuro para textos secundários */
-    --gray-200: 71 85 105; /* Cinza escuro */
-    --white: 51 65 85; /* Texto principal escuro */
+    /* Cores Neutras para Tema Claro - Exatamente como na imagem */
+    --gray-950: 250 251 252; /* Fundo principal muito claro */
+    --gray-900: 248 250 252; /* Fundo secundário */
+    --gray-800: 241 245 249; /* Bordas suaves */
+    --gray-700: 226 232 240; /* Separadores */
+    --gray-600: 148 163 184; /* Textos terciários */
+    --gray-400: 100 116 139; /* Textos secundários */
+    --gray-200: 71 85 105; /* Textos principais */
+    --white: 71 85 105; /* Texto principal escuro */
     
-    /* Gradientes para Tema Claro */
+    /* Gradientes para Tema Claro - Mais suaves */
     --gradient-primary: linear-gradient(135deg, rgb(139, 69, 219) 0%, rgb(168, 85, 247) 100%);
-    --gradient-secondary: linear-gradient(135deg, rgb(168, 85, 247) 0%, rgb(196, 181, 253) 100%);
-    --gradient-subtle: linear-gradient(135deg, rgba(139, 69, 219, 0.03) 0%, rgba(248, 250, 252, 0.8) 100%);
-    --gradient-header: linear-gradient(135deg, rgb(139, 69, 219) 0%, rgb(168, 85, 247) 100%);
-    --gradient-card: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.5) 100%);
-    --gradient-form: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.8) 100%);
+    --gradient-secondary: linear-gradient(135deg, rgb(168, 85, 247) 0%, rgba(241, 245, 249, 0.8) 100%);
+    --gradient-subtle: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(250, 251, 252, 0.7) 100%);
+    --gradient-header: linear-gradient(135deg, rgba(250, 251, 252, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
+    --gradient-card: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(248, 250, 252, 0.3) 100%);
+    --gradient-form: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(250, 251, 252, 0.5) 100%);
     
-    /* Sombras para Tema Claro */
-    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
-    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.03);
-    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.08), 0 4px 6px rgba(0, 0, 0, 0.03);
-    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.08), 0 10px 10px rgba(0, 0, 0, 0.02);
-    --shadow-purple: 0 4px 14px rgba(139, 69, 219, 0.10);
-    --shadow-purple-lg: 0 8px 25px rgba(139, 69, 219, 0.12);
-    --shadow-form: 0 2px 8px rgba(139, 69, 219, 0.06);
+    /* Sombras para Tema Claro - Muito suaves */
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.02);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.03), 0 2px 4px rgba(0, 0, 0, 0.02);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.04), 0 4px 6px rgba(0, 0, 0, 0.02);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.05), 0 10px 10px rgba(0, 0, 0, 0.01);
+    --shadow-purple: 0 4px 14px rgba(139, 69, 219, 0.08);
+    --shadow-purple-lg: 0 8px 25px rgba(139, 69, 219, 0.10);
+    --shadow-form: 0 2px 8px rgba(139, 69, 219, 0.04);
   }
 }
 
@@ -155,7 +155,7 @@
     transition: background-color 0.3s ease, color 0.3s ease;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1, h2, h3, h4, h5, h5 {
     font-family: 'Poppins', system-ui, sans-serif;
     font-weight: 600;
     line-height: 1.3;
