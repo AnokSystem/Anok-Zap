@@ -1,3 +1,4 @@
+
 export interface NocodbConfig {
   baseUrl: string;
   apiToken: string;
@@ -92,6 +93,12 @@ export const TABLE_SCHEMAS = {
       {
         column_name: 'sent_count',
         title: 'Mensagens Enviadas',
+        uidt: 'Number',
+        default: 0
+      },
+      {
+        column_name: 'contacts_reached',
+        title: 'Contatos Alcançados',
         uidt: 'Number',
         default: 0
       },
