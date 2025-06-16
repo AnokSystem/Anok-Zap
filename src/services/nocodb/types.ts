@@ -1,3 +1,4 @@
+
 export interface NocodbConfig {
   baseUrl: string;
   apiToken: string;
@@ -47,17 +48,17 @@ export const TABLE_SCHEMAS = {
     title: 'Notificações Hotmart',
     table_name: 'NotificacoesHotmart',
     columns: [
-      { title: 'ID do Usuário', column_name: 'user_id', uidt: 'SingleLineText' },
-      { title: 'Email do Usuário', column_name: 'user_email', uidt: 'Email' },
-      { title: 'Nome do Produto', column_name: 'product_name', uidt: 'SingleLineText' },
-      { title: 'ID do Produto', column_name: 'product_id', uidt: 'Number' },
-      { title: 'ID da Compra', column_name: 'purchase_id', uidt: 'SingleLineText' },
-      { title: 'Valor', column_name: 'value', uidt: 'Currency' },
-      { title: 'Tipo de Evento', column_name: 'event_type', uidt: 'SingleSelect', dtxp: 'purchase,subscription,refund,cancel' },
-      { title: 'Plataforma', column_name: 'platform', uidt: 'SingleSelect', dtxp: 'hotmart,eduzz,monetizze' },
-      { title: 'Status', column_name: 'status', uidt: 'SingleSelect', dtxp: 'processado,pendente,erro' },
-      { title: 'Data do Evento', column_name: 'event_date', uidt: 'DateTime' },
-      { title: 'Dados JSON', column_name: 'json_data', uidt: 'LongText' }
+      { title: 'ID do Usuário', column_name: 'user_id', uidt: 'SingleLineText', dt: 'varchar', rqd: false },
+      { title: 'Email do Usuário', column_name: 'user_email', uidt: 'Email', dt: 'varchar', rqd: false },
+      { title: 'Nome do Produto', column_name: 'product_name', uidt: 'SingleLineText', dt: 'varchar', rqd: false },
+      { title: 'ID do Produto', column_name: 'product_id', uidt: 'Number', dt: 'int', rqd: false },
+      { title: 'ID da Compra', column_name: 'purchase_id', uidt: 'SingleLineText', dt: 'varchar', rqd: false },
+      { title: 'Valor', column_name: 'value', uidt: 'Currency', dt: 'decimal', rqd: false },
+      { title: 'Tipo de Evento', column_name: 'event_type', uidt: 'SingleSelect', dt: 'varchar', rqd: false, dtxp: 'purchase,subscription,refund,cancel' },
+      { title: 'Plataforma', column_name: 'platform', uidt: 'SingleSelect', dt: 'varchar', rqd: false, dtxp: 'hotmart,eduzz,monetizze' },
+      { title: 'Status', column_name: 'status', uidt: 'SingleSelect', dt: 'varchar', rqd: false, dtxp: 'processado,pendente,erro' },
+      { title: 'Data do Evento', column_name: 'event_date', uidt: 'DateTime', dt: 'datetime', rqd: false },
+      { title: 'Dados JSON', column_name: 'json_data', uidt: 'LongText', dt: 'longtext', rqd: false }
     ]
   },
   
@@ -65,12 +66,12 @@ export const TABLE_SCHEMAS = {
     title: 'Contatos WhatsApp',
     table_name: 'WhatsAppContacts',
     columns: [
-      { title: 'ID do Contato', column_name: 'contact_id', uidt: 'SingleLineText' },
-      { title: 'Nome', column_name: 'name', uidt: 'SingleLineText' },
-      { title: 'Número', column_name: 'phone_number', uidt: 'PhoneNumber' },
-      { title: 'Nome do Grupo', column_name: 'group_name', uidt: 'SingleLineText' },
-      { title: 'ID da Instância', column_name: 'instance_id', uidt: 'SingleLineText' },
-      { title: 'Dados JSON', column_name: 'data_json', uidt: 'LongText' }
+      { title: 'ID do Contato', column_name: 'contact_id', uidt: 'SingleLineText', dt: 'varchar', rqd: false },
+      { title: 'Nome', column_name: 'name', uidt: 'SingleLineText', dt: 'varchar', rqd: false },
+      { title: 'Número', column_name: 'phone_number', uidt: 'PhoneNumber', dt: 'varchar', rqd: false },
+      { title: 'Nome do Grupo', column_name: 'group_name', uidt: 'SingleLineText', dt: 'varchar', rqd: false },
+      { title: 'ID da Instância', column_name: 'instance_id', uidt: 'SingleLineText', dt: 'varchar', rqd: false },
+      { title: 'Dados JSON', column_name: 'data_json', uidt: 'LongText', dt: 'longtext', rqd: false }
     ]
   },
 
@@ -78,11 +79,11 @@ export const TABLE_SCHEMAS = {
     title: 'Instâncias WhatsApp',
     table_name: 'WhatsAppInstances',
     columns: [
-      { title: 'ID da Instância', column_name: 'instance_id', uidt: 'SingleLineText' },
-      { title: 'Nome', column_name: 'name', uidt: 'SingleLineText' },
-      { title: 'Status', column_name: 'status', uidt: 'SingleSelect', dtxp: 'open,close,connecting' },
-      { title: 'Última Atualização', column_name: 'last_updated', uidt: 'DateTime' },
-      { title: 'Dados JSON', column_name: 'data_json', uidt: 'LongText' }
+      { title: 'ID da Instância', column_name: 'instance_id', uidt: 'SingleLineText', dt: 'varchar', rqd: false },
+      { title: 'Nome', column_name: 'name', uidt: 'SingleLineText', dt: 'varchar', rqd: false },
+      { title: 'Status', column_name: 'status', uidt: 'SingleSelect', dt: 'varchar', rqd: false, dtxp: 'open,close,connecting' },
+      { title: 'Última Atualização', column_name: 'last_updated', uidt: 'DateTime', dt: 'datetime', rqd: false },
+      { title: 'Dados JSON', column_name: 'data_json', uidt: 'LongText', dt: 'longtext', rqd: false }
     ]
   },
 
@@ -90,19 +91,19 @@ export const TABLE_SCHEMAS = {
     title: 'Logs de Disparo em Massa',
     table_name: 'MassMessagingLogs',
     columns: [
-      { title: 'ID da Campanha', column_name: 'campaign_id', uidt: 'SingleLineText' },
-      { title: 'Nome da Campanha', column_name: 'campaign_name', uidt: 'SingleLineText' },
-      { title: 'ID da Instância', column_name: 'instance_id', uidt: 'SingleLineText' },
-      { title: 'Nome da Instância', column_name: 'instance_name', uidt: 'SingleLineText' },
-      { title: 'Tipo de Mensagem', column_name: 'message_type', uidt: 'SingleSelect', dtxp: 'text,image,video,audio,document' },
-      { title: 'Número de Destinatários', column_name: 'recipient_count', uidt: 'Number' },
-      { title: 'Mensagens Enviadas', column_name: 'sent_count', uidt: 'Number' },
-      { title: 'Mensagens com Erro', column_name: 'error_count', uidt: 'Number' },
-      { title: 'Atraso (ms)', column_name: 'delay', uidt: 'Number' },
-      { title: 'Status', column_name: 'status', uidt: 'SingleSelect', dtxp: 'iniciado,enviando,concluido,erro,cancelado' },
-      { title: 'Data de Início', column_name: 'start_time', uidt: 'DateTime' },
-      { title: 'Data de Fim', column_name: 'end_time', uidt: 'DateTime' },
-      { title: 'Dados JSON', column_name: 'data_json', uidt: 'LongText' }
+      { title: 'ID da Campanha', column_name: 'campaign_id', uidt: 'SingleLineText', dt: 'varchar', rqd: false },
+      { title: 'Nome da Campanha', column_name: 'campaign_name', uidt: 'SingleLineText', dt: 'varchar', rqd: false },
+      { title: 'ID da Instância', column_name: 'instance_id', uidt: 'SingleLineText', dt: 'varchar', rqd: false },
+      { title: 'Nome da Instância', column_name: 'instance_name', uidt: 'SingleLineText', dt: 'varchar', rqd: false },
+      { title: 'Tipo de Mensagem', column_name: 'message_type', uidt: 'SingleSelect', dt: 'varchar', rqd: false, dtxp: 'text,image,video,audio,document' },
+      { title: 'Número de Destinatários', column_name: 'recipient_count', uidt: 'Number', dt: 'int', rqd: false },
+      { title: 'Mensagens Enviadas', column_name: 'sent_count', uidt: 'Number', dt: 'int', rqd: false },
+      { title: 'Mensagens com Erro', column_name: 'error_count', uidt: 'Number', dt: 'int', rqd: false },
+      { title: 'Atraso (ms)', column_name: 'delay', uidt: 'Number', dt: 'int', rqd: false },
+      { title: 'Status', column_name: 'status', uidt: 'SingleSelect', dt: 'varchar', rqd: false, dtxp: 'iniciado,enviando,concluido,erro,cancelado' },
+      { title: 'Data de Início', column_name: 'start_time', uidt: 'DateTime', dt: 'datetime', rqd: false },
+      { title: 'Data de Fim', column_name: 'end_time', uidt: 'DateTime', dt: 'datetime', rqd: false },
+      { title: 'Dados JSON', column_name: 'data_json', uidt: 'LongText', dt: 'longtext', rqd: false }
     ]
   },
 
@@ -110,13 +111,13 @@ export const TABLE_SCHEMAS = {
     title: 'Estatísticas Dashboard',
     table_name: 'DashboardStats',
     columns: [
-      { title: 'Data', column_name: 'date', uidt: 'Date' },
-      { title: 'Total Disparos', column_name: 'total_disparos', uidt: 'Number' },
-      { title: 'Total Notificações', column_name: 'total_notifications', uidt: 'Number' },
-      { title: 'Taxa de Sucesso', column_name: 'success_rate', uidt: 'Decimal' },
-      { title: 'Contatos Únicos', column_name: 'unique_contacts', uidt: 'Number' },
-      { title: 'Disparos Hoje', column_name: 'disparos_today', uidt: 'Number' },
-      { title: 'Notificações Hoje', column_name: 'notifications_today', uidt: 'Number' }
+      { title: 'Data', column_name: 'date', uidt: 'Date', dt: 'date', rqd: false },
+      { title: 'Total Disparos', column_name: 'total_disparos', uidt: 'Number', dt: 'int', rqd: false },
+      { title: 'Total Notificações', column_name: 'total_notifications', uidt: 'Number', dt: 'int', rqd: false },
+      { title: 'Taxa de Sucesso', column_name: 'success_rate', uidt: 'Decimal', dt: 'decimal', rqd: false },
+      { title: 'Contatos Únicos', column_name: 'unique_contacts', uidt: 'Number', dt: 'int', rqd: false },
+      { title: 'Disparos Hoje', column_name: 'disparos_today', uidt: 'Number', dt: 'int', rqd: false },
+      { title: 'Notificações Hoje', column_name: 'notifications_today', uidt: 'Number', dt: 'int', rqd: false }
     ]
   },
 
