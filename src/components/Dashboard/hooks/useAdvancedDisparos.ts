@@ -38,20 +38,75 @@ export const useAdvancedDisparos = () => {
       const data = await nocodbService.getAllDisparos();
       
       if (data && data.length > 0) {
-        const transformedDisparos: Disparo[] = data.map((item: any) => ({
-          id: item.Id || item.id || String(Math.random()),
-          campaignName: item.campaign_name || 'Campanha sem nome',
-          instanceName: item.instance_name || item.instance_id || 'Instância não identificada',
-          recipientCount: item.recipient_count || item.sent_count || 0,
-          status: mapStatus(item.status),
-          createdAt: item.start_time || item.CreatedAt || item.created_at || new Date().toISOString(),
-          messageType: item.message_type || 'text',
-          sentCount: item.sent_count || 0,
-          errorCount: item.error_count || 0
-        }));
+        console.log('📋 Dados brutos recebidos do NocoDB (todos):', data);
         
+        const transformedDisparos: Disparo[] = data.map((item: any) => {
+          console.log('🔍 Processando item completo:', item);
+          
+          // Mapear todos os possíveis campos para campanha
+          const campaignName = item.campaign_name || 
+                             item.Campaign_name || 
+                             item.CampaignName || 
+                             item.nome_campanha ||
+                             item.campanha ||
+                             `Campanha ${item.Id || item.id || 'N/A'}`;
+          
+          // Mapear todos os possíveis campos para instância
+          const instanceName = item.instance_name || 
+                              item.Instance_name || 
+                              item.InstanceName ||
+                              item.instance_id || 
+                              item.Instance_id ||
+                              item.instanceId ||
+                              item.instancia ||
+                              'Instância não identificada';
+          
+          // Mapear todos os possíveis campos para contagem de destinatários
+          const recipientCount = Number(item.recipient_count || 
+                                       item.Recipient_count ||
+                                       item.RecipientCount ||
+                                       item.total_recipients ||
+                                       item.destinatarios ||
+                                       item.sent_count ||
+                                       item.Sent_count ||
+                                       0);
+          
+          // Mapear todos os possíveis campos para contagem enviados
+          const sentCount = Number(item.sent_count || 
+                                  item.Sent_count ||
+                                  item.SentCount ||
+                                  item.enviados ||
+                                  item.recipient_count ||
+                                  0);
+          
+          // Mapear todos os possíveis campos para contagem de erros
+          const errorCount = Number(item.error_count || 
+                                   item.Error_count ||
+                                   item.ErrorCount ||
+                                   item.erros ||
+                                   0);
+          
+          return {
+            id: String(item.Id || item.id || Math.random()),
+            campaignName,
+            instanceName,
+            recipientCount,
+            sentCount,
+            errorCount,
+            status: mapStatus(item.status || item.Status || 'pendente'),
+            createdAt: item.start_time || 
+                      item.Start_time ||
+                      item.CreatedAt || 
+                      item.created_at || 
+                      item.Created_at ||
+                      item.data_criacao ||
+                      new Date().toISOString(),
+            messageType: item.message_type || item.Message_type || item.tipo_mensagem || 'text'
+          };
+        });
+        
+        console.log('✅ Todos os disparos transformados:', transformedDisparos);
         setDisparos(transformedDisparos);
-        console.log(`✅ ${transformedDisparos.length} disparos carregados da tabela específica`);
       } else {
         console.log('⚠️ Nenhum disparo encontrado na tabela específica');
         setDisparos([]);
@@ -67,21 +122,26 @@ export const useAdvancedDisparos = () => {
   };
 
   const mapStatus = (status: string): 'enviado' | 'pendente' | 'erro' | 'enviando' | 'concluido' | 'cancelado' => {
-    switch (status) {
+    const statusLower = status.toLowerCase();
+    switch (statusLower) {
       case 'concluido':
       case 'finalizado':
       case 'completed':
+      case 'complete':
         return 'concluido';
       case 'iniciado':
       case 'enviando':
       case 'sending':
+      case 'em_andamento':
         return 'enviando';
       case 'erro':
       case 'falha':
       case 'error':
+      case 'failed':
         return 'erro';
       case 'cancelado':
       case 'cancelled':
+      case 'canceled':
         return 'cancelado';
       case 'enviado':
       case 'sent':
@@ -149,8 +209,8 @@ export const useAdvancedDisparos = () => {
   useEffect(() => {
     fetchAllDisparos();
     
-    // Atualizar dados a cada 30 segundos
-    const interval = setInterval(fetchAllDisparos, 30000);
+    // Atualizar dados a cada 15 segundos
+    const interval = setInterval(fetchAllDisparos, 15000);
     
     // Escutar evento customizado de atualização do dashboard
     const handleDashboardRefresh = () => {

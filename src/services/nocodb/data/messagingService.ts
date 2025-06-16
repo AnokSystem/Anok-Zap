@@ -67,12 +67,18 @@ export class MessagingService extends ClientService {
       console.log('📨 Buscando TODOS os disparos recentes para cliente:', clientId);
       console.log('🎯 Usando tabela específica ID:', this.DISPARO_EM_MASSA_TABLE_ID);
 
-      // Buscar TODOS os disparos sem filtro restritivo
-      const url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.DISPARO_EM_MASSA_TABLE_ID}?limit=10000&sort=-Id`;
+      // Buscar TODOS os disparos com cache-busting e ordenação
+      const timestamp = Date.now();
+      const url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.DISPARO_EM_MASSA_TABLE_ID}?limit=${limit}&sort=-Id&_t=${timestamp}`;
       console.log('📡 URL de busca:', url);
       
       const response = await fetch(url, {
-        headers: this.headers,
+        headers: {
+          ...this.headers,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        },
       });
 
       if (response.ok) {
@@ -80,6 +86,8 @@ export class MessagingService extends ClientService {
         const allDisparos = data.list || [];
         
         console.log(`📊 ${allDisparos.length} disparos totais encontrados na tabela`);
+        console.log('📋 Campos disponíveis no primeiro registro:', Object.keys(allDisparos[0] || {}));
+        console.log('📝 Primeiros 2 registros para debug:', allDisparos.slice(0, 2));
         
         // Filtro mais flexível para client_id
         const clientDisparos = allDisparos.filter(d => {
@@ -92,11 +100,8 @@ export class MessagingService extends ClientService {
           return hasClientId;
         });
         
-        // Aplicar limite apenas após o filtro
-        const limitedDisparos = clientDisparos.slice(0, limit);
-        
-        console.log(`✅ ${limitedDisparos.length} disparos encontrados para cliente ${clientId}`);
-        return limitedDisparos;
+        console.log(`✅ ${clientDisparos.length} disparos encontrados para cliente ${clientId}`);
+        return clientDisparos;
       } else {
         const errorText = await response.text();
         console.log(`❌ Erro ao buscar disparos (${response.status}):`, errorText);
