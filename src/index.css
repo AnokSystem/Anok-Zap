@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
@@ -9,22 +8,22 @@
 @layer base {
   :root {
     --background: 16 16 20;
-    --foreground: 255 255 255; /* Garantindo que foreground seja branco */
+    --foreground: 255 255 255;
 
     --card: 24 24 29;
-    --card-foreground: 255 255 255; /* Garantindo que card-foreground seja branco */
+    --card-foreground: 255 255 255;
 
     --popover: 30 30 36;
-    --popover-foreground: 255 255 255; /* Garantindo que popover-foreground seja branco */
+    --popover-foreground: 255 255 255;
 
     --primary: 123 44 191;
     --primary-foreground: 255 255 255;
 
     --secondary: 39 39 47;
-    --secondary-foreground: 255 255 255; /* Alterado para branco */
+    --secondary-foreground: 255 255 255;
 
     --muted: 30 30 36;
-    --muted-foreground: 203 213 225; /* Mantendo cinza claro */
+    --muted-foreground: 203 213 225;
 
     --accent: 157 78 221;
     --accent-foreground: 255 255 255;
@@ -51,7 +50,7 @@
     --gray-800: 30 30 36; /* #1e1e24 */
     --gray-700: 39 39 47; /* #27272f */
     --gray-600: 82 82 91; /* #52525b */
-    --gray-400: 203 213 225; /* Alterado para cinza mais claro */
+    --gray-400: 203 213 225;
     --gray-200: 226 232 240; /* #e2e8f0 */
     --white: 255 255 255;
     
@@ -59,7 +58,7 @@
     --form-success: 34 197 94; /* #22c55e - Verde suave */
     --form-warning: 249 115 22; /* #f97316 - Laranja suave */
     --form-info: 59 130 246; /* #3b82f6 - Azul suave */
-    --form-highlight: 255 255 255; /* Alterado para branco */
+    --form-highlight: 255 255 255;
     
     /* Gradientes Modernos */
     --gradient-primary: linear-gradient(135deg, rgb(123, 44, 191) 0%, rgb(157, 78, 221) 100%);
@@ -80,53 +79,53 @@
     --shadow-form: 0 2px 8px rgba(157, 78, 221, 0.1);
   }
 
-  /* Tema Claro */
+  /* Tema Claro - Baseado na Imagem */
   [data-theme="light"] {
-    --background: 255 255 255; /* Fundo branco */
-    --foreground: 51 51 51; /* Texto cinza escuro #333333 */
+    --background: 248 250 252; /* Fundo cinza muito claro #f8fafc */
+    --foreground: 51 65 85; /* Texto cinza escuro #334155 */
 
     --card: 255 255 255; /* Cards brancos */
-    --card-foreground: 51 51 51; /* Texto dos cards em cinza escuro */
+    --card-foreground: 51 65 85; /* Texto dos cards em cinza escuro */
 
     --popover: 255 255 255;
-    --popover-foreground: 51 51 51;
+    --popover-foreground: 51 65 85;
 
-    --primary: 138 74 243; /* Roxo #8A4AF3 */
+    --primary: 139 69 219; /* Roxo ajustado para tema claro #8b45db */
     --primary-foreground: 255 255 255;
 
     --secondary: 248 250 252; /* Cinza bem claro */
-    --secondary-foreground: 51 51 51;
+    --secondary-foreground: 51 65 85;
 
-    --muted: 248 250 252;
-    --muted-foreground: 100 116 139;
+    --muted: 241 245 249; /* Cinza mais claro #f1f5f9 */
+    --muted-foreground: 100 116 139; /* Cinza médio #64748b */
 
-    --accent: 138 74 243; /* Roxo #8A4AF3 */
+    --accent: 139 69 219; /* Roxo para acentos */
     --accent-foreground: 255 255 255;
 
     --destructive: 239 68 68;
     --destructive-foreground: 255 255 255;
 
-    --border: 226 232 240; /* Bordas suaves */
+    --border: 226 232 240; /* Bordas suaves #e2e8f0 */
     --input: 255 255 255; /* Inputs brancos */
-    --ring: 138 74 243; /* Roxo para focus */
+    --ring: 139 69 219; /* Roxo para focus */
 
     /* Cores Neutras para Tema Claro */
-    --gray-950: 255 255 255; /* Invertido - fundo branco */
-    --gray-900: 248 250 252; /* Cinza muito claro */
-    --gray-800: 241 245 249; /* Cinza claro */
-    --gray-700: 226 232 240; /* Cinza médio */
+    --gray-950: 248 250 252; /* Fundo claro */
+    --gray-900: 241 245 249; /* Cinza muito claro */
+    --gray-800: 226 232 240; /* Cinza claro */
+    --gray-700: 203 213 225; /* Cinza médio */
     --gray-600: 148 163 184; /* Cinza */
-    --gray-400: 100 116 139; /* Cinza escuro */
-    --gray-200: 71 85 105; /* Cinza muito escuro */
-    --white: 51 51 51; /* Invertido - texto escuro */
+    --gray-400: 100 116 139; /* Cinza mais escuro para textos secundários */
+    --gray-200: 71 85 105; /* Cinza escuro */
+    --white: 51 65 85; /* Texto principal escuro */
     
     /* Gradientes para Tema Claro */
-    --gradient-primary: linear-gradient(135deg, rgb(138, 74, 243) 0%, rgb(168, 85, 247) 100%);
+    --gradient-primary: linear-gradient(135deg, rgb(139, 69, 219) 0%, rgb(168, 85, 247) 100%);
     --gradient-secondary: linear-gradient(135deg, rgb(168, 85, 247) 0%, rgb(196, 181, 253) 100%);
-    --gradient-subtle: linear-gradient(135deg, rgba(138, 74, 243, 0.05) 0%, rgba(168, 85, 247, 0.02) 100%);
-    --gradient-header: linear-gradient(135deg, rgb(138, 74, 243) 0%, rgb(168, 85, 247) 100%);
-    --gradient-card: linear-gradient(135deg, rgba(138, 74, 243, 0.02) 0%, rgba(255, 255, 255, 0.9) 100%);
-    --gradient-form: linear-gradient(135deg, rgba(138, 74, 243, 0.03) 0%, rgba(255, 255, 255, 0.95) 100%);
+    --gradient-subtle: linear-gradient(135deg, rgba(139, 69, 219, 0.03) 0%, rgba(248, 250, 252, 0.8) 100%);
+    --gradient-header: linear-gradient(135deg, rgb(139, 69, 219) 0%, rgb(168, 85, 247) 100%);
+    --gradient-card: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.5) 100%);
+    --gradient-form: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.8) 100%);
     
     /* Sombras para Tema Claro */
     --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
@@ -134,9 +133,9 @@
     --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.03);
     --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.08), 0 4px 6px rgba(0, 0, 0, 0.03);
     --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.08), 0 10px 10px rgba(0, 0, 0, 0.02);
-    --shadow-purple: 0 4px 14px rgba(138, 74, 243, 0.12);
-    --shadow-purple-lg: 0 8px 25px rgba(138, 74, 243, 0.15);
-    --shadow-form: 0 2px 8px rgba(138, 74, 243, 0.08);
+    --shadow-purple: 0 4px 14px rgba(139, 69, 219, 0.10);
+    --shadow-purple-lg: 0 8px 25px rgba(139, 69, 219, 0.12);
+    --shadow-form: 0 2px 8px rgba(139, 69, 219, 0.06);
   }
 }
 
