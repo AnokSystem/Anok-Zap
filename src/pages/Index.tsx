@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Settings, Users, Bell, MessageSquare, Zap, LogOut, User, BookOpen } from 'lucide-react';
+import { Settings, Users, Bell, MessageSquare, Zap, LogOut, User, BookOpen, TrendingUp } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/hooks/useAuth';
+import Dashboard from '@/components/Dashboard';
 import MassMessaging from '@/components/MassMessaging';
 import ContactManagement from '@/components/ContactManagement';
 import IntelligentNotifications from '@/components/IntelligentNotifications';
@@ -16,7 +17,7 @@ const Index = () => {
   const { toast } = useToast();
   const { user, logout } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState('mass-messaging');
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   useEffect(() => {
     const tab = searchParams.get('tab');
@@ -42,6 +43,14 @@ const Index = () => {
   };
 
   const navigationCards = [
+    {
+      id: 'dashboard',
+      title: 'Dashboard',
+      subtitle: 'Acompanhe disparos e notificações',
+      icon: TrendingUp,
+      gradient: 'gradient-primary',
+      active: activeTab === 'dashboard'
+    },
     {
       id: 'mass-messaging',
       title: 'Disparo',
@@ -86,6 +95,8 @@ const Index = () => {
 
   function renderTabContent() {
     switch (activeTab) {
+      case 'dashboard':
+        return <Dashboard />;
       case 'mass-messaging':
         return <MassMessaging />;
       case 'contact-management':
@@ -97,7 +108,7 @@ const Index = () => {
       case 'extras':
         return <ExtrasSection />;
       default:
-        return <MassMessaging />;
+        return <Dashboard />;
     }
   }
 
