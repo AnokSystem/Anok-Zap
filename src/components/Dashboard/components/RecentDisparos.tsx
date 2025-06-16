@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { MessageSquare, Eye, Clock, CheckCircle2, XCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { MessageSquare, Eye, Clock, CheckCircle2, XCircle, AlertCircle, RefreshCw, Users } from 'lucide-react';
 import { useAdvancedDisparos } from '../hooks/useAdvancedDisparos';
 import { DashboardFilters } from './DashboardFilters';
 import { format } from 'date-fns';
@@ -27,6 +27,34 @@ export const RecentDisparos = ({ showAll = false }: RecentDisparosProps) => {
   } = useAdvancedDisparos();
 
   const displayDisparos = showAll ? disparos : disparos.slice(0, 10);
+
+  // Função para calcular contatos que receberam mensagens
+  const getContactsReached = (disparo: any) => {
+    // Para status 'concluido', todos os contatos receberam
+    if (disparo.status === 'concluido') {
+      return disparo.recipientCount;
+    }
+    
+    // Para status 'enviando', usar o sentCount como base para contatos alcançados
+    if (disparo.status === 'enviando') {
+      // Se há mensagens múltiplas, dividir pelo número aproximado de mensagens por contato
+      // Baseado nos dados do console, parece que cada contato recebe todas as mensagens da campanha
+      return Math.min(disparo.sentCount || 0, disparo.recipientCount);
+    }
+    
+    // Para 'erro' ou 'cancelado', verificar se há contatos que receberam antes do erro
+    if (disparo.status === 'erro' || disparo.status === 'cancelado') {
+      return Math.min(disparo.sentCount || 0, disparo.recipientCount);
+    }
+    
+    // Para 'pendente', nenhum contato recebeu ainda
+    if (disparo.status === 'pendente') {
+      return 0;
+    }
+    
+    // Default: usar sentCount limitado pelo recipientCount
+    return Math.min(disparo.sentCount || 0, disparo.recipientCount);
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -61,6 +89,12 @@ export const RecentDisparos = ({ showAll = false }: RecentDisparosProps) => {
       default:
         return <AlertCircle className="w-4 h-4 text-gray-400" />;
     }
+  };
+
+  const getProgressPercentage = (disparo: any) => {
+    const contactsReached = getContactsReached(disparo);
+    const totalContacts = disparo.recipientCount || 1;
+    return Math.round((contactsReached / totalContacts) * 100);
   };
 
   if (isLoading) {
@@ -194,49 +228,88 @@ export const RecentDisparos = ({ showAll = false }: RecentDisparosProps) => {
                     <TableHead className="text-gray-300">Campanha</TableHead>
                     <TableHead className="text-gray-300">Instância</TableHead>
                     <TableHead className="text-gray-300">Destinatários</TableHead>
-                    <TableHead className="text-gray-300">Enviados</TableHead>
+                    <TableHead className="text-gray-300">Contatos Alcançados</TableHead>
+                    <TableHead className="text-gray-300">Progresso</TableHead>
                     <TableHead className="text-gray-300">Status</TableHead>
                     <TableHead className="text-gray-300">Data</TableHead>
                     <TableHead className="text-gray-300">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {displayDisparos.map((disparo) => (
-                    <TableRow key={disparo.id} className="border-gray-700 hover:bg-gray-800/50">
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(disparo.status)}
-                          <span className="font-medium text-primary-contrast">
-                            {disparo.campaignName}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-gray-300">
-                        {disparo.instanceName}
-                      </TableCell>
-                      <TableCell className="text-gray-300">
-                        {disparo.recipientCount} contatos
-                      </TableCell>
-                      <TableCell className="text-gray-300">
-                        {disparo.sentCount || 0} enviados
-                      </TableCell>
-                      <TableCell>
-                        {getStatusBadge(disparo.status)}
-                      </TableCell>
-                      <TableCell className="text-gray-300">
-                        {format(new Date(disparo.createdAt), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-gray-400 hover:text-primary-contrast"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {displayDisparos.map((disparo) => {
+                    const contactsReached = getContactsReached(disparo);
+                    const progressPercentage = getProgressPercentage(disparo);
+                    
+                    return (
+                      <TableRow key={disparo.id} className="border-gray-700 hover:bg-gray-800/50">
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {getStatusIcon(disparo.status)}
+                            <span className="font-medium text-primary-contrast">
+                              {disparo.campaignName}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-gray-300">
+                          {disparo.instanceName}
+                        </TableCell>
+                        <TableCell className="text-gray-300">
+                          <div className="flex items-center gap-1">
+                            <Users className="w-4 h-4 text-blue-400" />
+                            {disparo.recipientCount} contatos
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-gray-300">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-green-400">
+                              {contactsReached}/{disparo.recipientCount}
+                            </span>
+                            <Badge 
+                              variant="outline" 
+                              className={`text-xs ${
+                                progressPercentage === 100 
+                                  ? 'border-green-500/30 text-green-400' 
+                                  : progressPercentage > 0 
+                                    ? 'border-blue-500/30 text-blue-400'
+                                    : 'border-gray-500/30 text-gray-400'
+                              }`}
+                            >
+                              {progressPercentage}%
+                            </Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="w-full bg-gray-700 rounded-full h-2">
+                            <div 
+                              className={`h-2 rounded-full transition-all duration-300 ${
+                                progressPercentage === 100 
+                                  ? 'bg-green-500' 
+                                  : progressPercentage > 0 
+                                    ? 'bg-blue-500'
+                                    : 'bg-gray-600'
+                              }`}
+                              style={{ width: `${progressPercentage}%` }}
+                            />
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {getStatusBadge(disparo.status)}
+                        </TableCell>
+                        <TableCell className="text-gray-300">
+                          {format(new Date(disparo.createdAt), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-gray-400 hover:text-primary-contrast"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>

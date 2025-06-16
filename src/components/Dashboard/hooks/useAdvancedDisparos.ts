@@ -20,6 +20,7 @@ interface Disparo {
   messageType: string;
   sentCount?: number;
   errorCount?: number;
+  contactsReached?: number; // Novo campo para contatos únicos alcançados
 }
 
 export const useAdvancedDisparos = () => {
@@ -83,6 +84,21 @@ export const useAdvancedDisparos = () => {
                                    item.ErrorCount ||
                                    item.erros ||
                                    0);
+
+          const status = mapStatus(item.Status || item.status || 'pendente');
+          
+          // Calcular contatos únicos alcançados baseado no status e dados
+          let contactsReached = 0;
+          if (status === 'concluido') {
+            contactsReached = recipientCount;
+          } else if (status === 'enviando' || status === 'enviado') {
+            // Para campanhas em andamento, estimar baseado nas mensagens enviadas
+            // Assumindo que cada contato recebe múltiplas mensagens da campanha
+            contactsReached = Math.min(sentCount, recipientCount);
+          } else if (status === 'erro' || status === 'cancelado') {
+            // Para erros, ver quantos contatos foram alcançados antes do erro
+            contactsReached = Math.min(sentCount, recipientCount);
+          }
           
           return {
             id: String(item.ID || item.Id || item.id || Math.random()),
@@ -91,7 +107,8 @@ export const useAdvancedDisparos = () => {
             recipientCount,
             sentCount,
             errorCount,
-            status: mapStatus(item.Status || item.status || 'pendente'),
+            contactsReached,
+            status,
             createdAt: item['Hora de Início'] ||
                       item['Criado em'] ||
                       item.start_time || 
