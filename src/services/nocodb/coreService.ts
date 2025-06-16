@@ -46,16 +46,76 @@ export class CoreNocodbService {
     if (this.initialized) return;
     
     console.log('🔧 Inicializando NocoDB Service...');
+    console.log('🎯 Base target:', this.TARGET_BASE_ID);
+    
+    // Verificar se a base está acessível
+    const baseAccessible = await this.testBaseAccess();
+    if (!baseAccessible) {
+      console.error('❌ Base não acessível, verifique configurações');
+      return;
+    }
     
     // Descobrir bases disponíveis
     await this.tableManager.discoverBases();
     
     // Forçar criação de todas as tabelas na base target
-    console.log('🏗️ Criando todas as tabelas necessárias...');
-    await this.tableManager.createAllTables();
+    console.log('🏗️ Verificando e criando todas as tabelas necessárias...');
+    const tablesCreated = await this.tableManager.createAllTables();
+    
+    if (tablesCreated) {
+      console.log('✅ Todas as tabelas verificadas/criadas com sucesso');
+    } else {
+      console.log('⚠️ Algumas tabelas podem não ter sido criadas');
+    }
+    
+    // Verificar se todas as tabelas essenciais existem
+    await this.verifyEssentialTables();
     
     this.initialized = true;
     console.log('✅ NocoDB Service inicializado com sucesso');
+  }
+
+  private async testBaseAccess(): Promise<boolean> {
+    try {
+      console.log('🔌 Testando acesso à base...');
+      const response = await fetch(`${this._config.baseUrl}/api/v1/db/meta/projects/${this.TARGET_BASE_ID}/tables`, {
+        headers: this.headers,
+      });
+      
+      if (response.ok) {
+        console.log('✅ Base acessível');
+        return true;
+      } else {
+        console.error('❌ Base não acessível:', response.status, response.statusText);
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Erro ao testar acesso à base:', error);
+      return false;
+    }
+  }
+
+  private async verifyEssentialTables(): Promise<void> {
+    const essentialTables = [
+      'NotificacoesHotmart',
+      'MassMessagingLogs', 
+      'WhatsAppContacts',
+      'WhatsAppInstances',
+      'DashboardStats',
+      'Usuarios'
+    ];
+
+    console.log('🔍 Verificando tabelas essenciais...');
+    
+    for (const tableName of essentialTables) {
+      const tableId = await this.getTableId(this.TARGET_BASE_ID, tableName);
+      if (tableId) {
+        console.log(`✅ Tabela ${tableName} verificada (ID: ${tableId})`);
+      } else {
+        console.log(`❌ Tabela ${tableName} não encontrada, tentando criar...`);
+        await this.tableManager.ensureTableExists(tableName);
+      }
+    }
   }
 
   async ensureTableExists(tableName: string): Promise<boolean> {
@@ -94,7 +154,7 @@ export class CoreNocodbService {
 
   async testConnection(): Promise<ConnectionTestResult> {
     try {
-      console.log('🔌 Testando conexão com NocoDB...');
+      console.log('🔌 Testando conexão completa com NocoDB...');
       
       await this.ensureInitialized();
       
@@ -108,8 +168,17 @@ export class CoreNocodbService {
         const targetBase = discoveredBases.find(base => base.id === targetBaseId);
         
         if (targetBase) {
-          console.log('✅ Base "Notificação Inteligente" encontrada e tabelas criadas');
-          return { success: true, bases: discoveredBases, targetBase: targetBaseId };
+          console.log('✅ Base "Notificação Inteligente" encontrada e configurada');
+          
+          // Verificar se todas as tabelas estão criadas
+          const tablesVerified = await this.verifyAllTables();
+          
+          return { 
+            success: true, 
+            bases: discoveredBases, 
+            targetBase: targetBaseId,
+            tablesVerified 
+          };
         } else {
           console.warn('⚠️ Base com ID pddywozzup2sc85 não encontrada');
           return { success: false, error: 'Base com ID pddywozzup2sc85 não encontrada' };
@@ -121,6 +190,31 @@ export class CoreNocodbService {
       console.error('❌ Erro ao conectar com NocoDB:', error);
       return { success: false, error: error.message };
     }
+  }
+
+  private async verifyAllTables(): Promise<boolean> {
+    const tableNames = [
+      'NotificacoesHotmart',
+      'MassMessagingLogs',
+      'WhatsAppContacts',
+      'WhatsAppInstances', 
+      'DashboardStats',
+      'Usuarios'
+    ];
+
+    let allTablesExist = true;
+    
+    for (const tableName of tableNames) {
+      const tableId = await this.getTableId(this.TARGET_BASE_ID, tableName);
+      if (!tableId) {
+        console.log(`❌ Tabela ${tableName} não encontrada`);
+        allTablesExist = false;
+      } else {
+        console.log(`✅ Tabela ${tableName} encontrada`);
+      }
+    }
+
+    return allTablesExist;
   }
 
   async createAllTables() {

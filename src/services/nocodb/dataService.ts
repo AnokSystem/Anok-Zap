@@ -1,3 +1,4 @@
+
 import { BaseNocodbService } from './baseService';
 import { NocodbConfig } from './types';
 
@@ -6,12 +7,23 @@ export class DataService extends BaseNocodbService {
     super(config);
   }
 
+  // Obter client_id do usuário logado (pode ser do localStorage ou contexto)
+  private getClientId(): string {
+    // Por enquanto retorna um ID padrão, mas pode ser implementado baseado no usuário logado
+    const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    return user.client_id || user.Email?.split('@')[0] || 'default';
+  }
+
   async saveMassMessagingLog(baseId: string, campaignData: any): Promise<boolean> {
     try {
       console.log('💾 Salvando log de disparo em massa no NocoDB...');
       console.log('📋 Dados recebidos:', campaignData);
       
+      const clientId = this.getClientId();
+      console.log('🏢 Client ID identificado:', clientId);
+      
       const data = {
+        client_id: clientId,
         campaign_id: campaignData.campaign_id || `campanha_${Date.now()}`,
         campaign_name: campaignData.campaign_name || `Campanha ${new Date().toLocaleString('pt-BR')}`,
         instance_id: campaignData.instance_id || campaignData.instance,
@@ -23,7 +35,10 @@ export class DataService extends BaseNocodbService {
         delay: campaignData.delay || 5000,
         status: campaignData.status || 'iniciado',
         start_time: campaignData.start_time || new Date().toISOString(),
-        data_json: JSON.stringify(campaignData)
+        notification_phone: campaignData.notificationPhone,
+        data_json: JSON.stringify(campaignData),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
       
       console.log('📝 Dados formatados para salvar:', data);
@@ -62,16 +77,24 @@ export class DataService extends BaseNocodbService {
 
   async saveContacts(baseId: string, contacts: any[], instanceId: string): Promise<boolean> {
     try {
-      console.log('Salvando contatos no NocoDB...');
+      console.log('💾 Salvando contatos no NocoDB...');
+      
+      const clientId = this.getClientId();
+      console.log('🏢 Client ID identificado:', clientId);
       
       const contactRecords = contacts.map(contact => ({
+        client_id: clientId,
         contact_id: contact.id,
         name: contact.name,
         phone_number: contact.phoneNumber,
         group_name: contact.groupName || null,
         instance_id: instanceId,
+        is_business: contact.isBusiness || false,
+        profile_picture_url: contact.profilePictureUrl || null,
+        last_seen: contact.lastSeen || null,
+        data_json: JSON.stringify(contact),
         created_at: new Date().toISOString(),
-        data_json: JSON.stringify(contact)
+        updated_at: new Date().toISOString()
       }));
 
       const batchSize = 50;
@@ -91,45 +114,87 @@ export class DataService extends BaseNocodbService {
             const success = await this.saveToTable(baseId, tableId, contact);
             if (success) savedCount++;
           } catch (error) {
-            console.log('Erro ao salvar contato individual:', error);
+            console.log('❌ Erro ao salvar contato individual:', error);
           }
         }
       }
       
-      console.log(`Processo concluído: ${savedCount} de ${contactRecords.length} contatos salvos`);
+      console.log(`✅ Processo concluído: ${savedCount} de ${contactRecords.length} contatos salvos para cliente ${clientId}`);
       return true;
     } catch (error) {
-      console.error('Erro ao salvar contatos:', error);
+      console.error('❌ Erro ao salvar contatos:', error);
       return false;
     }
   }
 
   async saveInstance(baseId: string, instanceData: any): Promise<boolean> {
     try {
-      console.log('Salvando instância no NocoDB...');
+      console.log('💾 Salvando instância no NocoDB...');
+      
+      const clientId = this.getClientId();
+      console.log('🏢 Client ID identificado:', clientId);
       
       const data = {
+        client_id: clientId,
         instance_id: instanceData.id,
         name: instanceData.name,
         status: instanceData.status,
-        created_at: instanceData.creationDate,
-        last_updated: new Date().toISOString(),
-        data_json: JSON.stringify(instanceData)
+        phone_number: instanceData.phoneNumber || null,
+        profile_name: instanceData.profileName || null,
+        profile_picture_url: instanceData.profilePictureUrl || null,
+        webhook_url: instanceData.webhookUrl || null,
+        api_key: instanceData.apiKey || null,
+        data_json: JSON.stringify(instanceData),
+        created_at: instanceData.creationDate || new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
       
       const tableId = await this.getTableId(baseId, 'WhatsAppInstances');
       if (tableId) {
         const success = await this.saveToTable(baseId, tableId, data);
         if (success) {
-          console.log('✅ Instância salva com sucesso');
+          console.log(`✅ Instância salva com sucesso para cliente ${clientId}`);
           return true;
         }
       }
       
       return false;
     } catch (error) {
-      console.error('Erro ao salvar instância:', error);
+      console.error('❌ Erro ao salvar instância:', error);
       return false;
+    }
+  }
+
+  // Método para buscar dados filtrados por cliente
+  async getClientData(baseId: string, tableName: string, limit: number = 100): Promise<any[]> {
+    try {
+      const clientId = this.getClientId();
+      const tableId = await this.getTableId(baseId, tableName);
+      
+      if (!tableId) {
+        console.log(`❌ Tabela ${tableName} não encontrada`);
+        return [];
+      }
+
+      const url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?where=(client_id,eq,${clientId})&limit=${limit}&sort=-created_at`;
+      console.log('📡 Buscando dados do cliente:', url);
+      
+      const response = await fetch(url, {
+        headers: this.headers,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`✅ ${data.list?.length || 0} registros encontrados para cliente ${clientId}`);
+        return data.list || [];
+      } else {
+        const errorText = await response.text();
+        console.log(`❌ Erro ao buscar dados (${response.status}):`, errorText);
+        return [];
+      }
+    } catch (error) {
+      console.error('❌ Erro ao buscar dados do cliente:', error);
+      return [];
     }
   }
 

@@ -9,12 +9,19 @@ export class DashboardService extends BaseNocodbService {
 
   async getDashboardStats(baseId: string): Promise<any> {
     try {
-      console.log('📊 Buscando estatísticas do dashboard...');
+      console.log('📊 Buscando estatísticas do dashboard na base:', baseId);
       
+      // Verificar se a base está acessível
+      const baseTest = await this.testBaseConnection(baseId);
+      if (!baseTest) {
+        console.log('❌ Base não acessível, retornando estatísticas calculadas');
+        return await this.getCalculatedStats(baseId);
+      }
+
       const tableId = await this.getTableId(baseId, 'DashboardStats');
       if (!tableId) {
-        console.log('❌ Tabela DashboardStats não encontrada');
-        return this.getCalculatedStats(baseId);
+        console.log('❌ Tabela DashboardStats não encontrada, calculando em tempo real');
+        return await this.getCalculatedStats(baseId);
       }
 
       // Buscar estatísticas do dia atual
@@ -29,12 +36,13 @@ export class DashboardService extends BaseNocodbService {
       if (response.ok) {
         const data = await response.json();
         if (data.list && data.list.length > 0) {
-          console.log('✅ Estatísticas encontradas:', data.list[0]);
+          console.log('✅ Estatísticas encontradas na tabela:', data.list[0]);
           return data.list[0];
         }
       }
 
       // Se não encontrar estatísticas do dia, calcular em tempo real
+      console.log('🔄 Calculando estatísticas em tempo real...');
       return await this.getCalculatedStats(baseId);
     } catch (error) {
       console.error('❌ Erro ao buscar estatísticas:', error);
@@ -42,9 +50,21 @@ export class DashboardService extends BaseNocodbService {
     }
   }
 
+  private async testBaseConnection(baseId: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.config.baseUrl}/api/v1/db/meta/projects/${baseId}/tables`, {
+        headers: this.headers,
+      });
+      return response.ok;
+    } catch (error) {
+      console.error('❌ Erro ao testar conexão com a base:', error);
+      return false;
+    }
+  }
+
   async getCalculatedStats(baseId: string): Promise<any> {
     try {
-      console.log('🔄 Calculando estatísticas em tempo real...');
+      console.log('🔄 Calculando estatísticas em tempo real para base:', baseId);
       
       const [disparosStats, notificationsStats] = await Promise.all([
         this.getDisparosStats(baseId),
@@ -62,6 +82,10 @@ export class DashboardService extends BaseNocodbService {
       };
 
       console.log('✅ Estatísticas calculadas:', stats);
+      
+      // Tentar salvar as estatísticas calculadas para cache futuro
+      await this.saveDashboardStats(baseId, stats);
+      
       return stats;
     } catch (error) {
       console.error('❌ Erro ao calcular estatísticas:', error);
@@ -76,13 +100,49 @@ export class DashboardService extends BaseNocodbService {
     }
   }
 
+  private async saveDashboardStats(baseId: string, stats: any): Promise<void> {
+    try {
+      const tableId = await this.getTableId(baseId, 'DashboardStats');
+      if (!tableId) {
+        console.log('⚠️ Tabela DashboardStats não encontrada, não foi possível salvar cache');
+        return;
+      }
+
+      const response = await fetch(`${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}`, {
+        method: 'POST',
+        headers: this.headers,
+        body: JSON.stringify({
+          date: stats.date,
+          total_disparos: stats.total_disparos,
+          total_notifications: stats.total_notifications,
+          success_rate: stats.success_rate,
+          unique_contacts: stats.unique_contacts,
+          disparos_today: stats.disparos_today,
+          notifications_today: stats.notifications_today,
+          client_id: 'default', // Identificação do cliente
+          updated_at: new Date().toISOString()
+        }),
+      });
+
+      if (response.ok) {
+        console.log('✅ Estatísticas salvas em cache');
+      }
+    } catch (error) {
+      console.log('⚠️ Erro ao salvar cache de estatísticas:', error);
+    }
+  }
+
   async getDisparosStats(baseId: string): Promise<any> {
     try {
       const tableId = await this.getTableId(baseId, 'MassMessagingLogs');
-      if (!tableId) return { total: 0, today: 0, successRate: 0, uniqueContacts: 0 };
+      if (!tableId) {
+        console.log('❌ Tabela MassMessagingLogs não encontrada');
+        return { total: 0, today: 0, successRate: 0, uniqueContacts: 0 };
+      }
 
+      console.log('📡 Buscando dados de disparos na tabela:', tableId);
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=1000&sort=-start_time`,
         {
           headers: this.headers,
         }
@@ -92,23 +152,29 @@ export class DashboardService extends BaseNocodbService {
         const data = await response.json();
         const disparos = data.list || [];
         
+        console.log(`📊 ${disparos.length} disparos encontrados`);
+        
         const today = new Date().toISOString().split('T')[0];
         const disparosToday = disparos.filter(d => 
           d.start_time && d.start_time.startsWith(today)
         );
 
-        const totalSent = disparos.reduce((acc, d) => acc + (d.sent_count || 0), 0);
-        const totalErrors = disparos.reduce((acc, d) => acc + (d.error_count || 0), 0);
+        const totalSent = disparos.reduce((acc, d) => acc + (parseInt(d.sent_count) || 0), 0);
+        const totalErrors = disparos.reduce((acc, d) => acc + (parseInt(d.error_count) || 0), 0);
         const successRate = totalSent > 0 ? ((totalSent - totalErrors) / totalSent) * 100 : 0;
 
-        return {
+        const stats = {
           total: disparos.length,
           today: disparosToday.length,
           successRate: Math.round(successRate * 10) / 10,
           uniqueContacts: totalSent
         };
+
+        console.log('📈 Estatísticas de disparos:', stats);
+        return stats;
       }
 
+      console.log('❌ Erro na resposta da API:', response.status);
       return { total: 0, today: 0, successRate: 0, uniqueContacts: 0 };
     } catch (error) {
       console.error('❌ Erro ao buscar estatísticas de disparos:', error);
@@ -119,10 +185,14 @@ export class DashboardService extends BaseNocodbService {
   async getNotificationsStats(baseId: string): Promise<any> {
     try {
       const tableId = await this.getTableId(baseId, 'NotificacoesHotmart');
-      if (!tableId) return { total: 0, today: 0 };
+      if (!tableId) {
+        console.log('❌ Tabela NotificacoesHotmart não encontrada');
+        return { total: 0, today: 0 };
+      }
 
+      console.log('📡 Buscando dados de notificações na tabela:', tableId);
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=1000&sort=-event_date`,
         {
           headers: this.headers,
         }
@@ -132,17 +202,23 @@ export class DashboardService extends BaseNocodbService {
         const data = await response.json();
         const notifications = data.list || [];
         
+        console.log(`📊 ${notifications.length} notificações encontradas`);
+        
         const today = new Date().toISOString().split('T')[0];
         const notificationsToday = notifications.filter(n => 
           n.event_date && n.event_date.startsWith(today)
         );
 
-        return {
+        const stats = {
           total: notifications.length,
           today: notificationsToday.length
         };
+
+        console.log('📈 Estatísticas de notificações:', stats);
+        return stats;
       }
 
+      console.log('❌ Erro na resposta da API:', response.status);
       return { total: 0, today: 0 };
     } catch (error) {
       console.error('❌ Erro ao buscar estatísticas de notificações:', error);
@@ -169,7 +245,7 @@ export class DashboardService extends BaseNocodbService {
 
       if (response.ok) {
         const data = await response.json();
-        console.log(`✅ ${data.list?.length || 0} disparos encontrados`);
+        console.log(`✅ ${data.list?.length || 0} disparos recentes encontrados`);
         return data.list || [];
       }
 
@@ -200,7 +276,7 @@ export class DashboardService extends BaseNocodbService {
 
       if (response.ok) {
         const data = await response.json();
-        console.log(`✅ ${data.list?.length || 0} notificações encontradas`);
+        console.log(`✅ ${data.list?.length || 0} notificações recentes encontradas`);
         return data.list || [];
       }
 
@@ -220,7 +296,7 @@ export class DashboardService extends BaseNocodbService {
       if (!tableId) return [];
 
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?sort=-start_time`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?sort=-start_time&limit=1000`,
         {
           headers: this.headers,
         }
@@ -241,8 +317,8 @@ export class DashboardService extends BaseNocodbService {
             d.start_time && d.start_time.startsWith(dateStr)
           );
           
-          const totalSent = dayDisparos.reduce((acc, d) => acc + (d.sent_count || 0), 0);
-          const totalErrors = dayDisparos.reduce((acc, d) => acc + (d.error_count || 0), 0);
+          const totalSent = dayDisparos.reduce((acc, d) => acc + (parseInt(d.sent_count) || 0), 0);
+          const totalErrors = dayDisparos.reduce((acc, d) => acc + (parseInt(d.error_count) || 0), 0);
           
           chartData.push({
             date: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
@@ -251,6 +327,7 @@ export class DashboardService extends BaseNocodbService {
           });
         }
 
+        console.log('📊 Dados do gráfico calculados:', chartData);
         return chartData;
       }
 
@@ -269,7 +346,7 @@ export class DashboardService extends BaseNocodbService {
       if (!tableId) return [];
 
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?sort=-event_date`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?sort=-event_date&limit=1000`,
         {
           headers: this.headers,
         }
@@ -302,6 +379,7 @@ export class DashboardService extends BaseNocodbService {
           });
         }
 
+        console.log('📊 Dados do gráfico de notificações calculados:', chartData);
         return chartData;
       }
 

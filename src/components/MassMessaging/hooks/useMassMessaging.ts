@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { evolutionApiService } from '@/services/evolutionApi';
@@ -16,6 +17,12 @@ export const useMassMessaging = () => {
   const [delay, setDelay] = useState([5]);
   const [notificationPhone, setNotificationPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Obter identificação do cliente
+  const getClientId = (): string => {
+    const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    return user.client_id || user.Email?.split('@')[0] || 'default';
+  };
 
   useEffect(() => {
     loadInstances();
@@ -132,6 +139,9 @@ export const useMassMessaging = () => {
     try {
       console.log('💾 Salvando campanha no NocoDB...');
       
+      const clientId = getClientId();
+      console.log('🏢 Client ID identificado:', clientId);
+      
       // Preparar dados para salvar no formato correto
       const logData = {
         campaign_id: `campanha_${Date.now()}`,
@@ -150,7 +160,8 @@ export const useMassMessaging = () => {
         start_time: new Date().toISOString(),
         notificationPhone: campaignData.notificationPhone,
         processedCampaigns: processedCampaigns,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        client_id: clientId // Adicionar identificação do cliente
       };
       
       console.log('📋 Dados para salvar no NocoDB:', logData);
@@ -158,7 +169,7 @@ export const useMassMessaging = () => {
       const success = await nocodbService.saveMassMessagingLog(logData);
       
       if (success) {
-        console.log('✅ Campanha salva no NocoDB com sucesso');
+        console.log('✅ Campanha salva no NocoDB com sucesso para cliente:', clientId);
         return true;
       } else {
         console.log('❌ Falha ao salvar campanha no NocoDB');
@@ -184,6 +195,9 @@ export const useMassMessaging = () => {
     if (!validateMessages(messages)) {
       return;
     }
+
+    const clientId = getClientId();
+    console.log('🏢 Iniciando campanha para cliente:', clientId);
 
     setIsLoading(true);
     try {
@@ -225,7 +239,8 @@ export const useMassMessaging = () => {
           (msg.type === 'text' && VariableProcessor.getAvailableVariables().some(v => msg.content.includes(v))) ||
           (msg.caption && VariableProcessor.getAvailableVariables().some(v => msg.caption.includes(v)))
         ),
-        savedToNocoDB
+        savedToNocoDB,
+        client_id: clientId // Adicionar client_id ao webhook
       };
 
       console.log('📡 Enviando dados para webhook n8n:', enhancedCampaignData);
@@ -247,7 +262,7 @@ export const useMassMessaging = () => {
 
       toast({
         title: "Campanha Iniciada",
-        description: `Campanha iniciada com ${processedCampaigns.length} mensagens personalizadas${savedToNocoDB ? ' e salva no banco' : ''}`,
+        description: `Campanha iniciada com ${processedCampaigns.length} mensagens personalizadas${savedToNocoDB ? ' e salva no banco' : ''} para cliente ${clientId}`,
       });
 
       // Reset form
