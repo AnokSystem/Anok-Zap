@@ -23,25 +23,26 @@ export const useRecentDisparos = (limit: number = 10) => {
       setIsLoading(true);
       console.log('📨 Buscando TODOS os disparos recentes do NocoDB...');
       
-      // Usar o método específico que acessa a tabela correta
       const data = await nocodbService.getRecentDisparos(limit);
       
       if (data && data.length > 0) {
         console.log('📋 Dados brutos recebidos do NocoDB:', data);
         
         const transformedDisparos: Disparo[] = data.map((item: any) => {
-          console.log('🔍 Processando item:', item);
+          console.log('🔍 Processando item completo:', item);
           
-          // Mapear todos os possíveis campos para campanha
-          const campaignName = item.campaign_name || 
+          // Mapear usando os nomes exatos dos campos conforme console logs
+          const campaignName = item['Nome da Campanha'] || 
+                             item.campaign_name || 
                              item.Campaign_name || 
                              item.CampaignName || 
                              item.nome_campanha ||
                              item.campanha ||
-                             `Campanha ${item.Id || item.id || 'N/A'}`;
+                             `Campanha ${item.ID || item.Id || item.id || 'N/A'}`;
           
-          // Mapear todos os possíveis campos para instância
-          const instanceName = item.instance_name || 
+          const instanceName = item['Nome da Instância'] || 
+                              item['ID da Instância'] ||
+                              item.instance_name || 
                               item.Instance_name || 
                               item.InstanceName ||
                               item.instance_id || 
@@ -50,29 +51,28 @@ export const useRecentDisparos = (limit: number = 10) => {
                               item.instancia ||
                               'Instância não identificada';
           
-          // Mapear todos os possíveis campos para contagem de destinatários
-          const recipientCount = Number(item.recipient_count || 
+          const recipientCount = Number(item['Total de Destinatários'] || 
+                                       item.recipient_count || 
                                        item.Recipient_count ||
                                        item.RecipientCount ||
                                        item.total_recipients ||
                                        item.destinatarios ||
-                                       item.sent_count ||
-                                       item.Sent_count ||
                                        0);
           
-          // Mapear todos os possíveis campos para contagem enviados
-          const sentCount = Number(item.sent_count || 
+          const sentCount = Number(item['Mensagens Enviadas'] || 
+                                  item.sent_count || 
                                   item.Sent_count ||
                                   item.SentCount ||
                                   item.enviados ||
-                                  item.recipient_count ||
                                   0);
           
-          // Mapear status
-          const status = mapStatus(item.status || item.Status || 'pendente');
+          // Mapear status usando o campo correto
+          const status = mapStatus(item.Status || item.status || 'pendente');
           
           // Mapear data de criação
-          const createdAt = item.start_time || 
+          const createdAt = item['Hora de Início'] ||
+                           item['Criado em'] ||
+                           item.start_time || 
                            item.Start_time ||
                            item.CreatedAt || 
                            item.created_at || 
@@ -80,19 +80,28 @@ export const useRecentDisparos = (limit: number = 10) => {
                            item.data_criacao ||
                            new Date().toISOString();
           
+          console.log('✅ Dados mapeados:', {
+            campaignName,
+            instanceName,
+            recipientCount,
+            sentCount,
+            status,
+            createdAt
+          });
+          
           return {
-            id: String(item.Id || item.id || Math.random()),
+            id: String(item.ID || item.Id || item.id || Math.random()),
             campaignName,
             instanceName,
             recipientCount,
             sentCount,
             status,
             createdAt,
-            messageType: item.message_type || item.Message_type || item.tipo_mensagem || 'text'
+            messageType: item['Tipo de Mensagem'] || item.message_type || item.Message_type || item.tipo_mensagem || 'text'
           };
         });
         
-        console.log('✅ Disparos transformados:', transformedDisparos);
+        console.log('✅ Disparos transformados finais:', transformedDisparos);
         setDisparos(transformedDisparos);
         setError(null);
       } else {
@@ -142,8 +151,8 @@ export const useRecentDisparos = (limit: number = 10) => {
   useEffect(() => {
     fetchDisparos();
     
-    // Atualizar dados a cada 15 segundos para sincronização mais rápida
-    const interval = setInterval(fetchDisparos, 15000);
+    // Atualizar dados a cada 10 segundos para sincronização mais rápida
+    const interval = setInterval(fetchDisparos, 10000);
     
     // Escutar evento customizado de atualização do dashboard
     const handleDashboardRefresh = () => {

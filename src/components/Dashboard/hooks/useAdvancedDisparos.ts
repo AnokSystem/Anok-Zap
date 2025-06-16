@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { nocodbService } from '@/services/nocodb';
 
@@ -43,16 +42,18 @@ export const useAdvancedDisparos = () => {
         const transformedDisparos: Disparo[] = data.map((item: any) => {
           console.log('🔍 Processando item completo:', item);
           
-          // Mapear todos os possíveis campos para campanha
-          const campaignName = item.campaign_name || 
+          // Mapear usando os nomes exatos dos campos conforme console logs
+          const campaignName = item['Nome da Campanha'] || 
+                             item.campaign_name || 
                              item.Campaign_name || 
                              item.CampaignName || 
                              item.nome_campanha ||
                              item.campanha ||
-                             `Campanha ${item.Id || item.id || 'N/A'}`;
+                             `Campanha ${item.ID || item.Id || item.id || 'N/A'}`;
           
-          // Mapear todos os possíveis campos para instância
-          const instanceName = item.instance_name || 
+          const instanceName = item['Nome da Instância'] || 
+                              item['ID da Instância'] ||
+                              item.instance_name || 
                               item.Instance_name || 
                               item.InstanceName ||
                               item.instance_id || 
@@ -61,47 +62,46 @@ export const useAdvancedDisparos = () => {
                               item.instancia ||
                               'Instância não identificada';
           
-          // Mapear todos os possíveis campos para contagem de destinatários
-          const recipientCount = Number(item.recipient_count || 
+          const recipientCount = Number(item['Total de Destinatários'] || 
+                                       item.recipient_count || 
                                        item.Recipient_count ||
                                        item.RecipientCount ||
                                        item.total_recipients ||
                                        item.destinatarios ||
-                                       item.sent_count ||
-                                       item.Sent_count ||
                                        0);
           
-          // Mapear todos os possíveis campos para contagem enviados
-          const sentCount = Number(item.sent_count || 
+          const sentCount = Number(item['Mensagens Enviadas'] || 
+                                  item.sent_count || 
                                   item.Sent_count ||
                                   item.SentCount ||
                                   item.enviados ||
-                                  item.recipient_count ||
                                   0);
           
-          // Mapear todos os possíveis campos para contagem de erros
-          const errorCount = Number(item.error_count || 
+          const errorCount = Number(item.Erros || 
+                                   item.error_count || 
                                    item.Error_count ||
                                    item.ErrorCount ||
                                    item.erros ||
                                    0);
           
           return {
-            id: String(item.Id || item.id || Math.random()),
+            id: String(item.ID || item.Id || item.id || Math.random()),
             campaignName,
             instanceName,
             recipientCount,
             sentCount,
             errorCount,
-            status: mapStatus(item.status || item.Status || 'pendente'),
-            createdAt: item.start_time || 
+            status: mapStatus(item.Status || item.status || 'pendente'),
+            createdAt: item['Hora de Início'] ||
+                      item['Criado em'] ||
+                      item.start_time || 
                       item.Start_time ||
                       item.CreatedAt || 
                       item.created_at || 
                       item.Created_at ||
                       item.data_criacao ||
                       new Date().toISOString(),
-            messageType: item.message_type || item.Message_type || item.tipo_mensagem || 'text'
+            messageType: item['Tipo de Mensagem'] || item.message_type || item.Message_type || item.tipo_mensagem || 'text'
           };
         });
         
@@ -209,8 +209,8 @@ export const useAdvancedDisparos = () => {
   useEffect(() => {
     fetchAllDisparos();
     
-    // Atualizar dados a cada 15 segundos
-    const interval = setInterval(fetchAllDisparos, 15000);
+    // Atualizar dados a cada 10 segundos
+    const interval = setInterval(fetchAllDisparos, 10000);
     
     // Escutar evento customizado de atualização do dashboard
     const handleDashboardRefresh = () => {
