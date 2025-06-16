@@ -2,12 +2,22 @@
 import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { evolutionApiService } from '@/services/evolutionApi';
-import { nocodbService } from '@/services/nocodb';
 import { Message, CampaignData } from '../types';
 import { VariableProcessor } from '../utils/variableProcessor';
+import { useClientId } from './useClientId';
+import { useCampaignValidation } from './useCampaignValidation';
+import { useMessageProcessor } from './useMessageProcessor';
+import { useCampaignSave } from './useCampaignSave';
+import { useSavedContacts } from './useSavedContacts';
 
 export const useMassMessaging = () => {
   const { toast } = useToast();
+  const { getClientId } = useClientId();
+  const { validateMessages } = useCampaignValidation();
+  const { processMessagesWithVariables } = useMessageProcessor();
+  const { saveCampaignToNocoDB } = useCampaignSave();
+  const { checkForSavedContacts } = useSavedContacts();
+
   const [instances, setInstances] = useState<any[]>([]);
   const [selectedInstance, setSelectedInstance] = useState('');
   const [messages, setMessages] = useState<Message[]>([
@@ -18,46 +28,10 @@ export const useMassMessaging = () => {
   const [notificationPhone, setNotificationPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Obter identificação do cliente
-  const getClientId = (): string => {
-    const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    return user.client_id || user.Email?.split('@')[0] || 'default';
-  };
-
   useEffect(() => {
     loadInstances();
-    checkForSavedContacts();
+    checkForSavedContacts(setRecipients, setSelectedInstance);
   }, []);
-
-  const checkForSavedContacts = () => {
-    console.log('Verificando contatos salvos no localStorage...');
-    
-    const savedContacts = localStorage.getItem('massMessagingContacts');
-    const savedInstance = localStorage.getItem('massMessagingInstance');
-    
-    console.log('Contatos salvos encontrados:', !!savedContacts);
-    console.log('Instância salva encontrada:', !!savedInstance);
-    
-    if (savedContacts) {
-      console.log('Importando contatos:', savedContacts);
-      setRecipients(savedContacts);
-      
-      localStorage.removeItem('massMessagingContacts');
-      
-      if (savedInstance) {
-        console.log('Definindo instância:', savedInstance);
-        setSelectedInstance(savedInstance);
-        localStorage.removeItem('massMessagingInstance');
-      }
-      
-      toast({
-        title: "Contatos Importados",
-        description: "Contatos foram importados da página de gerenciamento de contatos",
-      });
-    } else {
-      console.log('Nenhum contato salvo encontrado');
-    }
-  };
 
   const loadInstances = async () => {
     try {
@@ -69,116 +43,6 @@ export const useMassMessaging = () => {
         description: "Falha ao carregar instâncias do WhatsApp",
         variant: "destructive",
       });
-    }
-  };
-
-  const processMessagesWithVariables = (messages: Message[], recipients: string[]) => {
-    return recipients.map(recipient => {
-      // Extrair nome e telefone do formato "telefone - nome" ou apenas "telefone"
-      const [phoneNumber, ...nameParts] = recipient.split(' - ');
-      const contactName = nameParts.length > 0 ? nameParts.join(' - ') : phoneNumber;
-      
-      const contactData = {
-        name: contactName,
-        phoneNumber: phoneNumber.trim()
-      };
-      
-      // Processar cada mensagem com as variáveis do contato
-      const processedMessages = messages.map(message => ({
-        ...message,
-        content: message.type === 'text' 
-          ? VariableProcessor.processMessage(message.content, contactData)
-          : message.content,
-        // Processar descrição do arquivo se existir
-        caption: message.caption 
-          ? VariableProcessor.processMessage(message.caption, contactData)
-          : message.caption,
-        // Preservar fileUrl para todos os tipos de mensagem
-        fileUrl: message.fileUrl || '',
-        file: message.file
-      }));
-      
-      return {
-        contact: contactData,
-        messages: processedMessages
-      };
-    });
-  };
-
-  const validateMessages = (messages: Message[]): boolean => {
-    for (const message of messages) {
-      if (message.type === 'text') {
-        const validation = VariableProcessor.validateMessage(message.content);
-        if (!validation.isValid) {
-          toast({
-            title: "Erro de Validação",
-            description: `Mensagem ${messages.indexOf(message) + 1}: ${validation.errors.join(', ')}`,
-            variant: "destructive",
-          });
-          return false;
-        }
-      }
-      
-      // Validar descrição do arquivo se existir
-      if (message.caption) {
-        const captionValidation = VariableProcessor.validateMessage(message.caption);
-        if (!captionValidation.isValid) {
-          toast({
-            title: "Erro de Validação",
-            description: `Descrição da mensagem ${messages.indexOf(message) + 1}: ${captionValidation.errors.join(', ')}`,
-            variant: "destructive",
-          });
-          return false;
-        }
-      }
-    }
-    return true;
-  };
-
-  const saveCampaignToNocoDB = async (campaignData: CampaignData, processedCampaigns: any[]) => {
-    try {
-      console.log('💾 Salvando campanha no NocoDB...');
-      
-      const clientId = getClientId();
-      console.log('🏢 Client ID identificado:', clientId);
-      
-      // Preparar dados corretamente para o NocoDB
-      const logData = {
-        campaign_id: `campanha_${Date.now()}`,
-        campaign_name: `Campanha ${new Date().toLocaleString('pt-BR')}`,
-        instance_id: campaignData.instance,
-        instance_name: instances.find(i => i.name === campaignData.instance)?.name || campaignData.instance,
-        message_type: campaignData.messages[0]?.type || 'text',
-        recipient_count: campaignData.recipients.length,
-        sent_count: 0,
-        error_count: 0,
-        delay: campaignData.delay,
-        status: 'iniciado',
-        start_time: new Date().toISOString(),
-        notification_phone: campaignData.notificationPhone,
-        data_json: JSON.stringify({
-          messages: campaignData.messages,
-          recipients: campaignData.recipients,
-          processedCampaigns: processedCampaigns
-        }),
-        client_id: clientId
-      };
-      
-      console.log('📋 Dados formatados para NocoDB:', logData);
-      
-      // Usar o método correto do nocodbService
-      const success = await nocodbService.saveMassMessagingLog(logData);
-      
-      if (success) {
-        console.log('✅ Campanha salva no NocoDB com sucesso para cliente:', clientId);
-        return true;
-      } else {
-        console.log('❌ Falha ao salvar campanha no NocoDB');
-        return false;
-      }
-    } catch (error) {
-      console.error('❌ Erro ao salvar campanha no NocoDB:', error);
-      return false;
     }
   };
 
@@ -222,22 +86,7 @@ export const useMassMessaging = () => {
 
       // Salvar no NocoDB ANTES de enviar para o webhook
       console.log('💾 Salvando campanha no NocoDB...');
-      const savedToNocoDB = await saveCampaignToNocoDB(campaignData, processedCampaigns);
-      
-      if (savedToNocoDB) {
-        console.log('✅ Campanha salva no NocoDB');
-        toast({
-          title: "Sucesso",
-          description: "Campanha registrada no banco de dados",
-        });
-      } else {
-        console.log('⚠️ Falha ao salvar no NocoDB, mas continuando com o envio');
-        toast({
-          title: "Aviso",
-          description: "Problema ao registrar no banco, mas disparo continuará",
-          variant: "destructive",
-        });
-      }
+      const savedToNocoDB = await saveCampaignToNocoDB(campaignData, processedCampaigns, instances);
 
       // Adicionar dados processados para o webhook
       const enhancedCampaignData = {
