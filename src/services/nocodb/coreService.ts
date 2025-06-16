@@ -54,7 +54,21 @@ export class CoreNocodbService {
     await this.ensureInitialized();
     const targetBaseId = this.getTargetBaseId();
     if (!targetBaseId) return [];
-    return await this.dataService.getRecentDisparos(targetBaseId, limit);
+    return await this.dashboardService.getRecentDisparos(targetBaseId, limit);
+  }
+
+  public async getAllDisparos() {
+    await this.ensureInitialized();
+    const targetBaseId = this.getTargetBaseId();
+    if (!targetBaseId) return [];
+    return await this.dashboardService.getAllDisparos(targetBaseId);
+  }
+
+  public async getDisparosWithFilters(filters: any) {
+    await this.ensureInitialized();
+    const targetBaseId = this.getTargetBaseId();
+    if (!targetBaseId) return [];
+    return await this.dashboardService.getDisparosWithFilters(targetBaseId, filters);
   }
 
   public async getRecentNotifications(limit: number = 10) {
@@ -62,6 +76,20 @@ export class CoreNocodbService {
     const targetBaseId = this.getTargetBaseId();
     if (!targetBaseId) return [];
     return await this.dashboardService.getRecentNotifications(targetBaseId, limit);
+  }
+
+  public async getAllNotifications() {
+    await this.ensureInitialized();
+    const targetBaseId = this.getTargetBaseId();
+    if (!targetBaseId) return [];
+    return await this.dashboardService.getAllNotifications(targetBaseId);
+  }
+
+  public async getNotificationsWithFilters(filters: any) {
+    await this.ensureInitialized();
+    const targetBaseId = this.getTargetBaseId();
+    if (!targetBaseId) return [];
+    return await this.dashboardService.getNotificationsWithFilters(targetBaseId, filters);
   }
 
   public async getDisparosChartData(days: number = 7) {

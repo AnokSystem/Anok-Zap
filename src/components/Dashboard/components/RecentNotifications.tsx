@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Bell, Eye, Activity, AlertTriangle } from 'lucide-react';
-import { useRecentNotifications } from '../hooks/useRecentNotifications';
+import { Bell, Eye, Activity, RefreshCw } from 'lucide-react';
+import { useAdvancedNotifications } from '../hooks/useAdvancedNotifications';
+import { DashboardFilters } from './DashboardFilters';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -14,7 +15,18 @@ interface RecentNotificationsProps {
 }
 
 export const RecentNotifications = ({ showAll = false }: RecentNotificationsProps) => {
-  const { notifications, isLoading, error } = useRecentNotifications(showAll ? 50 : 10);
+  const { 
+    notifications, 
+    isLoading, 
+    error, 
+    filters,
+    updateFilters,
+    clearFilters,
+    refetch,
+    hasFilters
+  } = useAdvancedNotifications();
+
+  const displayNotifications = showAll ? notifications : notifications.slice(0, 10);
 
   const getEventTypeBadge = (eventType: string) => {
     switch (eventType) {
@@ -46,97 +58,148 @@ export const RecentNotifications = ({ showAll = false }: RecentNotificationsProp
 
   if (isLoading) {
     return (
+      <div className="space-y-6">
+        {showAll && (
+          <DashboardFilters
+            type="notifications"
+            filters={filters}
+            onFiltersChange={updateFilters}
+            onClearFilters={clearFilters}
+            hasFilters={hasFilters}
+          />
+        )}
+        <Card className="card-modern">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-primary-contrast">
+              <Bell className="w-5 h-5 text-green-400" />
+              {showAll ? 'Todas as Notificações' : 'Notificações Recentes'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4 animate-pulse">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center space-x-4">
+                  <div className="w-10 h-10 bg-gray-700 rounded-full"></div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-700 rounded w-3/4"></div>
+                    <div className="h-3 bg-gray-700 rounded w-1/2"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {showAll && (
+        <DashboardFilters
+          type="notifications"
+          filters={filters}
+          onFiltersChange={updateFilters}
+          onClearFilters={clearFilters}
+          hasFilters={hasFilters}
+        />
+      )}
+      
       <Card className="card-modern">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-primary-contrast">
             <Bell className="w-5 h-5 text-green-400" />
             {showAll ? 'Todas as Notificações' : 'Notificações Recentes'}
+            <div className="ml-auto flex items-center gap-2">
+              <Badge variant="outline" className="border-green-500/30 text-green-400">
+                {notifications.length} registros
+              </Badge>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={refetch}
+                className="text-gray-400 hover:text-primary-contrast"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4 animate-pulse">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center space-x-4">
-                <div className="w-10 h-10 bg-gray-700 rounded-full"></div>
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-700 rounded w-3/4"></div>
-                  <div className="h-3 bg-gray-700 rounded w-1/2"></div>
-                </div>
-              </div>
-            ))}
-          </div>
+          {displayNotifications.length === 0 ? (
+            <div className="text-center py-8">
+              <Bell className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-400">
+                {hasFilters ? 'Nenhuma notificação encontrada com os filtros aplicados' : 'Nenhuma notificação encontrada'}
+              </p>
+              {hasFilters && (
+                <Button
+                  variant="outline"
+                  onClick={clearFilters}
+                  className="mt-4 border-gray-600 hover:border-gray-500"
+                >
+                  Limpar Filtros
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-gray-700">
+                    <TableHead className="text-gray-300">Evento</TableHead>
+                    <TableHead className="text-gray-300">Plataforma</TableHead>
+                    <TableHead className="text-gray-300">Cliente</TableHead>
+                    <TableHead className="text-gray-300">Produto</TableHead>
+                    <TableHead className="text-gray-300">Valor</TableHead>
+                    <TableHead className="text-gray-300">Data</TableHead>
+                    <TableHead className="text-gray-300">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {displayNotifications.map((notification) => (
+                    <TableRow key={notification.id} className="border-gray-700 hover:bg-gray-800/50">
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Activity className="w-4 h-4 text-green-400" />
+                          {getEventTypeBadge(notification.eventType)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {getPlatformBadge(notification.platform)}
+                      </TableCell>
+                      <TableCell className="text-gray-300">
+                        <div>
+                          <p className="font-medium">{notification.clientName}</p>
+                          <p className="text-sm text-gray-400">{notification.clientEmail}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-gray-300">
+                        <p className="text-sm">{notification.productName}</p>
+                      </TableCell>
+                      <TableCell className="text-gray-300">
+                        {notification.value ? `R$ ${notification.value.toFixed(2)}` : '-'}
+                      </TableCell>
+                      <TableCell className="text-gray-300">
+                        {format(new Date(notification.createdAt), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-gray-400 hover:text-primary-contrast"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
-    );
-  }
-
-  return (
-    <Card className="card-modern">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-primary-contrast">
-          <Bell className="w-5 h-5 text-green-400" />
-          {showAll ? 'Todas as Notificações' : 'Notificações Recentes'}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {notifications.length === 0 ? (
-          <div className="text-center py-8">
-            <Bell className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-400">Nenhuma notificação encontrada</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-gray-700">
-                  <TableHead className="text-gray-300">Evento</TableHead>
-                  <TableHead className="text-gray-300">Plataforma</TableHead>
-                  <TableHead className="text-gray-300">Cliente</TableHead>
-                  <TableHead className="text-gray-300">Valor</TableHead>
-                  <TableHead className="text-gray-300">Data</TableHead>
-                  <TableHead className="text-gray-300">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {notifications.map((notification) => (
-                  <TableRow key={notification.id} className="border-gray-700 hover:bg-gray-800/50">
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Activity className="w-4 h-4 text-green-400" />
-                        {getEventTypeBadge(notification.eventType)}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {getPlatformBadge(notification.platform)}
-                    </TableCell>
-                    <TableCell className="text-gray-300">
-                      <div>
-                        <p className="font-medium">{notification.clientName}</p>
-                        <p className="text-sm text-gray-400">{notification.clientEmail}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-gray-300">
-                      {notification.value ? `R$ ${notification.value.toFixed(2)}` : '-'}
-                    </TableCell>
-                    <TableCell className="text-gray-300">
-                      {format(new Date(notification.createdAt), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-gray-400 hover:text-primary-contrast"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+    </div>
   );
 };
