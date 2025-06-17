@@ -1,3 +1,4 @@
+
 import React, { useRef } from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -132,18 +133,6 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
       <div className="space-y-6 p-4 bg-gray-700/30 rounded-lg border border-gray-600">
         <div className="flex items-center justify-between">
           <Label className="text-white font-medium text-sm">Mensagens (até 5)</Label>
-          {messages.length < 5 && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={addMessage}
-              className="flex items-center space-x-1 bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Adicionar Mensagem</span>
-            </Button>
-          )}
         </div>
 
         {messages.map((message, index) => (
@@ -294,6 +283,21 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
             </div>
           </Card>
         ))}
+
+        {/* Botão Adicionar Mensagem - Movido para o final e centralizado */}
+        {messages.length < 5 && (
+          <div className="flex justify-center pt-4 border-t border-gray-600/50">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={addMessage}
+              className="bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600 px-6 py-3"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Adicionar Mensagem
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
