@@ -71,8 +71,12 @@ export const useMassMessaging = () => {
       // Processar mensagens com variáveis para cada contato
       const processedCampaigns = processMessagesWithVariables(messages, recipientList);
       
+      // Gerar ID único para a campanha
+      const campaignId = `campanha_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
       // Preparar dados da campanha
       const campaignData: CampaignData = {
+        campaign_id: campaignId,
         instance: selectedInstance,
         messages: messages.map(msg => ({
           ...msg,
@@ -81,7 +85,8 @@ export const useMassMessaging = () => {
         })),
         recipients: recipientList,
         delay: delay[0],
-        notificationPhone
+        notificationPhone,
+        status: 'enviando'
       };
 
       // Salvar no NocoDB ANTES de enviar para o webhook
@@ -97,7 +102,10 @@ export const useMassMessaging = () => {
           (msg.caption && VariableProcessor.getAvailableVariables().some(v => msg.caption.includes(v)))
         ),
         savedToNocoDB,
-        client_id: clientId
+        client_id: clientId,
+        // Expor serviços de atualização para o webhook
+        updateContactsReached: `${window.location.origin}/api/update-contacts-reached/${campaignId}`,
+        finalizeCampaign: `${window.location.origin}/api/finalize-campaign/${campaignId}`
       };
 
       console.log('📡 Enviando dados para webhook n8n:', enhancedCampaignData);
@@ -119,7 +127,7 @@ export const useMassMessaging = () => {
 
       toast({
         title: "Campanha Iniciada",
-        description: `Campanha iniciada com ${processedCampaigns.length} mensagens${savedToNocoDB ? ' e registrada no banco' : ''} para cliente ${clientId}`,
+        description: `Campanha ${campaignId} iniciada com 0/${recipientList.length} contatos alcançados. Status: Enviando`,
       });
 
       // Reset form

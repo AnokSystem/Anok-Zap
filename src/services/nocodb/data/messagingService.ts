@@ -1,4 +1,3 @@
-
 import { ClientService } from './clientService';
 import { NocodbConfig } from '../types';
 
@@ -25,10 +24,11 @@ export class MessagingService extends ClientService {
         instance_name: campaignData.instance_name || campaignData.instance,
         message_type: campaignData.message_type || campaignData.messages?.[0]?.type || 'text',
         recipient_count: campaignData.recipient_count || campaignData.recipients?.length || 0,
-        sent_count: campaignData.sent_count || campaignData.recipient_count || campaignData.recipients?.length || 0,
+        sent_count: campaignData.sent_count || 0,
+        contacts_reached: campaignData.status === 'enviando' ? 0 : (campaignData.contacts_reached || 0),
         error_count: campaignData.error_count || 0,
         delay: campaignData.delay || 5000,
-        status: campaignData.status || 'concluido',
+        status: campaignData.status || 'iniciado',
         start_time: campaignData.start_time || new Date().toISOString(),
         notification_phone: campaignData.notificationPhone,
         data_json: JSON.stringify(campaignData),
@@ -56,6 +56,66 @@ export class MessagingService extends ClientService {
       }
     } catch (error) {
       console.error('❌ Erro geral ao salvar log:', error);
+      return false;
+    }
+  }
+
+  async updateContactsReached(baseId: string, campaignId: string, contactsReached: number, status: string = 'enviando'): Promise<boolean> {
+    try {
+      console.log(`🔄 Atualizando contatos alcançados: ${contactsReached} para campanha ${campaignId}`);
+      
+      // Buscar o registro da campanha pelo campaign_id
+      const searchUrl = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.DISPARO_EM_MASSA_TABLE_ID}?where=(campaign_id,eq,${campaignId})`;
+      
+      const searchResponse = await fetch(searchUrl, {
+        headers: this.headers,
+      });
+
+      if (searchResponse.ok) {
+        const searchData = await searchResponse.json();
+        const records = searchData.list || [];
+        
+        if (records.length > 0) {
+          const recordId = records[0].Id || records[0].ID || records[0].id;
+          
+          // Atualizar o registro
+          const updateData = {
+            contacts_reached: contactsReached,
+            status: status,
+            updated_at: new Date().toISOString()
+          };
+          
+          const updateUrl = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.DISPARO_EM_MASSA_TABLE_ID}/${recordId}`;
+          
+          const updateResponse = await fetch(updateUrl, {
+            method: 'PATCH',
+            headers: this.headers,
+            body: JSON.stringify(updateData),
+          });
+
+          if (updateResponse.ok) {
+            console.log('✅ Contatos alcançados atualizados com sucesso');
+            
+            // Disparar evento de atualização do dashboard
+            window.dispatchEvent(new CustomEvent('dashboardRefresh'));
+            
+            return true;
+          } else {
+            const errorText = await updateResponse.text();
+            console.error('❌ Erro ao atualizar contatos alcançados:', errorText);
+            return false;
+          }
+        } else {
+          console.error('❌ Campanha não encontrada para atualização');
+          return false;
+        }
+      } else {
+        const errorText = await searchResponse.text();
+        console.error('❌ Erro ao buscar campanha para atualização:', errorText);
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Erro geral ao atualizar contatos alcançados:', error);
       return false;
     }
   }
