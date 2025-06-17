@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Settings, Users, Bell, MessageSquare, Zap, LogOut, User, BookOpen, TrendingUp } from 'lucide-react';
@@ -165,8 +166,8 @@ const Index = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="animate-fade-in-up">
-          {/* Navigation Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
+          {/* Navigation Cards Grid - Changed to single column */}
+          <div className="grid grid-cols-1 gap-6 mb-12 max-w-md mx-auto">
             {navigationCards.map((card) => {
               const IconComponent = card.icon;
               return (
@@ -176,11 +177,11 @@ const Index = () => {
                   className={`nav-card ${card.active ? 'active' : ''}`}
                   style={{ cursor: 'pointer' }}
                 >
-                  <div className="flex flex-col items-center text-center space-y-4">
+                  <div className="flex items-center space-x-4 p-6">
                     <div className={`w-16 h-16 ${card.gradient} rounded-2xl flex items-center justify-center shadow-purple`}>
                       <IconComponent className="w-8 h-8 text-white" />
                     </div>
-                    <div className="space-y-2">
+                    <div className="flex-1">
                       <h3 className="nav-label text-lg font-bold">{card.title}</h3>
                       <p className="text-sm text-gray-400 leading-relaxed">
                         {card.subtitle}
