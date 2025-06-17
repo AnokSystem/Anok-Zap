@@ -1,3 +1,4 @@
+
 export interface Message {
   id: string;
   type: 'text' | 'audio' | 'video' | 'image' | 'document';
@@ -8,11 +9,13 @@ export interface Message {
 }
 
 export interface CampaignData {
+  campaign_id?: string; // Add this optional property
   instance: string;
   messages: Message[];
   recipients: string[];
   delay: number;
   notificationPhone: string;
+  status?: string; // Add status property as well
 }
 
 export interface ContactData {

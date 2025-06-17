@@ -33,6 +33,13 @@ export const nocodbService = {
   getDisparosChartData: (days?: number) => coreService.getDisparosChartData(days),
   getNotificationsChartData: (days?: number) => coreService.getNotificationsChartData(days),
   
+  // Métodos necessários que estavam faltando
+  getTargetBaseId: () => coreService.getTargetBaseId(),
+  ensureTableExists: (tableName: string) => coreService.ensureTableExists(tableName),
+  getTableId: (baseId: string, tableName: string) => coreService.getTableId(baseId, tableName),
+  config: coreService.config,
+  headers: coreService.headers,
+  
   // Novos métodos para gerenciar contatos alcançados
   initializeCampaign: (campaignId: string, totalContacts: number) => {
     const baseId = coreService.getTargetBaseId();
