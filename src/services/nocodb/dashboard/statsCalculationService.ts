@@ -54,9 +54,8 @@ export class StatsCalculationService extends BaseNocodbService {
     try {
       const clientId = await this.getClientId();
       
-      console.log('📡 Buscando TODOS os dados de disparos na tabela:', this.DISPARO_EM_MASSA_TABLE_ID);
+      console.log('📡 Buscando estatísticas de disparos da tabela:', this.DISPARO_EM_MASSA_TABLE_ID);
       
-      // Adicionar timestamp para evitar cache
       const timestamp = Date.now();
       const response = await fetch(
         `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.DISPARO_EM_MASSA_TABLE_ID}?limit=10000&_t=${timestamp}`,
@@ -73,77 +72,63 @@ export class StatsCalculationService extends BaseNocodbService {
         const data = await response.json();
         const allDisparos = data.list || [];
         
-        console.log(`📊 ${allDisparos.length} disparos totais encontrados na tabela`);
-        console.log('📋 Exemplo de dados:', allDisparos.slice(0, 1));
+        console.log(`📊 ${allDisparos.length} disparos totais encontrados`);
         
-        // Filtrar por cliente se necessário
+        // Filtrar por cliente
         const clientDisparos = allDisparos.filter(d => {
-          if (!d.client_id && !d.Client_id && !d.clientId) {
-            return true;
-          }
-          const hasClientId = d.client_id === clientId || 
-                             d.Client_id === clientId || 
-                             d.clientId === clientId;
-          return hasClientId;
+          const clientMatches = d['Cliente ID'] === clientId || 
+                               d.client_id === clientId ||
+                               (!d['Cliente ID'] && !d.client_id);
+          return clientMatches;
         });
 
         console.log(`📊 ${clientDisparos.length} disparos filtrados para cliente ${clientId}`);
         
         const today = new Date().toISOString().split('T')[0];
         const disparosToday = clientDisparos.filter(d => {
-          const createdAt = d.CreatedAt || d.created_at || d.start_time || d.createdAt;
+          const createdAt = d.CreatedAt || d['Criado em'] || d.created_at;
           return createdAt && createdAt.startsWith(today);
         });
 
-        // Calcular estatísticas baseadas nos campos reais da tabela
-        const totalSent = clientDisparos.reduce((acc, d) => {
-          // Buscar diferentes variações dos campos de contagem
-          const count = parseInt(
-            d.recipient_count || 
-            d.recipientCount || 
-            d.sent_count || 
-            d.total_recipients ||
-            d.total_contacts ||
-            0
-          );
+        // Calcular estatísticas usando os campos corretos da tabela
+        const totalCampaigns = clientDisparos.length;
+        
+        // Somar total de destinatários de todas as campanhas
+        const totalRecipients = clientDisparos.reduce((acc, d) => {
+          const count = parseInt(d['Total de Destinatários'] || d.recipient_count || '0');
           return acc + count;
         }, 0);
 
-        const totalSuccess = clientDisparos.reduce((acc, d) => {
-          const sent = parseInt(
-            d.sent_count || 
-            d.sentCount || 
-            d.recipient_count || 
-            d.successful_sends ||
-            0
-          );
-          const errors = parseInt(
-            d.error_count || 
-            d.errorCount || 
-            d.failed_sends ||
-            0
-          );
-          return acc + Math.max(0, sent - errors);
+        // Somar mensagens enviadas com sucesso
+        const totalSent = clientDisparos.reduce((acc, d) => {
+          const sent = parseInt(d['Mensagens Enviadas'] || d.sent_count || '0');
+          return acc + sent;
         }, 0);
 
-        const successRate = totalSent > 0 ? ((totalSuccess / totalSent) * 100) : 0;
+        // Calcular taxa de sucesso baseada em mensagens enviadas vs destinatários
+        const successRate = totalRecipients > 0 ? ((totalSent / totalRecipients) * 100) : 0;
+
+        // Contatos únicos são baseados no total de destinatários únicos
+        const uniqueContacts = totalRecipients;
 
         const stats = {
-          total: clientDisparos.length,
-          today: disparosToday.length,
+          total: totalCampaigns, // Número total de campanhas de disparo
+          today: disparosToday.length, // Campanhas iniciadas hoje
           successRate: Math.round(successRate * 10) / 10,
-          uniqueContacts: totalSent
+          uniqueContacts: uniqueContacts, // Total de contatos que receberam mensagens
+          totalSent: totalSent, // Total de mensagens enviadas
+          totalRecipients: totalRecipients // Total de destinatários
         };
 
         console.log('📈 Estatísticas de disparos calculadas:', stats);
         return stats;
       }
 
-      console.log('❌ Erro na resposta da API:', response.status);
-      return { total: 0, today: 0, successRate: 0, uniqueContacts: 0 };
+      console.log('❌ Erro na resposta da API de disparos:', response.status);
+      return { total: 0, today: 0, successRate: 0, uniqueContacts: 0, totalSent: 0, totalRecipients: 0 };
     } catch (error) {
       console.error('❌ Erro ao buscar estatísticas de disparos:', error);
-      return { total: 0, today: 0, successRate: 0, uniqueContacts: 0 };
+      return { total: 0, today: 0, successRate: 0, uniqueContacts: 0, totalSent: 0, totalRecipients: 0 };
     }
   }
 
@@ -151,9 +136,8 @@ export class StatsCalculationService extends BaseNocodbService {
     try {
       const clientId = await this.getClientId();
       
-      console.log('📡 Buscando TODAS as notificações na tabela:', this.NOTIFICACOES_PLATAFORMAS_TABLE_ID);
+      console.log('📡 Buscando estatísticas de notificações da tabela:', this.NOTIFICACOES_PLATAFORMAS_TABLE_ID);
       
-      // Adicionar timestamp para evitar cache
       const timestamp = Date.now();
       const response = await fetch(
         `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.NOTIFICACOES_PLATAFORMAS_TABLE_ID}?limit=10000&_t=${timestamp}`,
@@ -170,18 +154,15 @@ export class StatsCalculationService extends BaseNocodbService {
         const data = await response.json();
         const allNotifications = data.list || [];
         
-        console.log(`📊 ${allNotifications.length} notificações totais encontradas na tabela`);
-        console.log('📋 Exemplo de dados:', allNotifications.slice(0, 1));
+        console.log(`📊 ${allNotifications.length} notificações totais encontradas`);
         
-        // Filtrar por cliente se necessário
+        // Filtrar por cliente
         const clientNotifications = allNotifications.filter(n => {
-          if (!n.client_id && !n.Client_id && !n.clientId) {
-            return true;
-          }
-          const hasClientId = n.client_id === clientId || 
-                             n.Client_id === clientId || 
-                             n.clientId === clientId;
-          return hasClientId;
+          const clientMatches = n.client_id === clientId || 
+                               n.Client_id === clientId || 
+                               n.clientId === clientId ||
+                               (!n.client_id && !n.Client_id && !n.clientId);
+          return clientMatches;
         });
         
         console.log(`📊 ${clientNotifications.length} notificações filtradas para cliente ${clientId}`);
@@ -201,7 +182,7 @@ export class StatsCalculationService extends BaseNocodbService {
         return stats;
       }
 
-      console.log('❌ Erro na resposta da API:', response.status);
+      console.log('❌ Erro na resposta da API de notificações:', response.status);
       return { total: 0, today: 0 };
     } catch (error) {
       console.error('❌ Erro ao buscar estatísticas de notificações:', error);

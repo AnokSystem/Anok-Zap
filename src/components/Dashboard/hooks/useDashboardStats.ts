@@ -26,7 +26,8 @@ export const useDashboardStats = () => {
   const fetchStats = async () => {
     try {
       setIsLoading(true);
-      console.log('📊 Buscando estatísticas atualizadas do dashboard...');
+      setError(null);
+      console.log('📊 Buscando estatísticas do dashboard usando dados reais...');
       
       const data = await nocodbService.getDashboardStats();
       
@@ -39,11 +40,10 @@ export const useDashboardStats = () => {
           disparos_today: data.disparos_today || 0,
           notifications_today: data.notifications_today || 0
         });
-        setError(null);
-        console.log('✅ Estatísticas atualizadas:', data);
+        console.log('✅ Estatísticas carregadas com sucesso:', data);
       } else {
-        console.log('⚠️ Nenhuma estatística retornada');
-        setError(null);
+        console.log('⚠️ Nenhuma estatística retornada do serviço');
+        setError('Nenhum dado disponível');
       }
     } catch (err) {
       console.error('❌ Erro ao buscar estatísticas:', err);
@@ -56,8 +56,8 @@ export const useDashboardStats = () => {
   useEffect(() => {
     fetchStats();
     
-    // Atualizar automaticamente a cada 15 segundos para sincronização mais rápida
-    const interval = setInterval(fetchStats, 15000);
+    // Atualizar automaticamente a cada 30 segundos
+    const interval = setInterval(fetchStats, 30000);
     
     // Escutar evento customizado de atualização do dashboard
     const handleDashboardRefresh = () => {

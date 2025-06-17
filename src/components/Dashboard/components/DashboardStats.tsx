@@ -1,10 +1,11 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MessageSquare, Bell, TrendingUp, Users, Clock, CheckCircle2 } from 'lucide-react';
+import { MessageSquare, Bell, TrendingUp, Users, Clock, CheckCircle2, RefreshCw } from 'lucide-react';
 import { useDashboardStats } from '../hooks/useDashboardStats';
 
 export const DashboardStats = () => {
-  const { stats, isLoading } = useDashboardStats();
+  const { stats, isLoading, error, refetch } = useDashboardStats();
 
   const statCards = [
     {
@@ -13,7 +14,7 @@ export const DashboardStats = () => {
       icon: MessageSquare,
       color: 'text-blue-400',
       bgColor: 'bg-blue-500/20',
-      description: 'Mensagens enviadas hoje'
+      description: 'Campanhas de disparo criadas'
     },
     {
       title: 'Notificações Ativas',
@@ -21,7 +22,7 @@ export const DashboardStats = () => {
       icon: Bell,
       color: 'text-green-400',
       bgColor: 'bg-green-500/20',
-      description: 'Webhooks recebidos hoje'
+      description: 'Webhooks das plataformas'
     },
     {
       title: 'Taxa de Sucesso',
@@ -29,7 +30,7 @@ export const DashboardStats = () => {
       icon: CheckCircle2,
       color: 'text-purple-400',
       bgColor: 'bg-purple-500/20',
-      description: 'Entregas bem-sucedidas'
+      description: 'Mensagens entregues com sucesso'
     },
     {
       title: 'Contatos Únicos',
@@ -37,7 +38,7 @@ export const DashboardStats = () => {
       icon: Users,
       color: 'text-orange-400',
       bgColor: 'bg-orange-500/20',
-      description: 'Contatos alcançados'
+      description: 'Total de destinatários alcançados'
     }
   ];
 
@@ -57,9 +58,33 @@ export const DashboardStats = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="card-modern border-red-500/20 col-span-full">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-red-400">
+                <Bell className="w-5 h-5" />
+                <span>Erro ao carregar estatísticas: {error}</span>
+              </div>
+              <button 
+                onClick={refetch}
+                className="p-2 bg-red-600 hover:bg-red-700 rounded text-white"
+                title="Tentar novamente"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {statCards.map((card) => {
+      {statCards.map((card, index) => {
         const IconComponent = card.icon;
         return (
           <Card key={card.title} className="card-modern hover:scale-105 transition-transform duration-300">
@@ -68,7 +93,15 @@ export const DashboardStats = () => {
                 <div className={`w-12 h-12 ${card.bgColor} rounded-xl flex items-center justify-center`}>
                   <IconComponent className={`w-6 h-6 ${card.color}`} />
                 </div>
-                <TrendingUp className="w-4 h-4 text-green-400" />
+                <div className="flex items-center gap-1">
+                  <TrendingUp className="w-4 h-4 text-green-400" />
+                  {index === 0 && stats?.disparos_today > 0 && (
+                    <span className="text-xs text-green-400">+{stats.disparos_today} hoje</span>
+                  )}
+                  {index === 1 && stats?.notifications_today > 0 && (
+                    <span className="text-xs text-green-400">+{stats.notifications_today} hoje</span>
+                  )}
+                </div>
               </div>
               
               <div className="space-y-2">
