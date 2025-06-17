@@ -41,16 +41,19 @@ export class ChartDataService extends BaseNocodbService {
         const allDisparos = data.list || [];
         
         console.log(`📊 ${allDisparos.length} disparos totais encontrados`);
-        console.log('📋 Dados brutos:', allDisparos.slice(0, 2));
+        console.log('📋 Campos disponíveis:', Object.keys(allDisparos[0] || {}));
+        console.log('📝 Primeiros 2 registros:', allDisparos.slice(0, 2));
         
-        // Filtro mais flexível para client_id
+        // Filtro para client_id com mais flexibilidade
         const clientDisparos = allDisparos.filter(d => {
-          if (!d.client_id && !d.Client_id && !d.clientId) {
-            return true;
-          }
-          const hasClientId = d.client_id === clientId || 
+          const hasClientId = d['Cliente ID'] === clientId || 
+                             d.client_id === clientId || 
                              d.Client_id === clientId || 
                              d.clientId === clientId;
+          // Se não há client_id, incluir para debug
+          if (!d['Cliente ID'] && !d.client_id && !d.Client_id && !d.clientId) {
+            return true;
+          }
           return hasClientId;
         });
         
@@ -63,20 +66,23 @@ export class ChartDataService extends BaseNocodbService {
           const dateStr = date.toISOString().split('T')[0];
           
           const dayDisparos = clientDisparos.filter(d => {
-            const createdAt = d.CreatedAt || d.created_at || d.start_time || d.createdAt;
-            return createdAt && createdAt.startsWith(dateStr);
+            const createdAt = d.CreatedAt || d['Criado em'] || d.created_at || d['Hora de Início'];
+            if (!createdAt) return false;
+            
+            const recordDate = new Date(createdAt).toISOString().split('T')[0];
+            return recordDate === dateStr;
           });
           
-          // Calcular disparos reais baseado nos dados da tabela
+          console.log(`📅 ${dateStr}: ${dayDisparos.length} disparos encontrados`);
+          
+          // Calcular totais do dia
           const totalDisparos = dayDisparos.reduce((acc, d) => {
-            // Usar recipient_count como número total de disparos
-            const count = parseInt(d.recipient_count || d.recipientCount || 0);
+            const count = parseInt(d['Total de Destinatários'] || d.recipient_count || d.recipientCount || '0');
             return acc + count;
           }, 0);
           
-          // Calcular sucessos baseado em contacts_reached
           const totalSucesso = dayDisparos.reduce((acc, d) => {
-            const reached = parseInt(d.contacts_reached || d.contactsReached || 0);
+            const reached = parseInt(d['Contatos Alcançados'] || d.contacts_reached || d.contactsReached || '0');
             return acc + reached;
           }, 0);
           
@@ -87,12 +93,12 @@ export class ChartDataService extends BaseNocodbService {
           });
         }
 
-        console.log('📊 Dados do gráfico calculados:', chartData);
+        console.log('📊 Dados finais do gráfico:', chartData);
         return chartData;
+      } else {
+        console.log('❌ Erro na resposta da API:', response.status, await response.text());
+        return [];
       }
-
-      console.log('❌ Erro ao buscar dados do gráfico:', response.status);
-      return [];
     } catch (error) {
       console.error('❌ Erro ao buscar dados do gráfico:', error);
       return [];

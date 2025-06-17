@@ -12,25 +12,32 @@ export const useDisparosChartData = (days: number = 7) => {
       setIsLoading(true);
       console.log('📈 Buscando dados reais do gráfico de disparos...');
       
+      const baseId = nocodbService.getTargetBaseId();
+      if (!baseId) {
+        console.error('❌ Base ID não encontrado');
+        setError('Base ID não configurado');
+        return;
+      }
+      
       const chartData = await nocodbService.getDisparosChartData(days);
       
       if (chartData && chartData.length > 0) {
+        console.log('✅ Dados do gráfico recebidos:', chartData);
         setData(chartData);
-        console.log('✅ Dados reais do gráfico de disparos carregados:', chartData);
       } else {
-        console.log('⚠️ Nenhum dado de disparo encontrado');
-        // Criar dados de exemplo para demonstração se não há dados reais
-        const exampleData = [];
+        console.log('⚠️ Nenhum dado encontrado, criando dados vazios');
+        // Criar estrutura de dados vazia para os últimos 7 dias
+        const emptyData = [];
         for (let i = days - 1; i >= 0; i--) {
           const date = new Date();
           date.setDate(date.getDate() - i);
-          exampleData.push({
+          emptyData.push({
             date: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
             disparos: 0,
             sucesso: 0
           });
         }
-        setData(exampleData);
+        setData(emptyData);
       }
       setError(null);
     } catch (err) {
@@ -45,12 +52,12 @@ export const useDisparosChartData = (days: number = 7) => {
   useEffect(() => {
     fetchData();
     
-    // Atualizar dados a cada 30 segundos para sincronização em tempo real
+    // Atualizar dados a cada 30 segundos
     const interval = setInterval(fetchData, 30 * 1000);
     
-    // Escutar evento customizado de atualização do dashboard
+    // Escutar evento de refresh do dashboard
     const handleDashboardRefresh = () => {
-      console.log('🔄 Evento de refresh recebido, atualizando gráfico de disparos...');
+      console.log('🔄 Evento de refresh recebido, atualizando gráfico...');
       fetchData();
     };
     
@@ -74,6 +81,13 @@ export const useNotificationsChartData = (days: number = 7) => {
     try {
       setIsLoading(true);
       console.log('📊 Buscando dados reais do gráfico de notificações...');
+      
+      const baseId = nocodbService.getTargetBaseId();
+      if (!baseId) {
+        console.error('❌ Base ID não encontrado');
+        setError('Base ID não configurado');
+        return;
+      }
       
       const chartData = await nocodbService.getNotificationsChartData(days);
       

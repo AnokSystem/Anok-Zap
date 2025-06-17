@@ -1,12 +1,16 @@
 
 import { CoreNocodbService } from './coreService';
 import { ContactsReachedService } from './data/contactsReachedService';
+import { ChartDataService } from './dashboard/chartDataService';
 
 // Criar instância principal do serviço
 const coreService = new CoreNocodbService();
 
 // Criar instância do serviço de contatos alcançados
 const contactsReachedService = new ContactsReachedService(coreService.config);
+
+// Criar instância do serviço de dados do gráfico
+const chartDataService = new ChartDataService(coreService.config);
 
 // Exportar serviço principal
 export const nocodbService = {
@@ -30,8 +34,23 @@ export const nocodbService = {
   getRecentNotifications: (limit?: number) => coreService.getRecentNotifications(limit),
   getAllNotifications: () => coreService.getAllNotifications(),
   getNotificationsWithFilters: (filters: any) => coreService.getNotificationsWithFilters(filters),
-  getDisparosChartData: (days?: number) => coreService.getDisparosChartData(days),
-  getNotificationsChartData: (days?: number) => coreService.getNotificationsChartData(days),
+  
+  // Métodos dos gráficos usando o serviço especializado
+  getDisparosChartData: (days?: number) => {
+    const baseId = coreService.getTargetBaseId();
+    if (baseId) {
+      return chartDataService.getDisparosChartData(baseId, days);
+    }
+    return Promise.resolve([]);
+  },
+  
+  getNotificationsChartData: (days?: number) => {
+    const baseId = coreService.getTargetBaseId();
+    if (baseId) {
+      return chartDataService.getNotificationsChartData(baseId, days);
+    }
+    return Promise.resolve([]);
+  },
   
   // Métodos necessários que estavam faltando
   getTargetBaseId: () => coreService.getTargetBaseId(),
@@ -40,7 +59,7 @@ export const nocodbService = {
   config: coreService.config,
   headers: coreService.headers,
   
-  // Novos métodos para gerenciar contatos alcançados
+  // Métodos para gerenciar contatos alcançados
   initializeCampaign: (campaignId: string, totalContacts: number) => {
     const baseId = coreService.getTargetBaseId();
     if (baseId) {
@@ -74,3 +93,4 @@ export const nocodbConfig = coreService.config;
 
 // Expor serviços específicos
 export { ContactsReachedService } from './data/contactsReachedService';
+export { ChartDataService } from './dashboard/chartDataService';
