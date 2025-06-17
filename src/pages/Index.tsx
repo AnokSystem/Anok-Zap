@@ -166,8 +166,8 @@ const Index = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="animate-fade-in-up">
-          {/* Navigation Cards Grid - Horizontal alignment */}
-          <div className="flex flex-wrap justify-center gap-4 mb-12">
+          {/* Navigation Cards Grid - Single horizontal line */}
+          <div className="flex justify-center gap-3 mb-12 overflow-x-auto">
             {navigationCards.map((card) => {
               const IconComponent = card.icon;
               return (
@@ -177,13 +177,13 @@ const Index = () => {
                   className={`nav-card ${card.active ? 'active' : ''} flex-shrink-0`}
                   style={{ cursor: 'pointer' }}
                 >
-                  <div className="flex flex-col items-center text-center space-y-3 p-4 min-w-[140px]">
-                    <div className={`w-12 h-12 ${card.gradient} rounded-xl flex items-center justify-center shadow-purple`}>
-                      <IconComponent className="w-6 h-6 text-white" />
+                  <div className="flex flex-col items-center text-center space-y-2 p-3 min-w-[120px]">
+                    <div className={`w-10 h-10 ${card.gradient} rounded-xl flex items-center justify-center shadow-purple`}>
+                      <IconComponent className="w-5 h-5 text-white" />
                     </div>
                     <div className="space-y-1">
-                      <h3 className="nav-label text-sm font-bold">{card.title}</h3>
-                      <p className="text-xs text-gray-400 leading-relaxed">
+                      <h3 className="nav-label text-xs font-bold">{card.title}</h3>
+                      <p className="text-xs text-gray-400 leading-tight text-center max-w-[100px]">
                         {card.subtitle}
                       </p>
                     </div>
