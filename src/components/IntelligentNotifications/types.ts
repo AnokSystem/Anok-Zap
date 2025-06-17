@@ -17,4 +17,6 @@ export interface NotificationRule {
   instanceId: string;
   messages: Message[];
   webhookUrl: string;
+  productScope: 'all' | 'specific'; // novo campo
+  specificProductName?: string; // novo campo
 }

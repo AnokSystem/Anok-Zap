@@ -9,6 +9,8 @@ const initialFormState: Partial<NotificationRule> = {
   profileName: '',
   instanceId: '',
   messages: [{ id: '1', type: 'text', content: '', delay: 0 }],
+  productScope: 'all',
+  specificProductName: '',
 };
 
 export const useFormState = () => {

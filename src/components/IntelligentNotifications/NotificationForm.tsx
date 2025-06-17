@@ -5,6 +5,7 @@ import { MessageEditor } from './MessageEditor';
 import { FormHeader } from './NotificationForm/FormHeader';
 import { InstanceEventSection } from './NotificationForm/InstanceEventSection';
 import { PlatformProfileSection } from './NotificationForm/PlatformProfileSection';
+import { ProductScopeSection } from './NotificationForm/ProductScopeSection';
 import { FormActions } from './NotificationForm/FormActions';
 
 interface NotificationRule {
@@ -14,6 +15,8 @@ interface NotificationRule {
   platform: string;
   profileName: string;
   messages: Message[];
+  productScope?: string;
+  specificProductName?: string;
 }
 
 interface NotificationFormProps {
@@ -55,6 +58,11 @@ export const NotificationForm = ({
         />
 
         <PlatformProfileSection 
+          newRule={newRule}
+          setNewRule={setNewRule}
+        />
+
+        <ProductScopeSection 
           newRule={newRule}
           setNewRule={setNewRule}
         />
