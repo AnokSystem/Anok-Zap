@@ -130,6 +130,18 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
                 />
               </div>
             )}
+
+            {(message.type === 'image' || message.type === 'video' || message.type === 'document') && (
+              <div>
+                <Label className="text-gray-200 font-medium text-sm">Descrição</Label>
+                <Textarea
+                  value={message.content || ''}
+                  onChange={(e) => onUpdateMessage(message.id, { content: e.target.value })}
+                  placeholder="Digite uma descrição para o arquivo..."
+                  className="min-h-[100px] input-form"
+                />
+              </div>
+            )}
           </div>
         </div>
       ))}
