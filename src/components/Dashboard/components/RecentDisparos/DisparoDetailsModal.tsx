@@ -23,14 +23,37 @@ export const DisparoDetailsModal = ({ disparo, isOpen, onClose }: DisparoDetails
 
   // Parse data_json to get campaign details
   let campaignData = null;
+  let messages = [];
+  let recipients = [];
+  
   try {
-    campaignData = disparo.data_json ? JSON.parse(disparo.data_json) : null;
+    // Primeiro tenta extrair do campo "Dados JSON"
+    const dataJsonField = disparo['Dados JSON'] || disparo.data_json || disparo['data_json'];
+    console.log('🔍 Campo Dados JSON encontrado:', dataJsonField);
+    
+    if (dataJsonField) {
+      const parsedData = JSON.parse(dataJsonField);
+      console.log('📦 Dados parseados:', parsedData);
+      
+      // Se tem data_json dentro do JSON parseado
+      if (parsedData.data_json) {
+        const innerData = JSON.parse(parsedData.data_json);
+        console.log('📦 Dados internos:', innerData);
+        messages = innerData.messages || [];
+        recipients = innerData.recipients || [];
+      } else {
+        // Usar dados diretos
+        messages = parsedData.messages || [];
+        recipients = parsedData.recipients || [];
+      }
+    }
+    
+    console.log('📧 Mensagens encontradas:', messages);
+    console.log('👥 Destinatários encontrados:', recipients);
+    
   } catch (error) {
-    console.log('Erro ao fazer parse do data_json:', error);
+    console.log('❌ Erro ao fazer parse do data_json:', error);
   }
-
-  const messages = campaignData?.messages || [];
-  const recipients = campaignData?.recipients || [];
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -97,7 +120,7 @@ export const DisparoDetailsModal = ({ disparo, isOpen, onClose }: DisparoDetails
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-primary-contrast flex items-center gap-2">
                     <FileText className="w-5 h-5 text-green-400" />
-                    Mensagens Enviadas
+                    Mensagens Enviadas ({messages.length})
                   </h3>
                   <div className="space-y-3">
                     {messages.map((message: any, index: number) => (
@@ -111,7 +134,7 @@ export const DisparoDetailsModal = ({ disparo, isOpen, onClose }: DisparoDetails
                         {message.content && (
                           <div className="mb-2">
                             <p className="text-sm text-gray-400 mb-1">Conteúdo:</p>
-                            <p className="text-primary-contrast bg-gray-700/50 p-2 rounded text-sm whitespace-pre-wrap">
+                            <p className="text-primary-contrast bg-gray-700/50 p-3 rounded text-sm whitespace-pre-wrap border-l-4 border-blue-400">
                               {message.content}
                             </p>
                           </div>
@@ -119,7 +142,7 @@ export const DisparoDetailsModal = ({ disparo, isOpen, onClose }: DisparoDetails
                         {message.caption && (
                           <div className="mb-2">
                             <p className="text-sm text-gray-400 mb-1">Legenda:</p>
-                            <p className="text-primary-contrast bg-gray-700/50 p-2 rounded text-sm whitespace-pre-wrap">
+                            <p className="text-primary-contrast bg-gray-700/50 p-3 rounded text-sm whitespace-pre-wrap border-l-4 border-green-400">
                               {message.caption}
                             </p>
                           </div>
@@ -127,7 +150,7 @@ export const DisparoDetailsModal = ({ disparo, isOpen, onClose }: DisparoDetails
                         {message.fileUrl && (
                           <div>
                             <p className="text-sm text-gray-400 mb-1">Arquivo:</p>
-                            <p className="text-blue-400 text-sm break-all">{message.fileUrl}</p>
+                            <p className="text-blue-400 text-sm break-all bg-gray-700/50 p-2 rounded">{message.fileUrl}</p>
                           </div>
                         )}
                       </div>
@@ -149,12 +172,22 @@ export const DisparoDetailsModal = ({ disparo, isOpen, onClose }: DisparoDetails
                   <div className="bg-gray-800/50 rounded-lg border border-gray-600 p-4">
                     <ScrollArea className="max-h-48">
                       <div className="space-y-2">
-                        {recipients.map((recipient: string, index: number) => (
-                          <div key={index} className="flex items-center gap-2 p-2 bg-gray-700/50 rounded">
-                            <span className="text-sm text-gray-400">#{index + 1}</span>
-                            <span className="text-primary-contrast font-mono">{recipient}</span>
-                          </div>
-                        ))}
+                        {recipients.map((recipient: string, index: number) => {
+                          // Extrair nome e número se estiver no formato "número - nome"
+                          const parts = recipient.split(' - ');
+                          const phoneNumber = parts[0];
+                          const contactName = parts[1] || 'Contato sem nome';
+                          
+                          return (
+                            <div key={index} className="flex items-center gap-3 p-3 bg-gray-700/50 rounded border-l-4 border-blue-400">
+                              <span className="text-sm text-gray-400 min-w-[30px]">#{index + 1}</span>
+                              <div className="flex-1">
+                                <p className="text-primary-contrast font-medium">{contactName}</p>
+                                <p className="text-blue-400 font-mono text-sm">{phoneNumber}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </ScrollArea>
                   </div>
