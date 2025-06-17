@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { nocodbService } from '@/services/nocodb';
 
@@ -10,7 +11,7 @@ export const useDisparosChartData = (days: number = 7) => {
     try {
       setIsLoading(true);
       setError(null);
-      console.log('📈 Iniciando busca de dados de disparos dos últimos', days, 'dias...');
+      console.log('📈 Iniciando busca de dados REAIS de disparos dos últimos', days, 'dias...');
       
       const chartData = await nocodbService.getDisparosChartData(days);
       
@@ -22,10 +23,10 @@ export const useDisparosChartData = (days: number = 7) => {
         
         if (hasRealData) {
           setData(chartData);
-          console.log('✅ Dados reais encontrados e definidos');
+          console.log('✅ Dados reais encontrados e definidos no gráfico!');
         } else {
-          console.log('⚠️ Apenas dados zerados encontrados');
-          setData(chartData); // Ainda assim, mostrar os dados zerados
+          console.log('⚠️ Apenas dados zerados encontrados, mas exibindo mesmo assim');
+          setData(chartData);
         }
       } else {
         console.log('⚠️ Nenhum dado encontrado, criando estrutura vazia');
@@ -66,8 +67,8 @@ export const useDisparosChartData = (days: number = 7) => {
   useEffect(() => {
     fetchData();
     
-    // Atualizar dados a cada 15 segundos para ver mudanças mais rapidamente
-    const interval = setInterval(fetchData, 15 * 1000);
+    // Atualizar dados a cada 10 segundos para ver mudanças mais rapidamente
+    const interval = setInterval(fetchData, 10 * 1000);
     
     // Escutar evento de refresh do dashboard
     const handleDashboardRefresh = () => {
