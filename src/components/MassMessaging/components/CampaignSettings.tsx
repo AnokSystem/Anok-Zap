@@ -57,21 +57,23 @@ export const CampaignSettings: React.FC<CampaignSettingsProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-400">Velocidade</span>
               <div className="flex items-center space-x-3">
-                <div className="bg-gradient-to-r from-purple-600 to-purple-800 text-white px-4 py-2 rounded-xl border-2 border-purple-500 shadow-lg">
-                  <span className="text-3xl font-bold">{delay[0]}</span>
-                  <span className="text-sm ml-2 opacity-90">segundos</span>
+                <div className="bg-gradient-to-r from-purple-600 to-purple-800 text-white px-6 py-3 rounded-2xl border-3 border-purple-500 shadow-xl">
+                  <span className="text-4xl font-bold">{delay[0]}</span>
+                  <span className="text-lg ml-3 opacity-90 font-medium">segundos</span>
                 </div>
               </div>
             </div>
             
-            <Slider
-              value={delay}
-              onValueChange={onDelayChange}
-              max={60}
-              min={1}
-              step={1}
-              className="w-full"
-            />
+            <div className="relative">
+              <Slider
+                value={delay}
+                onValueChange={onDelayChange}
+                max={60}
+                min={1}
+                step={1}
+                className="w-full [&_.relative]:h-3 [&_.relative_.absolute]:bg-gradient-to-r [&_.relative_.absolute]:from-purple-500 [&_.relative_.absolute]:to-purple-700 [&_.relative_.absolute]:border-2 [&_.relative_.absolute]:border-purple-400 [&_.relative_.absolute]:shadow-lg [&_.relative_.absolute]:rounded-full [&_.block]:w-6 [&_.block]:h-6 [&_.block]:border-3 [&_.block]:border-purple-400 [&_.block]:bg-white [&_.block]:shadow-xl [&_.block]:ring-2 [&_.block]:ring-purple-300/50"
+              />
+            </div>
             
             <div className="flex justify-between text-xs text-gray-500">
               <div className="flex items-center space-x-1">
