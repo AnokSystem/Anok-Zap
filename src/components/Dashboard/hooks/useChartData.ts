@@ -10,7 +10,7 @@ export const useDisparosChartData = (days: number = 7) => {
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      console.log('📈 Buscando TODOS os dados reais do gráfico de disparos...');
+      console.log('📈 Buscando dados reais do gráfico de disparos...');
       
       const chartData = await nocodbService.getDisparosChartData(days);
       
@@ -18,8 +18,19 @@ export const useDisparosChartData = (days: number = 7) => {
         setData(chartData);
         console.log('✅ Dados reais do gráfico de disparos carregados:', chartData);
       } else {
-        console.log('⚠️ Nenhum dado de disparo encontrado no NocoDB');
-        setData([]);
+        console.log('⚠️ Nenhum dado de disparo encontrado');
+        // Criar dados de exemplo para demonstração se não há dados reais
+        const exampleData = [];
+        for (let i = days - 1; i >= 0; i--) {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          exampleData.push({
+            date: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+            disparos: 0,
+            sucesso: 0
+          });
+        }
+        setData(exampleData);
       }
       setError(null);
     } catch (err) {
@@ -34,8 +45,8 @@ export const useDisparosChartData = (days: number = 7) => {
   useEffect(() => {
     fetchData();
     
-    // Atualizar dados a cada 1 minuto para sincronização mais rápida
-    const interval = setInterval(fetchData, 60 * 1000);
+    // Atualizar dados a cada 30 segundos para sincronização em tempo real
+    const interval = setInterval(fetchData, 30 * 1000);
     
     // Escutar evento customizado de atualização do dashboard
     const handleDashboardRefresh = () => {
@@ -62,7 +73,7 @@ export const useNotificationsChartData = (days: number = 7) => {
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      console.log('📊 Buscando TODOS os dados reais do gráfico de notificações...');
+      console.log('📊 Buscando dados reais do gráfico de notificações...');
       
       const chartData = await nocodbService.getNotificationsChartData(days);
       
@@ -70,8 +81,20 @@ export const useNotificationsChartData = (days: number = 7) => {
         setData(chartData);
         console.log('✅ Dados reais do gráfico de notificações carregados:', chartData);
       } else {
-        console.log('⚠️ Nenhum dado de notificação encontrado no NocoDB');
-        setData([]);
+        console.log('⚠️ Nenhum dado de notificação encontrado');
+        // Criar dados de exemplo para demonstração se não há dados reais
+        const exampleData = [];
+        for (let i = days - 1; i >= 0; i--) {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          exampleData.push({
+            date: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+            hotmart: 0,
+            eduzz: 0,
+            monetizze: 0
+          });
+        }
+        setData(exampleData);
       }
       setError(null);
     } catch (err) {
@@ -86,8 +109,8 @@ export const useNotificationsChartData = (days: number = 7) => {
   useEffect(() => {
     fetchData();
     
-    // Atualizar dados a cada 1 minuto para sincronização mais rápida
-    const interval = setInterval(fetchData, 60 * 1000);
+    // Atualizar dados a cada 30 segundos para sincronização em tempo real
+    const interval = setInterval(fetchData, 30 * 1000);
     
     // Escutar evento customizado de atualização do dashboard
     const handleDashboardRefresh = () => {

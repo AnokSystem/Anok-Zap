@@ -20,12 +20,13 @@ export class ChartDataService extends BaseNocodbService {
     try {
       const clientId = await this.getClientId();
       
-      console.log('📈 Buscando TODOS os dados do gráfico de disparos para cliente:', clientId);
+      console.log('📈 Buscando dados do gráfico de disparos para cliente:', clientId);
+      console.log('🎯 Usando tabela ID:', this.DISPARO_EM_MASSA_TABLE_ID);
       
       // Adicionar timestamp para evitar cache
       const timestamp = Date.now();
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.DISPARO_EM_MASSA_TABLE_ID}?limit=10000&_t=${timestamp}`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.DISPARO_EM_MASSA_TABLE_ID}?limit=10000&sort=-Id&_t=${timestamp}`,
         {
           headers: {
             ...this.headers,
@@ -40,7 +41,7 @@ export class ChartDataService extends BaseNocodbService {
         const allDisparos = data.list || [];
         
         console.log(`📊 ${allDisparos.length} disparos totais encontrados`);
-        console.log('📋 Campos disponíveis nos disparos:', Object.keys(allDisparos[0] || {}));
+        console.log('📋 Dados brutos:', allDisparos.slice(0, 2));
         
         // Filtro mais flexível para client_id
         const clientDisparos = allDisparos.filter(d => {
@@ -66,31 +67,23 @@ export class ChartDataService extends BaseNocodbService {
             return createdAt && createdAt.startsWith(dateStr);
           });
           
-          const totalSent = dayDisparos.reduce((acc, d) => {
-            const count = parseInt(
-              d.sent_count || 
-              d.sentCount || 
-              d.recipient_count || 
-              d.total_recipients ||
-              0
-            );
+          // Calcular disparos reais baseado nos dados da tabela
+          const totalDisparos = dayDisparos.reduce((acc, d) => {
+            // Usar recipient_count como número total de disparos
+            const count = parseInt(d.recipient_count || d.recipientCount || 0);
             return acc + count;
           }, 0);
           
-          const totalErrors = dayDisparos.reduce((acc, d) => {
-            const errors = parseInt(
-              d.error_count || 
-              d.errorCount || 
-              d.failed_sends ||
-              0
-            );
-            return acc + errors;
+          // Calcular sucessos baseado em contacts_reached
+          const totalSucesso = dayDisparos.reduce((acc, d) => {
+            const reached = parseInt(d.contacts_reached || d.contactsReached || 0);
+            return acc + reached;
           }, 0);
           
           chartData.push({
             date: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-            disparos: totalSent,
-            sucesso: Math.max(0, totalSent - totalErrors)
+            disparos: totalDisparos,
+            sucesso: totalSucesso
           });
         }
 
@@ -109,12 +102,12 @@ export class ChartDataService extends BaseNocodbService {
   async getNotificationsChartData(baseId: string, days: number = 7): Promise<any[]> {
     try {
       const clientId = await this.getClientId();
-      console.log('📊 Buscando TODOS os dados do gráfico de notificações para cliente:', clientId);
+      console.log('📊 Buscando dados do gráfico de notificações para cliente:', clientId);
       
       // Adicionar timestamp para evitar cache
       const timestamp = Date.now();
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.NOTIFICACOES_PLATAFORMAS_TABLE_ID}?limit=10000&_t=${timestamp}`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.NOTIFICACOES_PLATAFORMAS_TABLE_ID}?limit=10000&sort=-Id&_t=${timestamp}`,
         {
           headers: {
             ...this.headers,
@@ -129,7 +122,6 @@ export class ChartDataService extends BaseNocodbService {
         const allNotifications = data.list || [];
         
         console.log(`📊 ${allNotifications.length} notificações totais encontradas`);
-        console.log('📋 Campos disponíveis nas notificações:', Object.keys(allNotifications[0] || {}));
         
         // Filtro mais flexível para client_id
         const clientNotifications = allNotifications.filter(n => {
@@ -155,7 +147,7 @@ export class ChartDataService extends BaseNocodbService {
             return eventDate && eventDate.startsWith(dateStr);
           });
           
-          // Contar notificações por plataforma baseado nos dados reais
+          // Contar notificações por plataforma
           const hotmart = dayNotifications.filter(n => 
             (n.platform || '').toLowerCase().includes('hotmart') ||
             (n.source || '').toLowerCase().includes('hotmart')
@@ -171,12 +163,11 @@ export class ChartDataService extends BaseNocodbService {
             (n.source || '').toLowerCase().includes('monetizze')
           ).length;
           
-          // Se não tem platform específica, considerar como "outras"
           const outras = dayNotifications.length - (hotmart + eduzz + monetizze);
           
           chartData.push({
             date: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-            hotmart: hotmart || outras, // Se não tem hotmart, usar outras
+            hotmart: hotmart || outras,
             eduzz,
             monetizze
           });
