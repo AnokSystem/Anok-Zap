@@ -1,4 +1,3 @@
-
 import { BaseNocodbService } from '../baseService';
 import { NocodbConfig } from '../types';
 
@@ -7,8 +6,8 @@ export class ChartDataService extends BaseNocodbService {
     super(config);
   }
 
-  // IDs específicos das tabelas
-  private DISPARO_EM_MASSA_TABLE_ID = 'myx4lsmm5i02xcd';
+  // Nome da tabela de disparos em massa
+  private MASS_MESSAGING_TABLE_NAME = 'mass_messaging_logs';
   private NOTIFICACOES_PLATAFORMAS_TABLE_ID = 'mzup2t8ygoiy5ub';
 
   private async getClientId(): Promise<string> {
@@ -20,13 +19,45 @@ export class ChartDataService extends BaseNocodbService {
     try {
       const clientId = await this.getClientId();
       
-      console.log('📈 Buscando dados do gráfico de disparos para cliente:', clientId);
-      console.log('🎯 Usando tabela ID:', this.DISPARO_EM_MASSA_TABLE_ID);
+      console.log('📈 Buscando dados da tabela mass_messaging_logs para cliente:', clientId);
       
-      // Adicionar timestamp para evitar cache
+      // Primeiro, descobrir o ID da tabela mass_messaging_logs
+      const tablesResponse = await fetch(
+        `${this.config.baseUrl}/api/v1/db/meta/projects/${baseId}/tables`,
+        {
+          headers: this.headers,
+        }
+      );
+
+      if (!tablesResponse.ok) {
+        console.error('❌ Erro ao buscar tabelas:', tablesResponse.status);
+        return [];
+      }
+
+      const tablesData = await tablesResponse.json();
+      const tables = tablesData.list || [];
+      
+      console.log('📋 Tabelas disponíveis:', tables.map(t => t.table_name));
+      
+      // Procurar a tabela mass_messaging_logs
+      const massMessagingTable = tables.find(t => 
+        t.table_name === this.MASS_MESSAGING_TABLE_NAME || 
+        t.title === 'Disparos em Massa' ||
+        t.table_name.includes('mass_messaging') ||
+        t.table_name.includes('disparo')
+      );
+
+      if (!massMessagingTable) {
+        console.error('❌ Tabela mass_messaging_logs não encontrada');
+        return [];
+      }
+
+      console.log('✅ Tabela encontrada:', massMessagingTable.table_name, 'ID:', massMessagingTable.id);
+
+      // Buscar dados da tabela
       const timestamp = Date.now();
-      const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.DISPARO_EM_MASSA_TABLE_ID}?limit=10000&sort=-Id&_t=${timestamp}`,
+      const dataResponse = await fetch(
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${massMessagingTable.id}?limit=1000&sort=-created_at&_t=${timestamp}`,
         {
           headers: {
             ...this.headers,
@@ -36,69 +67,80 @@ export class ChartDataService extends BaseNocodbService {
         }
       );
 
-      if (response.ok) {
-        const data = await response.json();
-        const allDisparos = data.list || [];
-        
-        console.log(`📊 ${allDisparos.length} disparos totais encontrados`);
-        console.log('📋 Campos disponíveis:', Object.keys(allDisparos[0] || {}));
-        console.log('📝 Primeiros 2 registros:', allDisparos.slice(0, 2));
-        
-        // Filtro para client_id com mais flexibilidade
-        const clientDisparos = allDisparos.filter(d => {
-          const hasClientId = d['Cliente ID'] === clientId || 
-                             d.client_id === clientId || 
-                             d.Client_id === clientId || 
-                             d.clientId === clientId;
-          // Se não há client_id, incluir para debug
-          if (!d['Cliente ID'] && !d.client_id && !d.Client_id && !d.clientId) {
-            return true;
-          }
-          return hasClientId;
-        });
-        
-        console.log(`📊 ${clientDisparos.length} disparos filtrados para cliente ${clientId}`);
-        
-        const chartData = [];
-        for (let i = days - 1; i >= 0; i--) {
-          const date = new Date();
-          date.setDate(date.getDate() - i);
-          const dateStr = date.toISOString().split('T')[0];
-          
-          const dayDisparos = clientDisparos.filter(d => {
-            const createdAt = d.CreatedAt || d['Criado em'] || d.created_at || d['Hora de Início'];
-            if (!createdAt) return false;
-            
-            const recordDate = new Date(createdAt).toISOString().split('T')[0];
-            return recordDate === dateStr;
-          });
-          
-          console.log(`📅 ${dateStr}: ${dayDisparos.length} disparos encontrados`);
-          
-          // Calcular totais do dia
-          const totalDisparos = dayDisparos.reduce((acc, d) => {
-            const count = parseInt(d['Total de Destinatários'] || d.recipient_count || d.recipientCount || '0');
-            return acc + count;
-          }, 0);
-          
-          const totalSucesso = dayDisparos.reduce((acc, d) => {
-            const reached = parseInt(d['Contatos Alcançados'] || d.contacts_reached || d.contactsReached || '0');
-            return acc + reached;
-          }, 0);
-          
-          chartData.push({
-            date: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-            disparos: totalDisparos,
-            sucesso: totalSucesso
-          });
-        }
-
-        console.log('📊 Dados finais do gráfico:', chartData);
-        return chartData;
-      } else {
-        console.log('❌ Erro na resposta da API:', response.status, await response.text());
+      if (!dataResponse.ok) {
+        console.error('❌ Erro ao buscar dados:', dataResponse.status);
         return [];
       }
+
+      const data = await dataResponse.json();
+      const allDisparos = data.list || [];
+      
+      console.log(`📊 ${allDisparos.length} disparos encontrados na tabela`);
+      
+      if (allDisparos.length > 0) {
+        console.log('📋 Campos disponíveis no primeiro registro:', Object.keys(allDisparos[0]));
+        console.log('📝 Exemplo de registro:', allDisparos[0]);
+      }
+
+      // Filtrar por client_id
+      const clientDisparos = allDisparos.filter(d => {
+        const hasClientId = d.client_id === clientId || 
+                           d.Cliente_ID === clientId || 
+                           d['Cliente ID'] === clientId ||
+                           d.clientId === clientId;
+        // Se não há client_id definido, incluir para debug
+        if (!d.client_id && !d.Cliente_ID && !d['Cliente ID'] && !d.clientId) {
+          return true;
+        }
+        return hasClientId;
+      });
+      
+      console.log(`📊 ${clientDisparos.length} disparos filtrados para cliente ${clientId}`);
+
+      // Gerar dados para os últimos 7 dias
+      const chartData = [];
+      for (let i = days - 1; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        date.setHours(0, 0, 0, 0); // Zerar horas para comparação exata de datas
+        
+        const nextDate = new Date(date);
+        nextDate.setDate(nextDate.getDate() + 1);
+        
+        const dateStr = date.toISOString().split('T')[0];
+        
+        // Filtrar disparos do dia
+        const dayDisparos = clientDisparos.filter(d => {
+          const createdAt = d.created_at || d.CreatedAt || d['Criado em'] || d.start_time || d['Hora de Início'];
+          if (!createdAt) return false;
+          
+          const recordDate = new Date(createdAt);
+          return recordDate >= date && recordDate < nextDate;
+        });
+        
+        console.log(`📅 ${dateStr}: ${dayDisparos.length} disparos encontrados`);
+        
+        // Calcular totais do dia
+        const totalDisparos = dayDisparos.reduce((acc, d) => {
+          const count = parseInt(d.recipient_count || d['Total de Destinatários'] || d.recipientCount || '0');
+          return acc + count;
+        }, 0);
+        
+        const totalSucesso = dayDisparos.reduce((acc, d) => {
+          const reached = parseInt(d.contacts_reached || d['Contatos Alcançados'] || d.contactsReached || d.sent_count || '0');
+          return acc + reached;
+        }, 0);
+        
+        chartData.push({
+          date: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+          disparos: totalDisparos,
+          sucesso: totalSucesso
+        });
+      }
+
+      console.log('📊 Dados finais do gráfico:', chartData);
+      return chartData;
+      
     } catch (error) {
       console.error('❌ Erro ao buscar dados do gráfico:', error);
       return [];

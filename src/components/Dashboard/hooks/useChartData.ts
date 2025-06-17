@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { nocodbService } from '@/services/nocodb';
 
@@ -10,23 +9,27 @@ export const useDisparosChartData = (days: number = 7) => {
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      console.log('📈 Buscando dados reais do gráfico de disparos...');
-      
-      const baseId = nocodbService.getTargetBaseId();
-      if (!baseId) {
-        console.error('❌ Base ID não encontrado');
-        setError('Base ID não configurado');
-        return;
-      }
+      setError(null);
+      console.log('📈 Iniciando busca de dados de disparos dos últimos', days, 'dias...');
       
       const chartData = await nocodbService.getDisparosChartData(days);
       
       if (chartData && chartData.length > 0) {
-        console.log('✅ Dados do gráfico recebidos:', chartData);
-        setData(chartData);
+        console.log('✅ Dados do gráfico de disparos recebidos:', chartData);
+        
+        // Verificar se há dados reais (não apenas zeros)
+        const hasRealData = chartData.some(item => item.disparos > 0 || item.sucesso > 0);
+        
+        if (hasRealData) {
+          setData(chartData);
+          console.log('✅ Dados reais encontrados e definidos');
+        } else {
+          console.log('⚠️ Apenas dados zerados encontrados');
+          setData(chartData); // Ainda assim, mostrar os dados zerados
+        }
       } else {
-        console.log('⚠️ Nenhum dado encontrado, criando dados vazios');
-        // Criar estrutura de dados vazia para os últimos 7 dias
+        console.log('⚠️ Nenhum dado encontrado, criando estrutura vazia');
+        // Criar estrutura de dados vazia para os últimos dias
         const emptyData = [];
         for (let i = days - 1; i >= 0; i--) {
           const date = new Date();
@@ -39,11 +42,22 @@ export const useDisparosChartData = (days: number = 7) => {
         }
         setData(emptyData);
       }
-      setError(null);
     } catch (err) {
-      console.error('❌ Erro ao buscar dados do gráfico:', err);
+      console.error('❌ Erro ao buscar dados do gráfico de disparos:', err);
       setError('Erro ao carregar dados do gráfico');
-      setData([]);
+      
+      // Criar dados vazios em caso de erro
+      const emptyData = [];
+      for (let i = days - 1; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        emptyData.push({
+          date: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+          disparos: 0,
+          sucesso: 0
+        });
+      }
+      setData(emptyData);
     } finally {
       setIsLoading(false);
     }
@@ -52,12 +66,12 @@ export const useDisparosChartData = (days: number = 7) => {
   useEffect(() => {
     fetchData();
     
-    // Atualizar dados a cada 30 segundos
-    const interval = setInterval(fetchData, 30 * 1000);
+    // Atualizar dados a cada 15 segundos para ver mudanças mais rapidamente
+    const interval = setInterval(fetchData, 15 * 1000);
     
     // Escutar evento de refresh do dashboard
     const handleDashboardRefresh = () => {
-      console.log('🔄 Evento de refresh recebido, atualizando gráfico...');
+      console.log('🔄 Evento de refresh recebido, atualizando gráfico de disparos...');
       fetchData();
     };
     
