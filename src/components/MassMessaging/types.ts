@@ -9,13 +9,15 @@ export interface Message {
 }
 
 export interface CampaignData {
-  campaign_id?: string; // Add this optional property
-  instance: string;
+  campaign_id?: string;
+  instance: string; // Instância principal para compatibilidade
+  instances?: string[]; // Lista de todas as instâncias selecionadas
+  instance_assignments?: { [key: string]: string }; // Mapeamento recipient -> instância
   messages: Message[];
   recipients: string[];
   delay: number;
   notificationPhone: string;
-  status?: string; // Add status property as well
+  status?: string;
 }
 
 export interface ContactData {

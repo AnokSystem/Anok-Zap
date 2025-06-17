@@ -10,8 +10,8 @@ import { CampaignSettings } from './components/CampaignSettings';
 const MassMessaging = () => {
   const {
     instances,
-    selectedInstance,
-    setSelectedInstance,
+    selectedInstances,
+    setSelectedInstances,
     messages,
     setMessages,
     recipients,
@@ -36,28 +36,28 @@ const MassMessaging = () => {
           <h3 className="text-2xl font-bold text-primary-contrast">Disparo em Massa</h3>
         </div>
         <p className="text-gray-400 text-lg">
-          Envie mensagens para múltiplos contatos do WhatsApp
+          Envie mensagens para múltiplos contatos com randomização entre instâncias
         </p>
       </div>
 
-      {/* Seleção de Instância */}
+      {/* Seleção de Instâncias */}
       <div className="card-glass p-6">
         <div className="flex items-center space-x-3 mb-6">
           <div className="w-10 h-10 bg-purple-accent/20 rounded-lg flex items-center justify-center">
             <Send className="w-5 h-5 text-purple-accent" />
           </div>
           <div>
-            <h4 className="font-semibold text-primary-contrast text-lg">Configuração da Instância</h4>
+            <h4 className="font-semibold text-primary-contrast text-lg">Configuração das Instâncias</h4>
             <p className="text-sm text-gray-400 mt-1">
-              Selecione a instância do WhatsApp para envio
+              Selecione uma ou múltiplas instâncias para randomizar os envios
             </p>
           </div>
         </div>
         
         <InstanceSelector
           instances={instances}
-          selectedInstance={selectedInstance}
-          onInstanceChange={setSelectedInstance}
+          selectedInstances={selectedInstances}
+          onInstancesChange={setSelectedInstances}
         />
       </div>
 

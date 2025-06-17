@@ -19,7 +19,7 @@ export const useMassMessaging = () => {
   const { checkForSavedContacts } = useSavedContacts();
 
   const [instances, setInstances] = useState<any[]>([]);
-  const [selectedInstance, setSelectedInstance] = useState('');
+  const [selectedInstances, setSelectedInstances] = useState<string[]>([]);
   const [messages, setMessages] = useState<Message[]>([
     { id: '1', type: 'text', content: '' }
   ]);
@@ -30,7 +30,12 @@ export const useMassMessaging = () => {
 
   useEffect(() => {
     loadInstances();
-    checkForSavedContacts(setRecipients, setSelectedInstance);
+    checkForSavedContacts(setRecipients, (instanceId) => {
+      // Manter compatibilidade com a função antiga que esperava um instanceId único
+      if (instanceId) {
+        setSelectedInstances([instanceId]);
+      }
+    });
   }, []);
 
   const loadInstances = async () => {
@@ -46,14 +51,48 @@ export const useMassMessaging = () => {
     }
   };
 
+  // Função para randomizar a atribuição de instâncias aos destinatários
+  const randomizeInstanceAssignment = (recipientList: string[], selectedInstanceIds: string[]) => {
+    const assignments: { [key: string]: string } = {};
+    
+    recipientList.forEach((recipient, index) => {
+      // Usar índice baseado no recipient para garantir consistência na randomização
+      const randomIndex = Math.abs(recipient.hashCode ? recipient.hashCode() : index) % selectedInstanceIds.length;
+      assignments[recipient] = selectedInstanceIds[randomIndex];
+    });
+    
+    return assignments;
+  };
+
   const handleSendCampaign = async () => {
-    if (!selectedInstance || messages.length === 0 || !recipients.trim()) {
+    if (selectedInstances.length === 0 || messages.length === 0 || !recipients.trim()) {
       toast({
         title: "Erro",
-        description: "Por favor, preencha todos os campos obrigatórios",
+        description: "Por favor, selecione pelo menos uma instância e preencha todos os campos obrigatórios",
         variant: "destructive",
       });
       return;
+    }
+
+    // Validar se todas as instâncias selecionadas estão conectadas
+    const connectedInstances = instances.filter(instance => 
+      selectedInstances.includes(instance.id) && instance.status === 'conectado'
+    );
+
+    if (connectedInstances.length === 0) {
+      toast({
+        title: "Erro",
+        description: "Nenhuma das instâncias selecionadas está conectada",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (connectedInstances.length < selectedInstances.length) {
+      toast({
+        title: "Aviso",
+        description: `Apenas ${connectedInstances.length} de ${selectedInstances.length} instâncias estão conectadas e serão utilizadas`,
+      });
     }
 
     // Validar variáveis nas mensagens
@@ -63,10 +102,15 @@ export const useMassMessaging = () => {
 
     const clientId = getClientId();
     console.log('🏢 Iniciando campanha para cliente:', clientId);
+    console.log('📱 Instâncias selecionadas:', connectedInstances.map(i => i.name));
 
     setIsLoading(true);
     try {
       const recipientList = recipients.split('\n').filter(r => r.trim());
+      
+      // Randomizar atribuição de instâncias
+      const instanceAssignments = randomizeInstanceAssignment(recipientList, connectedInstances.map(i => i.id));
+      console.log('🎲 Atribuições randomizadas:', instanceAssignments);
       
       // Processar mensagens com variáveis para cada contato
       const processedCampaigns = processMessagesWithVariables(messages, recipientList);
@@ -74,10 +118,12 @@ export const useMassMessaging = () => {
       // Gerar ID único para a campanha
       const campaignId = `campanha_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
-      // Preparar dados da campanha
+      // Preparar dados da campanha com informações de múltiplas instâncias
       const campaignData: CampaignData = {
         campaign_id: campaignId,
-        instance: selectedInstance,
+        instance: connectedInstances[0].id, // Instância principal para compatibilidade
+        instances: connectedInstances.map(i => i.id), // Lista de todas as instâncias
+        instance_assignments: instanceAssignments, // Mapeamento recipient -> instância
         messages: messages.map(msg => ({
           ...msg,
           fileUrl: msg.fileUrl || '',
@@ -105,7 +151,10 @@ export const useMassMessaging = () => {
         client_id: clientId,
         // Expor serviços de atualização para o webhook
         updateContactsReached: `${window.location.origin}/api/update-contacts-reached/${campaignId}`,
-        finalizeCampaign: `${window.location.origin}/api/finalize-campaign/${campaignId}`
+        finalizeCampaign: `${window.location.origin}/api/finalize-campaign/${campaignId}`,
+        // Informações sobre randomização
+        randomization_enabled: connectedInstances.length > 1,
+        total_instances: connectedInstances.length
       };
 
       console.log('📡 Enviando dados para webhook n8n:', enhancedCampaignData);
@@ -125,9 +174,13 @@ export const useMassMessaging = () => {
 
       console.log('✅ Webhook enviado com sucesso');
 
+      const instancesText = connectedInstances.length > 1 
+        ? `${connectedInstances.length} instâncias (randomizado)`
+        : connectedInstances[0].name;
+
       toast({
         title: "Campanha Iniciada",
-        description: `Campanha ${campaignId} iniciada com 0/${recipientList.length} contatos alcançados. Status: Enviando`,
+        description: `Campanha ${campaignId} iniciada com 0/${recipientList.length} contatos. Usando: ${instancesText}`,
       });
 
       // Reset form
@@ -148,8 +201,8 @@ export const useMassMessaging = () => {
 
   return {
     instances,
-    selectedInstance,
-    setSelectedInstance,
+    selectedInstances,
+    setSelectedInstances,
     messages,
     setMessages,
     recipients,
@@ -162,4 +215,22 @@ export const useMassMessaging = () => {
     setIsLoading,
     handleSendCampaign,
   };
+};
+
+// Extensão do String prototype para criar um hash simples
+declare global {
+  interface String {
+    hashCode(): number;
+  }
+}
+
+String.prototype.hashCode = function() {
+  let hash = 0;
+  if (this.length === 0) return hash;
+  for (let i = 0; i < this.length; i++) {
+    const char = this.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return hash;
 };
