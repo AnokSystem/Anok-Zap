@@ -131,9 +131,9 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
               </div>
             )}
 
-            {(message.type === 'image' || message.type === 'video' || message.type === 'document') && (
+            {(message.type === 'image' || message.type === 'video' || message.type === 'document') && message.fileUrl && (
               <div>
-                <Label className="text-gray-200 font-medium text-sm">Descrição</Label>
+                <Label className="text-gray-200 font-medium text-sm">Descrição (opcional)</Label>
                 <Textarea
                   value={message.content || ''}
                   onChange={(e) => onUpdateMessage(message.id, { content: e.target.value })}
