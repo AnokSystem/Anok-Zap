@@ -27,18 +27,6 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <Label className="text-gray-200 font-medium text-sm">Mensagens (até 5)</Label>
-        {messages.length < 5 && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onAddMessage}
-            className="bg-gray-700/50 border-gray-600 text-gray-200 hover:bg-gray-600/50"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Adicionar Mensagem
-          </Button>
-        )}
       </div>
 
       {messages.map((message, index) => (
@@ -145,6 +133,21 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
           </div>
         </div>
       ))}
+
+      {messages.length < 5 && (
+        <div className="flex justify-center pt-4">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onAddMessage}
+            className="bg-gray-700/50 border-gray-600 text-gray-200 hover:bg-gray-600/50"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Adicionar Mensagem
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
