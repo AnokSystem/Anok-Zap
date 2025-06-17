@@ -57,8 +57,10 @@ export const CampaignSettings: React.FC<CampaignSettingsProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-400">Velocidade</span>
               <div className="flex items-center space-x-3">
-                <span className="text-3xl font-bold gradient-primary bg-clip-text text-transparent">{delay[0]}</span>
-                <span className="text-sm text-gray-400">segundos</span>
+                <div className="bg-gradient-to-r from-purple-600 to-purple-800 text-white px-4 py-2 rounded-xl border-2 border-purple-500 shadow-lg">
+                  <span className="text-3xl font-bold">{delay[0]}</span>
+                  <span className="text-sm ml-2 opacity-90">segundos</span>
+                </div>
               </div>
             </div>
             
