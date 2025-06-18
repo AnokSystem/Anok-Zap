@@ -18,13 +18,13 @@ export const useStoriesWebhook = () => {
   const { toast } = useToast();
   const [isPosting, setIsPosting] = useState(false);
 
-  const sendStoryViaWebhook = async (instanceId: string, fileUrl: string, storyData: StoryData) => {
+  const sendStoryViaWebhook = async (instances: string[], fileUrl: string, storyData: StoryData) => {
     try {
-      console.log(`📡 Enviando story via webhook para instância ${instanceId}`);
+      console.log(`📡 Enviando story via webhook para ${instances.length} instâncias:`, instances);
       
       const webhookData = {
         action: 'send_story',
-        instance: instanceId,
+        instances: instances, // Enviando array de instâncias
         data: {
           type: storyData.type,
           fileUrl: fileUrl,
@@ -36,7 +36,7 @@ export const useStoriesWebhook = () => {
         timestamp: new Date().toISOString()
       };
 
-      console.log(`📤 Dados do webhook para ${instanceId}:`, JSON.stringify(webhookData, null, 2));
+      console.log(`📤 Dados do webhook:`, JSON.stringify(webhookData, null, 2));
 
       const response = await fetch(WEBHOOK_URL, {
         method: 'POST',
@@ -47,17 +47,17 @@ export const useStoriesWebhook = () => {
       });
 
       const responseText = await response.text();
-      console.log(`📥 Resposta do webhook para ${instanceId} (${response.status}):`, responseText);
+      console.log(`📥 Resposta do webhook (${response.status}):`, responseText);
 
       if (response.ok) {
-        console.log(`✅ Story enviado com sucesso via webhook para instância ${instanceId}`);
+        console.log(`✅ Story enviado com sucesso via webhook para ${instances.length} instâncias`);
         return true;
       } else {
-        console.error(`❌ Erro no webhook para instância ${instanceId}:`, response.status, responseText);
+        console.error(`❌ Erro no webhook:`, response.status, responseText);
         return false;
       }
     } catch (error) {
-      console.error(`💥 Erro ao enviar story via webhook para instância ${instanceId}:`, error);
+      console.error(`💥 Erro ao enviar story via webhook:`, error);
       return false;
     }
   };
@@ -97,8 +97,6 @@ export const useStoriesWebhook = () => {
     }
 
     setIsPosting(true);
-    let successCount = 0;
-    let errorCount = 0;
 
     try {
       // 1. Primeiro, fazer upload do arquivo para MinIO
@@ -114,54 +112,28 @@ export const useStoriesWebhook = () => {
       const fileUrl = await minioService.uploadFile(renamedFile);
       console.log('✅ Arquivo enviado para MinIO:', fileUrl);
 
-      // 2. Enviar para cada instância via webhook
-      console.log(`🔄 Processando ${selectedInstances.length} instâncias...`);
+      // 2. Enviar para todas as instâncias em uma única chamada do webhook
+      console.log(`🔄 Enviando para ${selectedInstances.length} instâncias via webhook...`);
       
-      for (let i = 0; i < selectedInstances.length; i++) {
-        const instanceId = selectedInstances[i];
-        console.log(`📤 Processando instância ${i + 1}/${selectedInstances.length}: ${instanceId}`);
-        
-        const success = await sendStoryViaWebhook(instanceId, fileUrl, storyData);
-        
-        if (success) {
-          successCount++;
-          console.log(`✅ Sucesso para ${instanceId}. Total de sucessos: ${successCount}`);
-        } else {
-          errorCount++;
-          console.log(`❌ Erro para ${instanceId}. Total de erros: ${errorCount}`);
-        }
-
-        // Pequeno delay entre as requisições para evitar sobrecarga
-        if (i < selectedInstances.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
-      }
-
-      console.log(`📊 Resultado final: ${successCount} sucessos, ${errorCount} erros`);
+      const success = await sendStoryViaWebhook(selectedInstances, fileUrl, storyData);
 
       // 3. Mostrar resultado
-      if (successCount > 0 && errorCount === 0) {
+      if (success) {
         toast({
           title: isScheduled ? "Story Agendado" : "Story Enviado",
           description: isScheduled 
-            ? `Story agendado via webhook para ${storyData.scheduleDate} às ${storyData.scheduleTime} em ${successCount} instância(s)`
-            : `Story enviado com sucesso para ${successCount} instância(s) via webhook`,
-        });
-      } else if (successCount > 0 && errorCount > 0) {
-        toast({
-          title: "Parcialmente Concluído",
-          description: `Story enviado para ${successCount} instância(s), falhou em ${errorCount}`,
-          variant: "destructive"
+            ? `Story agendado via webhook para ${storyData.scheduleDate} às ${storyData.scheduleTime} em ${selectedInstances.length} instância(s)`
+            : `Story enviado com sucesso para ${selectedInstances.length} instância(s) via webhook`,
         });
       } else {
         toast({
           title: "Erro",
-          description: "Falha ao enviar story para todas as instâncias",
+          description: "Falha ao enviar story via webhook",
           variant: "destructive"
         });
       }
 
-      return successCount > 0;
+      return success;
 
     } catch (error) {
       console.error('💥 Erro durante o processo:', error);
