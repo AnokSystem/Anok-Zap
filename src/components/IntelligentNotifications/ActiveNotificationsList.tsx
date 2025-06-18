@@ -20,15 +20,24 @@ export const ActiveNotificationsList: React.FC<ActiveNotificationsListProps> = (
   const { handleViewDetails } = useNotificationNavigation();
   const displayedRules = 3;
 
+  // Ordenar regras por data de criação (mais recentes primeiro)
+  const sortedRules = React.useMemo(() => {
+    return [...rules].sort((a, b) => {
+      const dateA = new Date(a.CreatedAt || a.created_at || 0);
+      const dateB = new Date(b.CreatedAt || b.created_at || 0);
+      return dateB.getTime() - dateA.getTime(); // Ordem decrescente (mais recente primeiro)
+    });
+  }, [rules]);
+
   return (
     <div className="card-glass p-6">
-      <ListHeader rulesCount={rules.length} />
+      <ListHeader rulesCount={sortedRules.length} />
 
-      {rules.length === 0 ? (
+      {sortedRules.length === 0 ? (
         <EmptyState />
       ) : (
         <div className="space-y-4">
-          {rules.slice(0, displayedRules).map((rule) => (
+          {sortedRules.slice(0, displayedRules).map((rule) => (
             <NotificationCard
               key={rule.ID || rule.id}
               rule={rule}
@@ -37,7 +46,7 @@ export const ActiveNotificationsList: React.FC<ActiveNotificationsListProps> = (
           ))}
           
           <ViewMoreFooter 
-            totalRules={rules.length} 
+            totalRules={sortedRules.length} 
             displayedRules={displayedRules} 
           />
         </div>
