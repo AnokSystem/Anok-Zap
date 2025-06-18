@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
 interface NotificationVariableSelectorProps {
-  onVariableInsert: (variable: string) => void;
+  onVariableInsert: (displayText: string, variableCode: string) => void;
 }
 
 export const NotificationVariableSelector: React.FC<NotificationVariableSelectorProps> = ({
@@ -39,11 +39,11 @@ export const NotificationVariableSelector: React.FC<NotificationVariableSelector
     }
   ];
 
-  const handleVariableClick = (variable: string) => {
-    onVariableInsert(variable);
+  const handleVariableClick = (name: string, variable: string) => {
+    onVariableInsert(name, variable);
     toast({
       title: "Variável inserida",
-      description: "Variável adicionada à mensagem",
+      description: `${name} adicionado à mensagem`,
     });
   };
 
@@ -60,7 +60,7 @@ export const NotificationVariableSelector: React.FC<NotificationVariableSelector
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => handleVariableClick(item.variable)}
+            onClick={() => handleVariableClick(item.name, item.variable)}
             className="h-7 px-3 text-xs bg-purple-600/20 border-purple-400/30 text-purple-300 hover:bg-purple-600/30"
           >
             {item.name}

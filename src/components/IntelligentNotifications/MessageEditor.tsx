@@ -25,13 +25,33 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
   onFileUpload
 }) => {
   const [currentEditingMessageId, setCurrentEditingMessageId] = useState<string>('');
+  const [variablesMapping, setVariablesMapping] = useState<{[messageId: string]: {[displayText: string]: string}}>({});
 
-  const handleVariableInsert = (variable: string) => {
+  const variableMap: {[key: string]: string} = {
+    'Nome': "{{ $('Dados do Lead1').item.json.Nome }}",
+    'Nome Completo': "{{ $('Dados do Lead1').item.json.Sobrenome }}",
+    'CPF': "{{ $('Dados do Lead1').item.json.CPF }}",
+    'Email': "{{ $('Dados do Lead1').item.json.Email }}",
+    'Telefone': "{{ $('Dados do Lead1').item.json.Telefone }}",
+    'Nome do Produto': "{{ $('Dados do Lead1').item.json['Nome Produto'] }}"
+  };
+
+  const handleVariableInsert = (displayText: string, variableCode: string) => {
     if (currentEditingMessageId) {
       const currentMessage = messages.find(msg => msg.id === currentEditingMessageId);
       if (currentMessage) {
         const currentContent = currentMessage.content || '';
-        const newContent = currentContent + variable;
+        const newContent = currentContent + displayText;
+        
+        // Atualizar o mapeamento de variáveis para esta mensagem
+        setVariablesMapping(prev => ({
+          ...prev,
+          [currentEditingMessageId]: {
+            ...prev[currentEditingMessageId],
+            [displayText]: variableCode
+          }
+        }));
+        
         onUpdateMessage(currentEditingMessageId, { content: newContent });
       }
     }
@@ -40,6 +60,56 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
   const handleTextareaFocus = (messageId: string) => {
     setCurrentEditingMessageId(messageId);
   };
+
+  const handleContentChange = (messageId: string, newContent: string) => {
+    // Quando o conteúdo mudar, verificar se alguma variável foi removida
+    const mapping = variablesMapping[messageId] || {};
+    const usedVariables = Object.keys(mapping).filter(varName => 
+      newContent.includes(varName)
+    );
+    
+    // Atualizar o mapeamento apenas com as variáveis ainda presentes
+    const updatedMapping = usedVariables.reduce((acc, varName) => {
+      acc[varName] = mapping[varName];
+      return acc;
+    }, {} as {[key: string]: string});
+    
+    setVariablesMapping(prev => ({
+      ...prev,
+      [messageId]: updatedMapping
+    }));
+    
+    onUpdateMessage(messageId, { content: newContent });
+  };
+
+  // Função para converter o conteúdo com nomes amigáveis para variáveis completas
+  const convertToVariableCode = (messageId: string, content: string) => {
+    let convertedContent = content;
+    const mapping = variablesMapping[messageId] || {};
+    
+    // Substituir cada nome amigável pela variável completa
+    Object.entries(mapping).forEach(([displayText, variableCode]) => {
+      convertedContent = convertedContent.replace(new RegExp(displayText, 'g'), variableCode);
+    });
+    
+    return convertedContent;
+  };
+
+  // Atualizar as mensagens quando elas mudarem para incluir as variáveis convertidas
+  React.useEffect(() => {
+    messages.forEach(message => {
+      if (message.content && variablesMapping[message.id]) {
+        const convertedContent = convertToVariableCode(message.id, message.content);
+        if (convertedContent !== message.content) {
+          // Armazenar a versão convertida em um campo separado
+          onUpdateMessage(message.id, { 
+            ...message,
+            convertedContent 
+          });
+        }
+      }
+    });
+  }, [variablesMapping, messages]);
 
   return (
     <div className="space-y-4">
@@ -136,7 +206,7 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
                 
                 <Textarea
                   value={message.content}
-                  onChange={(e) => onUpdateMessage(message.id, { content: e.target.value })}
+                  onChange={(e) => handleContentChange(message.id, e.target.value)}
                   onFocus={() => handleTextareaFocus(message.id)}
                   placeholder="Digite sua mensagem..."
                   className="min-h-[100px] input-form"
@@ -157,7 +227,7 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
                 
                 <Textarea
                   value={message.content || ''}
-                  onChange={(e) => onUpdateMessage(message.id, { content: e.target.value })}
+                  onChange={(e) => handleContentChange(message.id, e.target.value)}
                   onFocus={() => handleTextareaFocus(message.id)}
                   placeholder="Digite uma descrição para o arquivo..."
                   className="min-h-[100px] input-form"
