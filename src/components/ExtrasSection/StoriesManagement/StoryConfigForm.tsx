@@ -33,9 +33,9 @@ export const StoryConfigForm: React.FC<StoryConfigFormProps> = ({
   };
 
   return (
-    <Card className="border-gray-200 bg-white data-[theme=light]:border-gray-200 data-[theme=light]:bg-white data-[theme=dark]:border-gray-600/50 data-[theme=dark]:bg-gray-800/30">
+    <Card className="bg-white border-gray-200 data-[theme=light]:bg-white data-[theme=light]:border-gray-200 data-[theme=dark]:bg-gray-800 data-[theme=dark]:border-gray-700">
       <CardHeader>
-        <CardTitle className="text-primary-contrast flex items-center gap-2">
+        <CardTitle className="text-gray-900 data-[theme=light]:text-gray-900 data-[theme=dark]:text-white flex items-center gap-2">
           <Image className="w-5 h-5" />
           Configuração do Story
         </CardTitle>
@@ -48,7 +48,7 @@ export const StoryConfigForm: React.FC<StoryConfigFormProps> = ({
               value={storyData.type} 
               onValueChange={(value) => onStoryDataChange({ type: value })}
             >
-              <SelectTrigger className="bg-white border-gray-300 data-[theme=light]:bg-white data-[theme=light]:border-gray-300 data-[theme=dark]:bg-gray-800 data-[theme=dark]:border-gray-600">
+              <SelectTrigger className="bg-white border-gray-300 data-[theme=light]:bg-white data-[theme=light]:border-gray-300 data-[theme=dark]:bg-gray-700 data-[theme=dark]:border-gray-600 data-[theme=dark]:text-white">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -75,9 +75,9 @@ export const StoryConfigForm: React.FC<StoryConfigFormProps> = ({
                 type="file"
                 accept={storyData.type === 'image' ? 'image/*' : 'video/*'}
                 onChange={handleFileChange}
-                className="bg-white border-gray-300 data-[theme=light]:bg-white data-[theme=light]:border-gray-300 data-[theme=dark]:bg-gray-800 data-[theme=dark]:border-gray-600"
+                className="bg-white border-gray-300 data-[theme=light]:bg-white data-[theme=light]:border-gray-300 data-[theme=dark]:bg-gray-700 data-[theme=dark]:border-gray-600 data-[theme=dark]:text-white"
               />
-              <Upload className="w-4 h-4 text-gray-400" />
+              <Upload className="w-4 h-4 text-gray-400 data-[theme=dark]:text-gray-500" />
             </div>
           </div>
         </div>
@@ -88,7 +88,7 @@ export const StoryConfigForm: React.FC<StoryConfigFormProps> = ({
             value={storyData.caption}
             onChange={(e) => onStoryDataChange({ caption: e.target.value })}
             placeholder="Digite uma legenda para o story..."
-            className="bg-white border-gray-300 text-gray-700 data-[theme=light]:bg-white data-[theme=light]:border-gray-300 data-[theme=light]:text-gray-700 data-[theme=dark]:bg-gray-800 data-[theme=dark]:border-gray-600 data-[theme=dark]:text-gray-200"
+            className="bg-white border-gray-300 text-gray-700 data-[theme=light]:bg-white data-[theme=light]:border-gray-300 data-[theme=light]:text-gray-700 data-[theme=dark]:bg-gray-700 data-[theme=dark]:border-gray-600 data-[theme=dark]:text-white data-[theme=dark]:placeholder:text-gray-400"
             rows={3}
           />
         </div>
