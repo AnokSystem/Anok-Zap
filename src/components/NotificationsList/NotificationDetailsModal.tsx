@@ -43,6 +43,14 @@ const NotificationDetailsModal = ({ notification, onClose }: NotificationDetails
     }
   };
 
+  const getNotificationData = (jsonData: string) => {
+    try {
+      return JSON.parse(jsonData);
+    } catch {
+      return {};
+    }
+  };
+
   const getEventTypeBadgeColor = (type: string) => {
     switch (type) {
       case 'purchase-approved': return 'bg-green-500/20 text-green-300 border-green-500/30';
@@ -50,6 +58,23 @@ const NotificationDetailsModal = ({ notification, onClose }: NotificationDetails
       case 'cart-abandoned': return 'bg-red-500/20 text-red-300 border-red-500/30';
       default: return 'bg-gray-500/20 text-gray-300 border-gray-500/30';
     }
+  };
+
+  const getUserRoleLabel = (userRole: string) => {
+    switch (userRole) {
+      case 'producer':
+      case 'produtor': return 'Produtor';
+      case 'affiliate':
+      case 'afiliado': return 'Afiliado';
+      default: return userRole;
+    }
+  };
+
+  const getProductScopeLabel = (productScope: string, specificProductName?: string) => {
+    if (productScope === 'specific' && specificProductName) {
+      return `Produto Específico: ${specificProductName}`;
+    }
+    return productScope === 'specific' ? 'Produto Específico' : 'Todos os Produtos';
   };
 
   const copyWebhookUrl = () => {
@@ -94,6 +119,9 @@ const NotificationDetailsModal = ({ notification, onClose }: NotificationDetails
     };
   }, []);
 
+  // Obter dados extras da notificação
+  const notificationData = getNotificationData(notification['Dados Completos (JSON)']);
+
   return (
     <div 
       className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6"
@@ -136,6 +164,27 @@ const NotificationDetailsModal = ({ notification, onClose }: NotificationDetails
             <div>
               <label className="text-sm font-medium text-gray-300">Perfil Hotmart</label>
               <p className="mt-1 font-medium text-gray-200">{notification['Perfil Hotmart'] || '-'}</p>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-300">Função do Usuário</label>
+              <p className="mt-1">
+                <Badge variant="outline" className="border-gray-500 text-gray-300">
+                  {getUserRoleLabel(notification['Função do Usuário'] || notificationData.userRole)}
+                </Badge>
+              </p>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-300">Escopo do Produto</label>
+              <p className="mt-1">
+                <Badge variant="outline" className="border-gray-500 text-gray-300">
+                  {getProductScopeLabel(
+                    notificationData.productScope || 'all',
+                    notificationData.specificProductName
+                  )}
+                </Badge>
+              </p>
             </div>
             
             <div>
