@@ -12,7 +12,14 @@ export const notificationSaveService = {
     console.log('📋 SERVIÇO - Dados da regra recebidos:', rule);
     console.log('📋 SERVIÇO - Regra sendo editada:', editingRule);
     
-    const webhookUrl = webhookService.getWebhookUrl(rule.eventType!);
+    // CORREÇÃO: Obter webhook URL segmentado
+    const webhookUrl = webhookService.getWebhookUrl(
+      rule.eventType!,
+      rule.userRole!,
+      rule.productScope || 'all'
+    );
+    
+    console.log('🔗 SERVIÇO - Webhook URL gerado:', webhookUrl);
     
     // CORREÇÃO: Preparar dados garantindo mapeamento correto
     const notificationData: any = {
@@ -21,6 +28,8 @@ export const notificationSaveService = {
       userRole: rule.userRole!,
       platform: rule.platform!,
       profileName: rule.profileName!,
+      productScope: rule.productScope || 'all',
+      specificProductName: rule.specificProductName || '',
       messages: rule.messages,
       webhookUrl,
       timestamp: new Date().toISOString(),
