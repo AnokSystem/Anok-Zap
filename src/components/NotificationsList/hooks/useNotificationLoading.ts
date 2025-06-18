@@ -51,13 +51,22 @@ export const useNotificationLoading = () => {
         });
       });
       
-      setNotifications(data);
+      // Ordenar notificações por data de criação (mais recentes primeiro)
+      const sortedData = data.sort((a, b) => {
+        const dateA = new Date(a.CreatedAt || a.created_at || 0);
+        const dateB = new Date(b.CreatedAt || b.created_at || 0);
+        return dateB.getTime() - dateA.getTime(); // Ordem decrescente (mais recente primeiro)
+      });
+      
+      console.log('📅 Notificações ordenadas por data (mais recentes primeiro)');
+      
+      setNotifications(sortedData);
       setLastSync(new Date());
       setSyncStatus('success');
       
       toast({
         title: "Sucesso",
-        description: `${data.length} notificações carregadas do NocoDB`,
+        description: `${sortedData.length} notificações carregadas do NocoDB`,
       });
     } catch (error) {
       console.error('❌ Erro ao carregar notificações:', error);
