@@ -17,7 +17,7 @@ export const NavigationCard = ({ id, title, subtitle, icon: IconComponent, gradi
     <div
       key={id}
       onClick={() => onClick(id)}
-      className={`nav-card ${active ? 'active' : ''} flex-shrink-0`}
+      className={`nav-card ${active ? 'active' : ''} flex-shrink-0 data-[theme=light]:border data-[theme=light]:border-gray-200`}
       style={{ cursor: 'pointer' }}
     >
       <div className="flex flex-col items-center text-center space-y-2 p-3 min-w-[120px]">
