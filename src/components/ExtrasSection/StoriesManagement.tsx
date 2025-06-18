@@ -10,6 +10,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Image, Video, Clock, Upload, Calendar, Smartphone, Play, PauseCircle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { evolutionApiService } from '@/services/evolutionApi';
+import { minioService } from '@/services/minio';
+
+const WEBHOOK_URL = 'https://webhook.novahagencia.com.br/webhook/9941ecf6-76bf-441b-83a3-1bdadc58eefb';
 
 const StoriesManagement = () => {
   const { toast } = useToast();
@@ -53,37 +56,42 @@ const StoriesManagement = () => {
     );
   };
 
-  const postStoryToInstance = async (instanceId: string) => {
-    if (!storyData.file) return false;
-
+  const sendStoryViaWebhook = async (instanceId: string, fileUrl: string) => {
     try {
-      const formData = new FormData();
-      formData.append('statusMessage', storyData.file);
-      if (storyData.caption) {
-        formData.append('content', storyData.caption);
-      }
-
-      console.log(`Postando story na instância ${instanceId}`);
+      console.log(`📡 Enviando story via webhook para instância ${instanceId}`);
       
-      // Endpoint correto para stories na Evolution API
-      const response = await fetch(`https://api.novahagencia.com.br/message/sendStatus/${instanceId}`, {
+      const webhookData = {
+        action: 'send_story',
+        instance: instanceId,
+        data: {
+          type: storyData.type,
+          fileUrl: fileUrl,
+          caption: storyData.caption || '',
+          schedule: storyData.schedule,
+          scheduleDate: storyData.scheduleDate,
+          scheduleTime: storyData.scheduleTime
+        },
+        timestamp: new Date().toISOString()
+      };
+
+      const response = await fetch(WEBHOOK_URL, {
         method: 'POST',
         headers: {
-          'apikey': '26bda82495a95caeae71f96534841285',
+          'Content-Type': 'application/json',
         },
-        body: formData,
+        body: JSON.stringify(webhookData),
       });
 
       if (response.ok) {
-        console.log(`Story postado com sucesso na instância ${instanceId}`);
+        console.log(`✅ Story enviado com sucesso via webhook para instância ${instanceId}`);
         return true;
       } else {
         const errorText = await response.text();
-        console.error(`Erro ao postar story na instância ${instanceId}:`, response.status, errorText);
+        console.error(`❌ Erro no webhook para instância ${instanceId}:`, response.status, errorText);
         return false;
       }
     } catch (error) {
-      console.error(`Erro ao postar story na instância ${instanceId}:`, error);
+      console.error(`💥 Erro ao enviar story via webhook para instância ${instanceId}:`, error);
       return false;
     }
   };
@@ -111,32 +119,58 @@ const StoriesManagement = () => {
     let successCount = 0;
     let errorCount = 0;
 
-    for (const instanceId of selectedInstances) {
-      const success = await postStoryToInstance(instanceId);
-      if (success) {
-        successCount++;
-      } else {
-        errorCount++;
+    try {
+      // 1. Primeiro, fazer upload do arquivo para MinIO
+      console.log('📤 Fazendo upload do arquivo para MinIO...');
+      const timestamp = Date.now();
+      const fileExtension = storyData.file.name.split('.').pop() || 'jpg';
+      const fileName = `stories/${timestamp}_story.${fileExtension}`;
+      
+      const renamedFile = new File([storyData.file], fileName, { 
+        type: storyData.file.type 
+      });
+      
+      const fileUrl = await minioService.uploadFile(renamedFile);
+      console.log('✅ Arquivo enviado para MinIO:', fileUrl);
+
+      // 2. Enviar para cada instância via webhook
+      for (const instanceId of selectedInstances) {
+        const success = await sendStoryViaWebhook(instanceId, fileUrl);
+        if (success) {
+          successCount++;
+        } else {
+          errorCount++;
+        }
       }
+
+    } catch (error) {
+      console.error('💥 Erro durante o processo:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao fazer upload do arquivo para MinIO",
+        variant: "destructive"
+      });
+      setIsPosting(false);
+      return;
     }
 
     setIsPosting(false);
 
     if (successCount > 0 && errorCount === 0) {
       toast({
-        title: "Story Postado",
-        description: `Story postado com sucesso em ${successCount} instância(s)`,
+        title: "Story Enviado",
+        description: `Story enviado com sucesso para ${successCount} instância(s) via webhook`,
       });
     } else if (successCount > 0 && errorCount > 0) {
       toast({
         title: "Parcialmente Concluído",
-        description: `Story postado em ${successCount} instância(s), falhou em ${errorCount}`,
+        description: `Story enviado para ${successCount} instância(s), falhou em ${errorCount}`,
         variant: "destructive"
       });
     } else {
       toast({
         title: "Erro",
-        description: "Falha ao postar story em todas as instâncias",
+        description: "Falha ao enviar story para todas as instâncias",
         variant: "destructive"
       });
     }
@@ -153,7 +187,7 @@ const StoriesManagement = () => {
     setSelectedInstances([]);
   };
 
-  const handleScheduleStory = () => {
+  const handleScheduleStory = async () => {
     if (!storyData.file) {
       toast({
         title: "Erro",
@@ -181,11 +215,59 @@ const StoriesManagement = () => {
       return;
     }
 
-    // Implementar lógica de agendamento aqui
-    toast({
-      title: "Story Agendado",
-      description: `Story agendado para ${storyData.scheduleDate} às ${storyData.scheduleTime} em ${selectedInstances.length} instância(s)`,
-    });
+    setIsPosting(true);
+
+    try {
+      // 1. Upload do arquivo para MinIO
+      console.log('📤 Fazendo upload do arquivo para MinIO...');
+      const timestamp = Date.now();
+      const fileExtension = storyData.file.name.split('.').pop() || 'jpg';
+      const fileName = `stories/scheduled_${timestamp}_story.${fileExtension}`;
+      
+      const renamedFile = new File([storyData.file], fileName, { 
+        type: storyData.file.type 
+      });
+      
+      const fileUrl = await minioService.uploadFile(renamedFile);
+      console.log('✅ Arquivo enviado para MinIO:', fileUrl);
+
+      // 2. Enviar agendamento via webhook
+      let successCount = 0;
+      for (const instanceId of selectedInstances) {
+        const success = await sendStoryViaWebhook(instanceId, fileUrl);
+        if (success) {
+          successCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        toast({
+          title: "Story Agendado",
+          description: `Story agendado via webhook para ${storyData.scheduleDate} às ${storyData.scheduleTime} em ${successCount} instância(s)`,
+        });
+        
+        // Limpar formulário
+        setStoryData({
+          type: 'image',
+          caption: '',
+          schedule: false,
+          scheduleDate: '',
+          scheduleTime: '',
+          file: null
+        });
+        setSelectedInstances([]);
+      }
+
+    } catch (error) {
+      console.error('💥 Erro ao agendar story:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao fazer upload do arquivo para agendamento",
+        variant: "destructive"
+      });
+    } finally {
+      setIsPosting(false);
+    }
   };
 
   return (
@@ -332,6 +414,13 @@ const StoriesManagement = () => {
             </div>
           )}
 
+          {/* Informação sobre webhook */}
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg data-[theme=dark]:bg-blue-accent/10 data-[theme=dark]:border-blue-accent/20">
+            <p className="text-sm text-blue-700 data-[theme=dark]:text-blue-300">
+              📡 Stories serão enviados via webhook para processamento automático
+            </p>
+          </div>
+
           {/* Botões de Ação */}
           <div className="flex flex-col md:flex-row gap-3 pt-4">
             {!storyData.schedule && (
@@ -341,14 +430,14 @@ const StoriesManagement = () => {
                 disabled={isPosting}
               >
                 <Play className="w-4 h-4 mr-2" />
-                {isPosting ? 'Postando...' : 'Postar Story Agora'}
+                {isPosting ? 'Enviando via Webhook...' : 'Postar Story Agora'}
               </Button>
             )}
             
             {storyData.schedule && (
-              <Button onClick={handleScheduleStory} className="btn-primary flex-1">
+              <Button onClick={handleScheduleStory} className="btn-primary flex-1" disabled={isPosting}>
                 <Calendar className="w-4 h-4 mr-2" />
-                Agendar Story
+                {isPosting ? 'Agendando via Webhook...' : 'Agendar Story'}
               </Button>
             )}
             
