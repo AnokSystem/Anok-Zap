@@ -25,7 +25,7 @@ const ExtrasSection = () => {
 
       {/* Tabs para organizar as funcionalidades */}
       <Tabs defaultValue="tutorials" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 bg-white data-[theme=light]:bg-gray-100 data-[theme=light]:border data-[theme=light]:border-gray-200 data-[theme=dark]:bg-gray-900 data-[theme=dark]:border data-[theme=dark]:border-gray-700">
+        <TabsList className="grid w-full grid-cols-4 bg-gray-900 data-[theme=light]:bg-gray-100 data-[theme=light]:border data-[theme=light]:border-gray-200 data-[theme=dark]:bg-gray-900 data-[theme=dark]:border data-[theme=dark]:border-gray-700">
           <TabsTrigger 
             value="tutorials" 
             className="flex items-center gap-2 data-[state=active]:bg-purple-500 data-[state=active]:text-white data-[theme=light]:data-[state=active]:bg-purple-500 data-[theme=dark]:data-[state=active]:bg-purple-600 data-[theme=light]:text-gray-700 data-[theme=dark]:text-gray-300"
