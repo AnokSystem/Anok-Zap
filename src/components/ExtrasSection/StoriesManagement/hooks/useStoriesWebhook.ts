@@ -36,6 +36,8 @@ export const useStoriesWebhook = () => {
         timestamp: new Date().toISOString()
       };
 
+      console.log(`📤 Dados do webhook para ${instanceId}:`, JSON.stringify(webhookData, null, 2));
+
       const response = await fetch(WEBHOOK_URL, {
         method: 'POST',
         headers: {
@@ -44,12 +46,14 @@ export const useStoriesWebhook = () => {
         body: JSON.stringify(webhookData),
       });
 
+      const responseText = await response.text();
+      console.log(`📥 Resposta do webhook para ${instanceId} (${response.status}):`, responseText);
+
       if (response.ok) {
         console.log(`✅ Story enviado com sucesso via webhook para instância ${instanceId}`);
         return true;
       } else {
-        const errorText = await response.text();
-        console.error(`❌ Erro no webhook para instância ${instanceId}:`, response.status, errorText);
+        console.error(`❌ Erro no webhook para instância ${instanceId}:`, response.status, responseText);
         return false;
       }
     } catch (error) {
@@ -63,6 +67,8 @@ export const useStoriesWebhook = () => {
     selectedInstances: string[],
     isScheduled: boolean = false
   ) => {
+    console.log(`🚀 Iniciando envio de story para ${selectedInstances.length} instâncias:`, selectedInstances);
+
     if (!storyData.file) {
       toast({
         title: "Erro",
@@ -109,14 +115,29 @@ export const useStoriesWebhook = () => {
       console.log('✅ Arquivo enviado para MinIO:', fileUrl);
 
       // 2. Enviar para cada instância via webhook
-      for (const instanceId of selectedInstances) {
+      console.log(`🔄 Processando ${selectedInstances.length} instâncias...`);
+      
+      for (let i = 0; i < selectedInstances.length; i++) {
+        const instanceId = selectedInstances[i];
+        console.log(`📤 Processando instância ${i + 1}/${selectedInstances.length}: ${instanceId}`);
+        
         const success = await sendStoryViaWebhook(instanceId, fileUrl, storyData);
+        
         if (success) {
           successCount++;
+          console.log(`✅ Sucesso para ${instanceId}. Total de sucessos: ${successCount}`);
         } else {
           errorCount++;
+          console.log(`❌ Erro para ${instanceId}. Total de erros: ${errorCount}`);
+        }
+
+        // Pequeno delay entre as requisições para evitar sobrecarga
+        if (i < selectedInstances.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
       }
+
+      console.log(`📊 Resultado final: ${successCount} sucessos, ${errorCount} erros`);
 
       // 3. Mostrar resultado
       if (successCount > 0 && errorCount === 0) {
