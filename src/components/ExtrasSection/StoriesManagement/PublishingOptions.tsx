@@ -32,9 +32,9 @@ export const PublishingOptions: React.FC<PublishingOptionsProps> = ({
   onScheduleStory,
 }) => {
   return (
-    <Card className="bg-white data-[theme=dark]:bg-gray-800 border-gray-200 data-[theme=dark]:border-gray-700">
+    <Card className="bg-white data-[theme=dark]:bg-gray-900 border-gray-200 data-[theme=dark]:border-gray-700">
       <CardHeader>
-        <CardTitle className="text-gray-900 data-[theme=dark]:text-gray-100 flex items-center gap-2">
+        <CardTitle className="text-gray-900 data-[theme=dark]:text-white flex items-center gap-2">
           <Clock className="w-5 h-5" />
           Opções de Publicação
         </CardTitle>
@@ -46,16 +46,16 @@ export const PublishingOptions: React.FC<PublishingOptionsProps> = ({
             checked={storyData.schedule}
             onCheckedChange={(checked) => onStoryDataChange({ schedule: !!checked })}
           />
-          <Label htmlFor="schedule" className="text-gray-700 data-[theme=dark]:text-gray-300 flex items-center gap-2">
+          <Label htmlFor="schedule" className="text-gray-700 data-[theme=dark]:text-gray-200 flex items-center gap-2">
             <Calendar className="w-4 h-4" />
             Agendar Story
           </Label>
         </div>
 
         {storyData.schedule && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 data-[theme=dark]:bg-gray-700/30 border border-gray-200 data-[theme=dark]:border-gray-600 rounded-lg">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 data-[theme=dark]:bg-gray-800 border border-gray-200 data-[theme=dark]:border-gray-600 rounded-lg">
             <div>
-              <Label className="text-gray-700 data-[theme=dark]:text-gray-300">Data</Label>
+              <Label className="text-gray-700 data-[theme=dark]:text-gray-200">Data</Label>
               <Input
                 type="date"
                 value={storyData.scheduleDate}
@@ -64,7 +64,7 @@ export const PublishingOptions: React.FC<PublishingOptionsProps> = ({
               />
             </div>
             <div>
-              <Label className="text-gray-700 data-[theme=dark]:text-gray-300">Horário</Label>
+              <Label className="text-gray-700 data-[theme=dark]:text-gray-200">Horário</Label>
               <Input
                 type="time"
                 value={storyData.scheduleTime}

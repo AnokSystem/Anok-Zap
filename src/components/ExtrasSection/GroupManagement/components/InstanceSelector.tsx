@@ -24,7 +24,7 @@ export const InstanceSelector = ({
   return (
     <div className="flex gap-3">
       <div className="flex-1">
-        <Label className="text-gray-700 data-[theme=dark]:text-gray-300">Instância Ativa</Label>
+        <Label className="text-gray-700 data-[theme=dark]:text-gray-200">Instância Ativa</Label>
         <Select value={selectedInstance} onValueChange={onInstanceChange}>
           <SelectTrigger className="bg-white data-[theme=dark]:bg-gray-800 border-gray-300 data-[theme=dark]:border-gray-600 text-gray-900 data-[theme=dark]:text-gray-100">
             <SelectValue placeholder="Escolha uma instância" />

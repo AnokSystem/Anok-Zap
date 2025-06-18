@@ -23,9 +23,9 @@ export const InstanceSelector: React.FC<InstanceSelectorProps> = ({
   onInstanceToggle,
 }) => {
   return (
-    <Card className="bg-white data-[theme=dark]:bg-gray-800 border-gray-200 data-[theme=dark]:border-gray-700">
+    <Card className="bg-white data-[theme=dark]:bg-gray-900 border-gray-200 data-[theme=dark]:border-gray-700">
       <CardHeader>
-        <CardTitle className="text-gray-900 data-[theme=dark]:text-gray-100 flex items-center gap-2">
+        <CardTitle className="text-gray-900 data-[theme=dark]:text-white flex items-center gap-2">
           <Smartphone className="w-5 h-5" />
           Selecionar Instâncias
         </CardTitle>
@@ -33,13 +33,13 @@ export const InstanceSelector: React.FC<InstanceSelectorProps> = ({
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {instances.map((instance) => (
-            <div key={instance.id} className="flex items-center space-x-2 p-3 bg-gray-50 data-[theme=dark]:bg-gray-700 border border-gray-200 data-[theme=dark]:border-gray-600 rounded-lg">
+            <div key={instance.id} className="flex items-center space-x-2 p-3 bg-gray-50 data-[theme=dark]:bg-gray-800 border border-gray-200 data-[theme=dark]:border-gray-600 rounded-lg">
               <Checkbox
                 id={instance.id}
                 checked={selectedInstances.includes(instance.id)}
                 onCheckedChange={() => onInstanceToggle(instance.id)}
               />
-              <Label htmlFor={instance.id} className="text-gray-700 data-[theme=dark]:text-gray-300 flex-1 cursor-pointer">
+              <Label htmlFor={instance.id} className="text-gray-700 data-[theme=dark]:text-gray-200 flex-1 cursor-pointer">
                 {instance.name}
                 <span className={`ml-2 text-xs px-2 py-1 rounded ${
                   instance.status === 'conectado' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
