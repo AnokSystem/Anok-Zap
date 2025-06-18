@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -101,9 +100,8 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
       if (message.content && variablesMapping[message.id]) {
         const convertedContent = convertToVariableCode(message.id, message.content);
         if (convertedContent !== message.content) {
-          // Armazenar a versão convertida em um campo separado
+          // Armazenar a versão convertida no campo convertedContent
           onUpdateMessage(message.id, { 
-            ...message,
             convertedContent 
           });
         }

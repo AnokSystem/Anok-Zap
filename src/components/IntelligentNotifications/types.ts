@@ -6,6 +6,7 @@ export interface Message {
   file?: File;
   fileUrl?: string;
   delay: number; // tempo em minutos
+  convertedContent?: string; // conteúdo com variáveis convertidas
 }
 
 export interface NotificationRule {
