@@ -37,13 +37,13 @@ export const GroupsList = ({
   if (!selectedInstance) return null;
 
   return (
-    <Card className="bg-white border-gray-200 data-[theme=light]:bg-white data-[theme=light]:border-gray-200 data-[theme=dark]:border-gray-600/50 data-[theme=dark]:bg-gray-800/30">
+    <Card className="bg-white data-[theme=dark]:bg-gray-900 border-gray-200 data-[theme=dark]:border-gray-700">
       <CardHeader>
-        <CardTitle className="text-primary-contrast flex items-center gap-2">
+        <CardTitle className="text-gray-900 data-[theme=dark]:text-white flex items-center gap-2">
           <Users className="w-5 h-5" />
           Grupos ({filteredGroups.length})
           {isLoadingGroups && (
-            <div className="flex items-center gap-2 text-gray-400 data-[theme=light]:text-gray-600">
+            <div className="flex items-center gap-2 text-gray-400 data-[theme=dark]:text-gray-500">
               <Loader2 className="w-4 h-4 animate-spin" />
               <span className="text-sm">Buscando grupos...</span>
             </div>
@@ -52,14 +52,14 @@ export const GroupsList = ({
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <Label className="text-gray-700 data-[theme=light]:text-gray-700 data-[theme=dark]:text-gray-300">Buscar Grupos</Label>
+          <Label className="text-gray-700 data-[theme=dark]:text-gray-300">Buscar Grupos</Label>
           <div className="relative">
-            <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400 data-[theme=dark]:text-gray-500" />
             <Input
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Buscar grupos..."
-              className="bg-white border-gray-300 pl-10 data-[theme=light]:bg-white data-[theme=light]:border-gray-300 data-[theme=dark]:bg-gray-800 data-[theme=dark]:border-gray-600"
+              className="bg-white data-[theme=dark]:bg-gray-800 border-gray-300 data-[theme=dark]:border-gray-600 text-gray-900 data-[theme=dark]:text-gray-100 pl-10 placeholder:text-gray-400 data-[theme=dark]:placeholder:text-gray-500"
             />
           </div>
         </div>
@@ -67,28 +67,28 @@ export const GroupsList = ({
         {isLoadingGroups ? (
           <div className="flex items-center justify-center p-8">
             <div className="flex flex-col items-center gap-3">
-              <Loader2 className="w-8 h-8 animate-spin text-purple-accent" />
-              <p className="text-gray-400 data-[theme=light]:text-gray-600">Buscando grupos...</p>
+              <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+              <p className="text-gray-500 data-[theme=dark]:text-gray-400">Buscando grupos...</p>
             </div>
           </div>
         ) : (
           <div className="space-y-3">
             {filteredGroups.map((group) => (
-              <div key={group.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200 data-[theme=light]:bg-gray-50 data-[theme=light]:border-gray-200 data-[theme=dark]:bg-gray-700/30 data-[theme=dark]:border-gray-600">
+              <div key={group.id} className="p-4 bg-gray-50 data-[theme=dark]:bg-gray-800 rounded-lg border border-gray-200 data-[theme=dark]:border-gray-700">
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-semibold text-gray-700 data-[theme=light]:text-gray-700 data-[theme=dark]:text-gray-200">{group.name}</h4>
-                  <span className="text-sm text-gray-500 data-[theme=light]:text-gray-500 data-[theme=dark]:text-gray-400">
+                  <h4 className="font-semibold text-gray-900 data-[theme=dark]:text-gray-100">{group.name}</h4>
+                  <span className="text-sm text-gray-500 data-[theme=dark]:text-gray-400">
                     {group.size} membros
                   </span>
                 </div>
                 {group.description && (
-                  <p className="text-gray-500 text-sm mb-3 data-[theme=light]:text-gray-500 data-[theme=dark]:text-gray-400">{group.description}</p>
+                  <p className="text-gray-600 data-[theme=dark]:text-gray-300 text-sm mb-3">{group.description}</p>
                 )}
                 <div className="flex flex-wrap gap-2">
                   <Button 
                     size="sm" 
                     variant="outline" 
-                    className="bg-white border-gray-300 data-[theme=light]:bg-white data-[theme=light]:border-gray-300 data-[theme=dark]:bg-gray-800 data-[theme=dark]:border-gray-600"
+                    className="bg-white data-[theme=dark]:bg-gray-700 border-gray-300 data-[theme=dark]:border-gray-600 text-gray-900 data-[theme=dark]:text-gray-100 hover:bg-gray-50 data-[theme=dark]:hover:bg-gray-600"
                     onClick={() => onEditGroup(group)}
                   >
                     <Edit className="w-4 h-4 mr-1" />
@@ -97,7 +97,7 @@ export const GroupsList = ({
                   <Button 
                     size="sm" 
                     variant="outline" 
-                    className="bg-white border-gray-300 data-[theme=light]:bg-white data-[theme=light]:border-gray-300 data-[theme=dark]:bg-gray-800 data-[theme=dark]:border-gray-600"
+                    className="bg-white data-[theme=dark]:bg-gray-700 border-gray-300 data-[theme=dark]:border-gray-600 text-gray-900 data-[theme=dark]:text-gray-100 hover:bg-gray-50 data-[theme=dark]:hover:bg-gray-600"
                     onClick={() => onOpenParticipants(group)}
                   >
                     <Users className="w-4 h-4 mr-1" />
@@ -106,7 +106,7 @@ export const GroupsList = ({
                   <Button 
                     size="sm" 
                     variant="outline" 
-                    className="bg-white border-gray-300 data-[theme=light]:bg-white data-[theme=light]:border-gray-300 data-[theme=dark]:bg-gray-800 data-[theme=dark]:border-gray-600"
+                    className="bg-white data-[theme=dark]:bg-gray-700 border-gray-300 data-[theme=dark]:border-gray-600 text-gray-900 data-[theme=dark]:text-gray-100 hover:bg-gray-50 data-[theme=dark]:hover:bg-gray-600"
                     onClick={() => onCopyGroupLink(group.id, group.name)}
                   >
                     <Link className="w-4 h-4 mr-1" />
