@@ -1,6 +1,10 @@
 
 export const webhookService = {
   getWebhookUrl: (eventType: string, userRole: string, productScope: string): string => {
+    // Mapear os valores para o formato correto
+    const normalizedUserRole = userRole === 'producer' ? 'produtor' : 'afiliado';
+    const normalizedProductScope = productScope === 'specific' ? 'specific' : 'all';
+    
     const webhookUrls: Record<string, string> = {
       // Compra Aprovada - Produtor
       'purchase-approved-produtor-all': 'https://webhook.novahagencia.com.br/webhook/4759af4e-61f0-47b8-b2c0-d730000ca2b5',
@@ -27,17 +31,26 @@ export const webhookService = {
       'cart-abandoned-afiliado-specific': 'https://webhook.novahagencia.com.br/webhook/13d4e1b7-51a0-4528-a9e4-1413d0d90028'
     };
 
-    // Criar a chave baseada nos parâmetros
-    const key = `${eventType}-${userRole}-${productScope}`;
+    // Criar a chave baseada nos parâmetros normalizados
+    const key = `${eventType}-${normalizedUserRole}-${normalizedProductScope}`;
     
     console.log('🔗 Gerando webhook URL:', {
       eventType,
       userRole,
       productScope,
+      normalizedUserRole,
+      normalizedProductScope,
       key,
       url: webhookUrls[key]
     });
     
-    return webhookUrls[key] || '';
+    const webhookUrl = webhookUrls[key] || '';
+    
+    if (!webhookUrl) {
+      console.warn('⚠️ Webhook URL não encontrada para a chave:', key);
+      console.warn('⚠️ Chaves disponíveis:', Object.keys(webhookUrls));
+    }
+    
+    return webhookUrl;
   }
 };

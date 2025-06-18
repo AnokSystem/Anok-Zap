@@ -12,20 +12,34 @@ export const notificationSaveService = {
     console.log('📋 SERVIÇO - Dados da regra recebidos:', rule);
     console.log('📋 SERVIÇO - Regra sendo editada:', editingRule);
     
-    // CORREÇÃO: Obter webhook URL segmentado
+    // Validar dados obrigatórios antes de gerar webhook
+    if (!rule.eventType || !rule.userRole) {
+      console.error('❌ SERVIÇO - Dados obrigatórios faltando:', {
+        eventType: rule.eventType,
+        userRole: rule.userRole
+      });
+      throw new Error('Tipo de evento e função do usuário são obrigatórios');
+    }
+    
+    // CORREÇÃO: Obter webhook URL segmentado com valores validados
     const webhookUrl = webhookService.getWebhookUrl(
-      rule.eventType!,
-      rule.userRole!,
+      rule.eventType,
+      rule.userRole,
       rule.productScope || 'all'
     );
     
     console.log('🔗 SERVIÇO - Webhook URL gerado:', webhookUrl);
     
+    if (!webhookUrl) {
+      console.error('❌ SERVIÇO - Webhook URL não gerado');
+      throw new Error('Não foi possível gerar a URL do webhook');
+    }
+    
     // CORREÇÃO: Preparar dados garantindo mapeamento correto
     const notificationData: any = {
-      eventType: rule.eventType!,
+      eventType: rule.eventType,
       instance: rule.instanceId!, // IMPORTANTE: Converter instanceId para instance
-      userRole: rule.userRole!,
+      userRole: rule.userRole,
       platform: rule.platform!,
       profileName: rule.profileName!,
       productScope: rule.productScope || 'all',
