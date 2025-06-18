@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, Upload, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Trash2, Upload, Clock } from 'lucide-react';
 import { Message } from './types';
 import { NotificationVariableSelector } from './components/NotificationVariableSelector';
 
@@ -24,7 +24,6 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
   onUpdateMessage,
   onFileUpload
 }) => {
-  const [showVariables, setShowVariables] = useState(false);
   const [currentEditingMessageId, setCurrentEditingMessageId] = useState<string>('');
 
   const handleVariableInsert = (variable: string) => {
@@ -44,23 +43,7 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <Label className="text-gray-200 font-medium text-sm">Mensagens (até 5)</Label>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setShowVariables(!showVariables)}
-          className="bg-gray-700/50 border-gray-600 text-gray-200 hover:bg-gray-600/50"
-        >
-          {showVariables ? <ChevronUp className="w-4 h-4 mr-2" /> : <ChevronDown className="w-4 h-4 mr-2" />}
-          {showVariables ? 'Ocultar' : 'Mostrar'} Variáveis
-        </Button>
-      </div>
-
-      {showVariables && (
-        <NotificationVariableSelector onVariableInsert={handleVariableInsert} />
-      )}
+      <Label className="text-gray-200 font-medium text-sm">Mensagens (até 5)</Label>
 
       {messages.map((message, index) => (
         <div key={message.id} className="p-4 bg-gray-700/30 rounded-lg border border-gray-600/50">
@@ -143,6 +126,14 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
             {message.type === 'text' && (
               <div>
                 <Label className="text-gray-200 font-medium text-sm">Conteúdo</Label>
+                
+                {/* Seletor de variáveis acima do campo de texto */}
+                {currentEditingMessageId === message.id && (
+                  <div className="mb-3">
+                    <NotificationVariableSelector onVariableInsert={handleVariableInsert} />
+                  </div>
+                )}
+                
                 <Textarea
                   value={message.content}
                   onChange={(e) => onUpdateMessage(message.id, { content: e.target.value })}
@@ -150,17 +141,20 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
                   placeholder="Digite sua mensagem..."
                   className="min-h-[100px] input-form"
                 />
-                {currentEditingMessageId === message.id && (
-                  <p className="text-xs text-gray-400 mt-1">
-                    💡 Use o seletor de variáveis acima para inserir dados do Hotmart
-                  </p>
-                )}
               </div>
             )}
 
             {(message.type === 'image' || message.type === 'video' || message.type === 'document') && message.fileUrl && (
               <div>
                 <Label className="text-gray-200 font-medium text-sm">Descrição (opcional)</Label>
+                
+                {/* Seletor de variáveis acima do campo de descrição */}
+                {currentEditingMessageId === message.id && (
+                  <div className="mb-3">
+                    <NotificationVariableSelector onVariableInsert={handleVariableInsert} />
+                  </div>
+                )}
+                
                 <Textarea
                   value={message.content || ''}
                   onChange={(e) => onUpdateMessage(message.id, { content: e.target.value })}
@@ -168,11 +162,6 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
                   placeholder="Digite uma descrição para o arquivo..."
                   className="min-h-[100px] input-form"
                 />
-                {currentEditingMessageId === message.id && (
-                  <p className="text-xs text-gray-400 mt-1">
-                    💡 Use o seletor de variáveis acima para inserir dados do Hotmart
-                  </p>
-                )}
               </div>
             )}
           </div>
