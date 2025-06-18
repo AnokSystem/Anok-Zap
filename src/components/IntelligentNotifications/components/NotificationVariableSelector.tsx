@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -18,7 +19,7 @@ export const NotificationVariableSelector: React.FC<NotificationVariableSelector
       variable: "{{ $('Dados do Lead1').item.json.Nome }}",
     },
     {
-      name: 'Nome Completo',
+      name: 'Sobrenome',
       variable: "{{ $('Dados do Lead1').item.json.Sobrenome }}",
     },
     {
@@ -70,3 +71,4 @@ export const NotificationVariableSelector: React.FC<NotificationVariableSelector
     </div>
   );
 };
+

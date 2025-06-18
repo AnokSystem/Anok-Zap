@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +30,7 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
 
   const variableMap: {[key: string]: string} = {
     'Nome': "{{ $('Dados do Lead1').item.json.Nome }}",
-    'Nome Completo': "{{ $('Dados do Lead1').item.json.Sobrenome }}",
+    'Sobrenome': "{{ $('Dados do Lead1').item.json.Sobrenome }}",
     'CPF': "{{ $('Dados do Lead1').item.json.CPF }}",
     'Email': "{{ $('Dados do Lead1').item.json.Email }}",
     'Telefone': "{{ $('Dados do Lead1').item.json.Telefone }}",
@@ -256,3 +257,4 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
     </div>
   );
 };
+
