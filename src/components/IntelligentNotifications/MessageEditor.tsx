@@ -1,12 +1,13 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, Upload, Clock } from 'lucide-react';
+import { Plus, Trash2, Upload, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { Message } from './types';
+import { NotificationVariableSelector } from './components/NotificationVariableSelector';
 
 interface MessageEditorProps {
   messages: Message[];
@@ -23,11 +24,43 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
   onUpdateMessage,
   onFileUpload
 }) => {
+  const [showVariables, setShowVariables] = useState(false);
+  const [currentEditingMessageId, setCurrentEditingMessageId] = useState<string>('');
+
+  const handleVariableInsert = (variable: string) => {
+    if (currentEditingMessageId) {
+      const currentMessage = messages.find(msg => msg.id === currentEditingMessageId);
+      if (currentMessage) {
+        const currentContent = currentMessage.content || '';
+        const newContent = currentContent + variable;
+        onUpdateMessage(currentEditingMessageId, { content: newContent });
+      }
+    }
+  };
+
+  const handleTextareaFocus = (messageId: string) => {
+    setCurrentEditingMessageId(messageId);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <Label className="text-gray-200 font-medium text-sm">Mensagens (até 5)</Label>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setShowVariables(!showVariables)}
+          className="bg-gray-700/50 border-gray-600 text-gray-200 hover:bg-gray-600/50"
+        >
+          {showVariables ? <ChevronUp className="w-4 h-4 mr-2" /> : <ChevronDown className="w-4 h-4 mr-2" />}
+          {showVariables ? 'Ocultar' : 'Mostrar'} Variáveis
+        </Button>
       </div>
+
+      {showVariables && (
+        <NotificationVariableSelector onVariableInsert={handleVariableInsert} />
+      )}
 
       {messages.map((message, index) => (
         <div key={message.id} className="p-4 bg-gray-700/30 rounded-lg border border-gray-600/50">
@@ -113,9 +146,15 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
                 <Textarea
                   value={message.content}
                   onChange={(e) => onUpdateMessage(message.id, { content: e.target.value })}
+                  onFocus={() => handleTextareaFocus(message.id)}
                   placeholder="Digite sua mensagem..."
                   className="min-h-[100px] input-form"
                 />
+                {currentEditingMessageId === message.id && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    💡 Use o seletor de variáveis acima para inserir dados do Hotmart
+                  </p>
+                )}
               </div>
             )}
 
@@ -125,9 +164,15 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
                 <Textarea
                   value={message.content || ''}
                   onChange={(e) => onUpdateMessage(message.id, { content: e.target.value })}
+                  onFocus={() => handleTextareaFocus(message.id)}
                   placeholder="Digite uma descrição para o arquivo..."
                   className="min-h-[100px] input-form"
                 />
+                {currentEditingMessageId === message.id && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    💡 Use o seletor de variáveis acima para inserir dados do Hotmart
+                  </p>
+                )}
               </div>
             )}
           </div>
