@@ -82,7 +82,7 @@ const StoriesManagement = () => {
   };
 
   return (
-    <div className="space-y-6 bg-transparent data-[theme=dark]:bg-transparent">
+    <div className="space-y-6 bg-gray-950 data-[theme=light]:bg-white data-[theme=dark]:bg-gray-950">
       <InstanceSelector
         instances={instances}
         selectedInstances={selectedInstances}

@@ -32,9 +32,9 @@ export const PublishingOptions: React.FC<PublishingOptionsProps> = ({
   onScheduleStory,
 }) => {
   return (
-    <Card className="bg-white data-[theme=dark]:bg-gray-900 border-gray-200 data-[theme=dark]:border-gray-700">
+    <Card className="bg-gray-900 data-[theme=light]:bg-white data-[theme=dark]:bg-gray-900 border-gray-700 data-[theme=light]:border-gray-200 data-[theme=dark]:border-gray-700">
       <CardHeader>
-        <CardTitle className="text-gray-900 data-[theme=dark]:text-white flex items-center gap-2">
+        <CardTitle className="text-white data-[theme=light]:text-gray-900 data-[theme=dark]:text-white flex items-center gap-2">
           <Clock className="w-5 h-5" />
           Opções de Publicação
         </CardTitle>
@@ -46,38 +46,38 @@ export const PublishingOptions: React.FC<PublishingOptionsProps> = ({
             checked={storyData.schedule}
             onCheckedChange={(checked) => onStoryDataChange({ schedule: !!checked })}
           />
-          <Label htmlFor="schedule" className="text-gray-700 data-[theme=dark]:text-gray-200 flex items-center gap-2">
+          <Label htmlFor="schedule" className="text-gray-200 data-[theme=light]:text-gray-700 data-[theme=dark]:text-gray-200 flex items-center gap-2">
             <Calendar className="w-4 h-4" />
             Agendar Story
           </Label>
         </div>
 
         {storyData.schedule && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 data-[theme=dark]:bg-gray-800 border border-gray-200 data-[theme=dark]:border-gray-600 rounded-lg">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-800 data-[theme=light]:bg-gray-50 data-[theme=dark]:bg-gray-800 border border-gray-600 data-[theme=light]:border-gray-200 data-[theme=dark]:border-gray-600 rounded-lg">
             <div>
-              <Label className="text-gray-700 data-[theme=dark]:text-gray-200">Data</Label>
+              <Label className="text-gray-200 data-[theme=light]:text-gray-700 data-[theme=dark]:text-gray-200">Data</Label>
               <Input
                 type="date"
                 value={storyData.scheduleDate}
                 onChange={(e) => onStoryDataChange({ scheduleDate: e.target.value })}
-                className="bg-white data-[theme=dark]:bg-gray-800 border-gray-300 data-[theme=dark]:border-gray-600 text-gray-900 data-[theme=dark]:text-gray-100"
+                className="bg-gray-800 data-[theme=light]:bg-white data-[theme=dark]:bg-gray-800 border-gray-600 data-[theme=light]:border-gray-300 data-[theme=dark]:border-gray-600 text-gray-100 data-[theme=light]:text-gray-900 data-[theme=dark]:text-gray-100"
               />
             </div>
             <div>
-              <Label className="text-gray-700 data-[theme=dark]:text-gray-200">Horário</Label>
+              <Label className="text-gray-200 data-[theme=light]:text-gray-700 data-[theme=dark]:text-gray-200">Horário</Label>
               <Input
                 type="time"
                 value={storyData.scheduleTime}
                 onChange={(e) => onStoryDataChange({ scheduleTime: e.target.value })}
-                className="bg-white data-[theme=dark]:bg-gray-800 border-gray-300 data-[theme=dark]:border-gray-600 text-gray-900 data-[theme=dark]:text-gray-100"
+                className="bg-gray-800 data-[theme=light]:bg-white data-[theme=dark]:bg-gray-800 border-gray-600 data-[theme=light]:border-gray-300 data-[theme=dark]:border-gray-600 text-gray-100 data-[theme=light]:text-gray-900 data-[theme=dark]:text-gray-100"
               />
             </div>
           </div>
         )}
 
         {/* Informação sobre webhook */}
-        <div className="p-3 bg-blue-50 data-[theme=dark]:bg-blue-900/20 border border-blue-200 data-[theme=dark]:border-blue-700 rounded-lg">
-          <p className="text-sm text-blue-700 data-[theme=dark]:text-blue-300">
+        <div className="p-3 bg-blue-900/20 data-[theme=light]:bg-blue-50 data-[theme=dark]:bg-blue-900/20 border border-blue-700 data-[theme=light]:border-blue-200 data-[theme=dark]:border-blue-700 rounded-lg">
+          <p className="text-sm text-blue-300 data-[theme=light]:text-blue-700 data-[theme=dark]:text-blue-300">
             📡 Stories serão enviados via webhook para processamento automático
           </p>
         </div>
@@ -102,7 +102,7 @@ export const PublishingOptions: React.FC<PublishingOptionsProps> = ({
             </Button>
           )}
           
-          <Button variant="outline" className="flex-1 bg-white data-[theme=dark]:bg-gray-800 border-gray-300 data-[theme=dark]:border-gray-600 text-gray-900 data-[theme=dark]:text-gray-100">
+          <Button variant="outline" className="flex-1 bg-gray-800 data-[theme=light]:bg-white data-[theme=dark]:bg-gray-800 border-gray-600 data-[theme=light]:border-gray-300 data-[theme=dark]:border-gray-600 text-gray-100 data-[theme=light]:text-gray-900 data-[theme=dark]:text-gray-100 hover:bg-gray-700 data-[theme=light]:hover:bg-gray-50 data-[theme=dark]:hover:bg-gray-700">
             <PauseCircle className="w-4 h-4 mr-2" />
             Salvar Rascunho
           </Button>

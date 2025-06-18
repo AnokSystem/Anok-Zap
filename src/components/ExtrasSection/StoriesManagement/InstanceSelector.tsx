@@ -23,9 +23,9 @@ export const InstanceSelector: React.FC<InstanceSelectorProps> = ({
   onInstanceToggle,
 }) => {
   return (
-    <Card className="bg-white data-[theme=dark]:bg-gray-900 border-gray-200 data-[theme=dark]:border-gray-700">
+    <Card className="bg-gray-900 data-[theme=light]:bg-white data-[theme=dark]:bg-gray-900 border-gray-700 data-[theme=light]:border-gray-200 data-[theme=dark]:border-gray-700">
       <CardHeader>
-        <CardTitle className="text-gray-900 data-[theme=dark]:text-white flex items-center gap-2">
+        <CardTitle className="text-white data-[theme=light]:text-gray-900 data-[theme=dark]:text-white flex items-center gap-2">
           <Smartphone className="w-5 h-5" />
           Selecionar Instâncias
         </CardTitle>
@@ -33,13 +33,13 @@ export const InstanceSelector: React.FC<InstanceSelectorProps> = ({
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {instances.map((instance) => (
-            <div key={instance.id} className="flex items-center space-x-2 p-3 bg-gray-50 data-[theme=dark]:bg-gray-800 border border-gray-200 data-[theme=dark]:border-gray-600 rounded-lg">
+            <div key={instance.id} className="flex items-center space-x-2 p-3 bg-gray-800 data-[theme=light]:bg-gray-50 data-[theme=dark]:bg-gray-800 border border-gray-600 data-[theme=light]:border-gray-200 data-[theme=dark]:border-gray-600 rounded-lg">
               <Checkbox
                 id={instance.id}
                 checked={selectedInstances.includes(instance.id)}
                 onCheckedChange={() => onInstanceToggle(instance.id)}
               />
-              <Label htmlFor={instance.id} className="text-gray-700 data-[theme=dark]:text-gray-200 flex-1 cursor-pointer">
+              <Label htmlFor={instance.id} className="text-gray-100 data-[theme=light]:text-gray-700 data-[theme=dark]:text-gray-100 flex-1 cursor-pointer">
                 {instance.name}
                 <span className={`ml-2 text-xs px-2 py-1 rounded ${
                   instance.status === 'conectado' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
@@ -51,8 +51,8 @@ export const InstanceSelector: React.FC<InstanceSelectorProps> = ({
           ))}
         </div>
         {selectedInstances.length > 0 && (
-          <div className="mt-3 p-2 bg-purple-50 data-[theme=dark]:bg-purple-900/20 border border-purple-200 data-[theme=dark]:border-purple-700 rounded">
-            <p className="text-sm text-purple-700 data-[theme=dark]:text-purple-300">
+          <div className="mt-3 p-2 bg-purple-900/20 data-[theme=light]:bg-purple-50 data-[theme=dark]:bg-purple-900/20 border border-purple-700 data-[theme=light]:border-purple-200 data-[theme=dark]:border-purple-700 rounded">
+            <p className="text-sm text-purple-300 data-[theme=light]:text-purple-700 data-[theme=dark]:text-purple-300">
               {selectedInstances.length} instância(s) selecionada(s)
             </p>
           </div>
