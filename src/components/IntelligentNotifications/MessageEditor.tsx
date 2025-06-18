@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,14 +41,16 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
       const currentMessage = messages.find(msg => msg.id === currentEditingMessageId);
       if (currentMessage) {
         const currentContent = currentMessage.content || '';
-        const newContent = currentContent + displayText;
+        // Inserir a variável com formato visual {{ displayText }}
+        const formattedVariable = `{{ ${displayText} }}`;
+        const newContent = currentContent + formattedVariable;
         
         // Atualizar o mapeamento de variáveis para esta mensagem
         setVariablesMapping(prev => ({
           ...prev,
           [currentEditingMessageId]: {
             ...prev[currentEditingMessageId],
-            [displayText]: variableCode
+            [formattedVariable]: variableCode
           }
         }));
         
@@ -88,7 +91,7 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
     
     // Substituir cada nome amigável pela variável completa
     Object.entries(mapping).forEach(([displayText, variableCode]) => {
-      convertedContent = convertedContent.replace(new RegExp(displayText, 'g'), variableCode);
+      convertedContent = convertedContent.replace(new RegExp(displayText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), variableCode);
     });
     
     return convertedContent;
