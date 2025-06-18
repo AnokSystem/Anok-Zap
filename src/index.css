@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
@@ -221,10 +222,24 @@
     border-color: #d1d5db !important;
   }
 
+  /* Profile Management Cards - White background for Light theme only */
+  [data-theme="light"] .border-gray-600\/50.bg-gray-800\/30 {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+  }
+
   /* Forçar fundo escuro no tema escuro */
   [data-theme="dark"] body {
     background: rgb(16, 16, 20) !important;
     background-color: rgb(16, 16, 20) !important;
+  }
+
+  /* Manter fundo cinza escuro no tema escuro para Profile Management */
+  [data-theme="dark"] .border-gray-600\/50.bg-gray-800\/30 {
+    background: rgba(30, 30, 36, 0.3) !important;
+    background-color: rgba(30, 30, 36, 0.3) !important;
+    border: 1px solid rgba(82, 82, 91, 0.5) !important;
   }
 
   h1, h2, h3, h4, h5, h5 {
