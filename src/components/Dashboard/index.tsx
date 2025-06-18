@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -107,16 +106,25 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 bg-gray-800/50">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-3 bg-gray-900 data-[theme=light]:bg-gray-100 data-[theme=light]:border data-[theme=light]:border-gray-200 data-[theme=dark]:bg-gray-900 data-[theme=dark]:border data-[theme=dark]:border-gray-700">
+          <TabsTrigger 
+            value="overview" 
+            className="flex items-center gap-2 data-[state=active]:bg-purple-500 data-[state=active]:text-white data-[theme=light]:data-[state=active]:bg-purple-500 data-[theme=dark]:data-[state=active]:bg-purple-600 data-[theme=light]:text-gray-700 data-[theme=dark]:text-gray-300"
+          >
             <TrendingUp className="w-4 h-4" />
             Visão Geral
           </TabsTrigger>
-          <TabsTrigger value="disparos" className="flex items-center gap-2">
+          <TabsTrigger 
+            value="disparos" 
+            className="flex items-center gap-2 data-[state=active]:bg-purple-500 data-[state=active]:text-white data-[theme=light]:data-[state=active]:bg-purple-500 data-[theme=dark]:data-[state=active]:bg-purple-600 data-[theme=light]:text-gray-700 data-[theme=dark]:text-gray-300"
+          >
             <MessageSquare className="w-4 h-4" />
             Disparos
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center gap-2">
+          <TabsTrigger 
+            value="notifications" 
+            className="flex items-center gap-2 data-[state=active]:bg-purple-500 data-[state=active]:text-white data-[theme=light]:data-[state=active]:bg-purple-500 data-[theme=dark]:data-[state=active]:bg-purple-600 data-[theme=light]:text-gray-700 data-[theme=dark]:text-gray-300"
+          >
             <Bell className="w-4 h-4" />
             Notificações
           </TabsTrigger>
