@@ -33,9 +33,9 @@ export const StoryConfigForm: React.FC<StoryConfigFormProps> = ({
   };
 
   return (
-    <Card className="bg-white border-gray-200 data-[theme=dark]:bg-gray-800 data-[theme=dark]:border-gray-700">
+    <Card className="bg-white data-[theme=dark]:bg-gray-800 border-gray-200 data-[theme=dark]:border-gray-700">
       <CardHeader>
-        <CardTitle className="text-gray-900 data-[theme=dark]:text-white flex items-center gap-2">
+        <CardTitle className="text-gray-900 data-[theme=dark]:text-gray-100 flex items-center gap-2">
           <Image className="w-5 h-5" />
           Configuração do Story
         </CardTitle>
@@ -48,7 +48,7 @@ export const StoryConfigForm: React.FC<StoryConfigFormProps> = ({
               value={storyData.type} 
               onValueChange={(value) => onStoryDataChange({ type: value })}
             >
-              <SelectTrigger className="bg-white border-gray-300 data-[theme=dark]:bg-gray-700 data-[theme=dark]:border-gray-600 data-[theme=dark]:text-white">
+              <SelectTrigger className="bg-white data-[theme=dark]:bg-gray-700 border-gray-300 data-[theme=dark]:border-gray-600 text-gray-900 data-[theme=dark]:text-gray-100">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -75,7 +75,7 @@ export const StoryConfigForm: React.FC<StoryConfigFormProps> = ({
                 type="file"
                 accept={storyData.type === 'image' ? 'image/*' : 'video/*'}
                 onChange={handleFileChange}
-                className="bg-white border-gray-300 data-[theme=dark]:bg-gray-700 data-[theme=dark]:border-gray-600 data-[theme=dark]:text-white"
+                className="bg-white data-[theme=dark]:bg-gray-700 border-gray-300 data-[theme=dark]:border-gray-600 text-gray-900 data-[theme=dark]:text-gray-100"
               />
               <Upload className="w-4 h-4 text-gray-400 data-[theme=dark]:text-gray-500" />
             </div>
@@ -88,7 +88,7 @@ export const StoryConfigForm: React.FC<StoryConfigFormProps> = ({
             value={storyData.caption}
             onChange={(e) => onStoryDataChange({ caption: e.target.value })}
             placeholder="Digite uma legenda para o story..."
-            className="bg-white border-gray-300 text-gray-700 data-[theme=dark]:bg-gray-700 data-[theme=dark]:border-gray-600 data-[theme=dark]:text-white data-[theme=dark]:placeholder:text-gray-400"
+            className="bg-white data-[theme=dark]:bg-gray-700 border-gray-300 data-[theme=dark]:border-gray-600 text-gray-700 data-[theme=dark]:text-gray-100 placeholder:text-gray-400 data-[theme=dark]:placeholder:text-gray-400"
             rows={3}
           />
         </div>

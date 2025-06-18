@@ -26,7 +26,7 @@ export const InstanceSelector = ({
       <div className="flex-1">
         <Label className="text-gray-700 data-[theme=dark]:text-gray-300">Instância Ativa</Label>
         <Select value={selectedInstance} onValueChange={onInstanceChange}>
-          <SelectTrigger className="bg-white border-gray-300 data-[theme=dark]:bg-gray-800 data-[theme=dark]:border-gray-600">
+          <SelectTrigger className="bg-white data-[theme=dark]:bg-gray-800 border-gray-300 data-[theme=dark]:border-gray-600 text-gray-900 data-[theme=dark]:text-gray-100">
             <SelectValue placeholder="Escolha uma instância" />
           </SelectTrigger>
           <SelectContent>
@@ -49,7 +49,7 @@ export const InstanceSelector = ({
         variant="outline" 
         onClick={onRefresh}
         disabled={!selectedInstance || isLoadingGroups}
-        className="bg-white border-gray-300 mt-6 data-[theme=dark]:bg-gray-800 data-[theme=dark]:border-gray-600"
+        className="bg-white data-[theme=dark]:bg-gray-800 border-gray-300 data-[theme=dark]:border-gray-600 text-gray-900 data-[theme=dark]:text-gray-100 mt-6"
       >
         <RefreshCw className={`w-4 h-4 ${isLoadingGroups ? 'animate-spin' : ''}`} />
       </Button>

@@ -119,9 +119,9 @@ const GroupManagement = () => {
 
   return (
     <div className="space-y-6 bg-transparent data-[theme=dark]:bg-transparent">
-      <Card className="bg-white border-gray-200 data-[theme=dark]:bg-gray-800 data-[theme=dark]:border-gray-700">
+      <Card className="bg-white data-[theme=dark]:bg-gray-800 border-gray-200 data-[theme=dark]:border-gray-700">
         <CardHeader>
-          <CardTitle className="text-gray-900 data-[theme=dark]:text-white">Gerenciamento de Grupos</CardTitle>
+          <CardTitle className="text-gray-900 data-[theme=dark]:text-gray-100">Gerenciamento de Grupos</CardTitle>
         </CardHeader>
         <CardContent>
           <InstanceSelector
