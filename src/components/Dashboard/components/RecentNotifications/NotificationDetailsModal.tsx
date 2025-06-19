@@ -57,17 +57,17 @@ export const NotificationDetailsModal = ({ notification, isOpen, onClose }: Noti
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl bg-gray-900 border-gray-700">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl text-primary-contrast">
-            <Bell className="w-6 h-6 text-green-400" />
+      <DialogContent className="max-w-lg w-[95vw] max-h-[85vh] overflow-y-auto bg-gray-900 border-gray-700 p-4 sm:p-6">
+        <DialogHeader className="pb-3">
+          <DialogTitle className="flex items-center gap-2 text-lg text-primary-contrast">
+            <Bell className="w-5 h-5 text-green-400" />
             Detalhes da Notificação
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Badges da Plataforma e Evento */}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Badge variant="outline" className={getPlatformColor(notification.platform)}>
               {notification.platform}
             </Badge>
@@ -79,79 +79,80 @@ export const NotificationDetailsModal = ({ notification, isOpen, onClose }: Noti
           <Separator className="bg-gray-700" />
 
           {/* Informações do Cliente */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-primary-contrast">Informações do Cliente</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg">
-                <User className="w-5 h-5 text-blue-400" />
-                <div>
-                  <p className="text-sm text-gray-400">Nome</p>
-                  <p className="text-primary-contrast font-medium">{notification.clientName}</p>
+          <div className="space-y-3">
+            <h3 className="text-base font-semibold text-primary-contrast">Informações do Cliente</h3>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-3 bg-gray-800/50 rounded-lg">
+                <User className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-gray-400">Nome</p>
+                  <p className="text-sm text-primary-contrast font-medium break-words">{notification.clientName}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg">
-                <Mail className="w-5 h-5 text-green-400" />
-                <div>
-                  <p className="text-sm text-gray-400">Email</p>
-                  <p className="text-primary-contrast font-medium">{notification.clientEmail}</p>
+              
+              <div className="flex items-start gap-3 p-3 bg-gray-800/50 rounded-lg">
+                <Mail className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-gray-400">Email</p>
+                  <p className="text-sm text-primary-contrast font-medium break-all">{notification.clientEmail}</p>
                 </div>
               </div>
+              
               {notification.clientPhone && (
-                <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg">
-                  <Phone className="w-5 h-5 text-purple-400" />
-                  <div>
-                    <p className="text-sm text-gray-400">Telefone</p>
-                    <p className="text-primary-contrast font-medium">{notification.clientPhone}</p>
+                <div className="flex items-start gap-3 p-3 bg-gray-800/50 rounded-lg">
+                  <Phone className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-gray-400">Telefone</p>
+                    <p className="text-sm text-primary-contrast font-medium">{notification.clientPhone}</p>
                   </div>
                 </div>
               )}
             </div>
           </div>
 
-          <Separator className="bg-gray-700" />
-
           {/* Informações do Produto */}
           {notification.productName && (
             <>
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-primary-contrast">Produto</h3>
-                <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg">
-                  <Package className="w-5 h-5 text-purple-400" />
-                  <div>
-                    <p className="text-sm text-gray-400">Nome do Produto</p>
-                    <p className="text-primary-contrast font-medium">{notification.productName}</p>
+              <Separator className="bg-gray-700" />
+              <div className="space-y-3">
+                <h3 className="text-base font-semibold text-primary-contrast">Produto</h3>
+                <div className="flex items-start gap-3 p-3 bg-gray-800/50 rounded-lg">
+                  <Package className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-gray-400">Nome do Produto</p>
+                    <p className="text-sm text-primary-contrast font-medium break-words">{notification.productName}</p>
                   </div>
                 </div>
               </div>
-              <Separator className="bg-gray-700" />
             </>
           )}
 
           {/* Informações Financeiras */}
           {notification.value && notification.value > 0 && (
             <>
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-primary-contrast">Valor</h3>
-                <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
-                  <CreditCard className="w-6 h-6 text-green-400" />
-                  <div>
-                    <p className="text-sm text-gray-400">Valor da Transação</p>
-                    <p className="text-2xl font-bold text-green-400">{formatCurrency(notification.value)}</p>
+              <Separator className="bg-gray-700" />
+              <div className="space-y-3">
+                <h3 className="text-base font-semibold text-primary-contrast">Valor</h3>
+                <div className="flex items-center gap-3 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                  <CreditCard className="w-5 h-5 text-green-400 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-gray-400">Valor da Transação</p>
+                    <p className="text-xl font-bold text-green-400">{formatCurrency(notification.value)}</p>
                   </div>
                 </div>
               </div>
-              <Separator className="bg-gray-700" />
             </>
           )}
 
           {/* Data e Hora */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-primary-contrast">Data e Hora</h3>
-            <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg">
-              <Calendar className="w-5 h-5 text-yellow-400" />
-              <div>
-                <p className="text-sm text-gray-400">Recebido em</p>
-                <p className="text-primary-contrast font-medium">
+          <Separator className="bg-gray-700" />
+          <div className="space-y-3">
+            <h3 className="text-base font-semibold text-primary-contrast">Data e Hora</h3>
+            <div className="flex items-start gap-3 p-3 bg-gray-800/50 rounded-lg">
+              <Calendar className="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-gray-400">Recebido em</p>
+                <p className="text-sm text-primary-contrast font-medium">
                   {format(new Date(notification.createdAt), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
                 </p>
               </div>
