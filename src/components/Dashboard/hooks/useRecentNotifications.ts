@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { nocodbService } from '@/services/nocodb';
+import { userContextService } from '@/services/userContextService';
 
 interface Notification {
   id: string;
@@ -21,13 +22,41 @@ export const useRecentNotifications = (limit: number = 10) => {
   const fetchNotifications = async () => {
     try {
       setIsLoading(true);
-      console.log('🔔 Buscando TODAS as notificações recentes...');
       
-      // Usar o método público correto
+      // Ensure user is authenticated before fetching data
+      if (!userContextService.isAuthenticated()) {
+        console.log('❌ Usuário não autenticado - negando acesso às notificações');
+        setNotifications([]);
+        setError('Usuário não autenticado');
+        return;
+      }
+
+      const userId = userContextService.getUserId();
+      console.log('🔔 Buscando notificações para usuário autenticado:', userId);
+      
       const data = await nocodbService.getRecentNotifications(limit);
       
       if (data && data.length > 0) {
-        const transformedNotifications: Notification[] = data.map((item: any) => ({
+        // Apply additional client-side filtering for security
+        const userFilteredData = data.filter(item => {
+          const recordUserId = item.user_id || item.User_id || item.userId;
+          const recordClientId = item.client_id || item.Client_id || item.clientId;
+          
+          // Only show records that belong to the current user
+          const belongsToUser = recordUserId === userId || recordClientId === userId;
+          
+          if (!belongsToUser && (recordUserId || recordClientId)) {
+            console.log('🚫 Notificação filtrada - não pertence ao usuário:', {
+              recordUserId,
+              recordClientId,
+              currentUserId: userId
+            });
+          }
+          
+          return belongsToUser;
+        });
+
+        const transformedNotifications: Notification[] = userFilteredData.map((item: any) => ({
           id: item.Id || item.id || String(Math.random()),
           eventType: item.event_type || 'unknown',
           platform: item.platform || 'hotmart',
@@ -38,11 +67,11 @@ export const useRecentNotifications = (limit: number = 10) => {
           productName: item.product_name || 'Produto não identificado'
         }));
         
+        console.log(`✅ ${transformedNotifications.length} notificações filtradas para usuário ${userId}`);
         setNotifications(transformedNotifications);
         setError(null);
-        console.log(`✅ ${transformedNotifications.length} notificações carregadas`);
       } else {
-        console.log('⚠️ Nenhuma notificação encontrada');
+        console.log('⚠️ Nenhuma notificação encontrada para o usuário');
         setNotifications([]);
         setError(null);
       }
@@ -58,10 +87,8 @@ export const useRecentNotifications = (limit: number = 10) => {
   useEffect(() => {
     fetchNotifications();
     
-    // Atualizar dados a cada 30 segundos
     const interval = setInterval(fetchNotifications, 30000);
     
-    // Escutar evento customizado de atualização do dashboard
     const handleDashboardRefresh = () => {
       console.log('🔄 Evento de refresh recebido, atualizando notificações...');
       fetchNotifications();

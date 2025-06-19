@@ -1,6 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { nocodbService } from '@/services/nocodb';
+import { userContextService } from '@/services/userContextService';
 
 interface NotificationFilters {
   dateFrom?: string;
@@ -34,12 +34,41 @@ export const useAdvancedNotifications = () => {
   const fetchAllNotifications = async () => {
     try {
       setIsLoading(true);
-      console.log('🔔 Buscando TODAS as notificações da tabela específica...');
+      
+      // Ensure user is authenticated before fetching data
+      if (!userContextService.isAuthenticated()) {
+        console.log('❌ Usuário não autenticado - negando acesso às notificações');
+        setNotifications([]);
+        setError('Usuário não autenticado');
+        return;
+      }
+
+      const userId = userContextService.getUserId();
+      console.log('🔔 Buscando TODAS as notificações para usuário autenticado:', userId);
       
       const data = await nocodbService.getAllNotifications();
       
       if (data && data.length > 0) {
-        const transformedNotifications: Notification[] = data.map((item: any) => ({
+        // Apply additional client-side filtering for security
+        const userFilteredData = data.filter(item => {
+          const recordUserId = item.user_id || item.User_id || item.userId;
+          const recordClientId = item.client_id || item.Client_id || item.clientId;
+          
+          // Only show records that belong to the current user
+          const belongsToUser = recordUserId === userId || recordClientId === userId;
+          
+          if (!belongsToUser && (recordUserId || recordClientId)) {
+            console.log('🚫 Notificação filtrada - não pertence ao usuário:', {
+              recordUserId,
+              recordClientId,
+              currentUserId: userId
+            });
+          }
+          
+          return belongsToUser;
+        });
+
+        const transformedNotifications: Notification[] = userFilteredData.map((item: any) => ({
           id: item.Id || item.id || String(Math.random()),
           eventType: item.event_type || 'unknown',
           platform: item.platform || 'hotmart',
@@ -52,13 +81,14 @@ export const useAdvancedNotifications = () => {
           transactionId: item.transaction_id || ''
         }));
         
+        console.log(`✅ ${transformedNotifications.length} notificações filtradas para usuário ${userId}`);
         setNotifications(transformedNotifications);
-        console.log(`✅ ${transformedNotifications.length} notificações carregadas da tabela específica`);
+        setError(null);
       } else {
-        console.log('⚠️ Nenhuma notificação encontrada na tabela específica');
+        console.log('⚠️ Nenhuma notificação encontrada para o usuário');
         setNotifications([]);
+        setError(null);
       }
-      setError(null);
     } catch (err) {
       console.error('❌ Erro ao buscar notificações:', err);
       setError('Erro ao carregar notificações');

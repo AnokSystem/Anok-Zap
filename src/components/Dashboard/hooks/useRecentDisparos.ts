@@ -1,6 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { nocodbService } from '@/services/nocodb';
+import { userContextService } from '@/services/userContextService';
 
 interface Disparo {
   id: string;
@@ -21,14 +21,43 @@ export const useRecentDisparos = (limit: number = 10) => {
   const fetchDisparos = async () => {
     try {
       setIsLoading(true);
-      console.log('📨 Buscando TODOS os disparos recentes do NocoDB...');
+      
+      // Ensure user is authenticated before fetching data
+      if (!userContextService.isAuthenticated()) {
+        console.log('❌ Usuário não autenticado - negando acesso aos disparos');
+        setDisparos([]);
+        setError('Usuário não autenticado');
+        return;
+      }
+
+      const userId = userContextService.getUserId();
+      console.log('📨 Buscando disparos para usuário autenticado:', userId);
       
       const data = await nocodbService.getRecentDisparos(limit);
       
       if (data && data.length > 0) {
         console.log('📋 Dados brutos recebidos do NocoDB:', data);
         
-        const transformedDisparos: Disparo[] = data.map((item: any) => {
+        // Apply additional client-side filtering for security
+        const userFilteredData = data.filter(item => {
+          const recordUserId = item.user_id || item.User_id || item.userId;
+          const recordClientId = item['Cliente ID'] || item.client_id || item.Client_id || item.clientId;
+          
+          // Only show records that belong to the current user
+          const belongsToUser = recordUserId === userId || recordClientId === userId;
+          
+          if (!belongsToUser && (recordUserId || recordClientId)) {
+            console.log('🚫 Registro filtrado - não pertence ao usuário:', {
+              recordUserId,
+              recordClientId,
+              currentUserId: userId
+            });
+          }
+          
+          return belongsToUser;
+        });
+        
+        const transformedDisparos: Disparo[] = userFilteredData.map((item: any) => {
           console.log('🔍 Processando item completo:', item);
           
           // Mapear usando os nomes exatos dos campos conforme console logs
@@ -101,11 +130,11 @@ export const useRecentDisparos = (limit: number = 10) => {
           };
         });
         
-        console.log('✅ Disparos transformados finais:', transformedDisparos);
+        console.log(`✅ ${transformedDisparos.length} disparos filtrados para usuário ${userId}`);
         setDisparos(transformedDisparos);
         setError(null);
       } else {
-        console.log('⚠️ Nenhum disparo encontrado na tabela específica');
+        console.log('⚠️ Nenhum disparo encontrado para o usuário');
         setDisparos([]);
         setError(null);
       }
