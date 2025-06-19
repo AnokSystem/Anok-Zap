@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -96,7 +97,7 @@ const Dashboard = () => {
         {isInitialized && (
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-sm text-green-400">NocoDB Conectado</span>
+            <span className="text-sm text-green-400">Banco de Dados Conectado</span>
           </div>
         )}
       </div>
