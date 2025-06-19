@@ -30,6 +30,7 @@ export const useInstanceOperations = (userId: string | null) => {
       const data = await evolutionApiService.getInstances();
       console.log('✅ Instâncias carregadas:', data);
       setInstances(data);
+      // Removido o toast de sucesso para carregamento de instâncias
     } catch (error) {
       console.error('❌ Erro ao carregar instâncias:', error);
       toast({
