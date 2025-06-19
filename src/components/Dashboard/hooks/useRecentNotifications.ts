@@ -9,6 +9,7 @@ interface Notification {
   platform: string;
   clientName: string;
   clientEmail: string;
+  clientPhone?: string;
   value?: number;
   createdAt: string;
   productName?: string;
@@ -94,6 +95,7 @@ export const useRecentNotifications = (limit: number = 10) => {
             platform: item.platform || item.Platform || item.Plataforma || 'hotmart',
             clientName: item.customer_name || item['Nome do Cliente'] || 'Cliente não identificado',
             clientEmail: item.customer_email || item['Email do Cliente'] || 'email@naoidentificado.com',
+            clientPhone: item.customer_phone || item['Telefone do Cliente'] || item['Phone'] || '',
             value: parseFloat(item.value || item.Valor || '0'),
             createdAt: item.event_date || item.CreatedAt || item.created_at || new Date().toISOString(),
             productName: item.product_name || item['Nome do Produto'] || 'Produto não identificado'

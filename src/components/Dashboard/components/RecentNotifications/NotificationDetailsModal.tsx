@@ -3,7 +3,7 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Bell, User, CreditCard, Calendar, Package, Mail } from 'lucide-react';
+import { Bell, User, CreditCard, Calendar, Package, Mail, Phone } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -96,6 +96,15 @@ export const NotificationDetailsModal = ({ notification, isOpen, onClose }: Noti
                   <p className="text-primary-contrast font-medium">{notification.clientEmail}</p>
                 </div>
               </div>
+              {notification.clientPhone && (
+                <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg">
+                  <Phone className="w-5 h-5 text-purple-400" />
+                  <div>
+                    <p className="text-sm text-gray-400">Telefone</p>
+                    <p className="text-primary-contrast font-medium">{notification.clientPhone}</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
