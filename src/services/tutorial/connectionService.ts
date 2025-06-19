@@ -53,9 +53,21 @@ class TutorialConnectionService {
         return false;
       }
 
-      // Pegar a primeira base disponível ou procurar por uma específica
-      this.targetBaseId = basesData.list[0].id;
-      console.log('✅ Base ID encontrado:', this.targetBaseId);
+      // Procurar pela base "Notificação Inteligente" especificamente
+      const targetBase = basesData.list.find((base: any) => 
+        base.title === 'Notificação Inteligente' || base.title === 'Notificacao Inteligente'
+      );
+      
+      if (targetBase) {
+        this.targetBaseId = targetBase.id;
+        console.log('✅ Base "Notificação Inteligente" encontrada:', targetBase);
+      } else {
+        // Se não encontrar, usar a primeira base disponível
+        this.targetBaseId = basesData.list[0].id;
+        console.log('⚠️ Base específica não encontrada, usando primeira disponível:', basesData.list[0]);
+      }
+
+      console.log('✅ Base ID selecionado:', this.targetBaseId);
 
       // Testar acesso às tabelas do projeto
       const testUrl = `${nocodbService.config.baseUrl}/api/v1/db/meta/projects/${this.targetBaseId}/tables`;

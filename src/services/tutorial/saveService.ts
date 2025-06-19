@@ -34,6 +34,7 @@ class TutorialSaveService {
       await tutorialDataService.ensureTutorialsTable();
       console.log('✅ SaveService - Tabela verificada');
       
+      // Usar o mesmo Base ID que foi testado na conexão
       const targetBaseId = tutorialConnectionService.getTargetBaseId();
       if (!targetBaseId) {
         console.error('❌ SaveService - Base ID não encontrado');
@@ -43,15 +44,29 @@ class TutorialSaveService {
 
       console.log('✅ SaveService - Base ID obtido:', targetBaseId);
 
+      // Buscar a tabela pelo nome correto
       const tableId = await nocodbService.getTableId(targetBaseId, this.TUTORIALS_TABLE);
       
       if (!tableId) {
-        console.error('❌ SaveService - Tabela de tutoriais não encontrada');
-        tutorialLocalStorageService.saveTutorial(tutorial);
-        return;
+        console.error('❌ SaveService - Tabela de tutoriais não encontrada, tentando criar...');
+        
+        // Tentar garantir que a tabela existe novamente
+        await tutorialDataService.ensureTutorialsTable();
+        
+        // Tentar buscar novamente
+        const retryTableId = await nocodbService.getTableId(targetBaseId, this.TUTORIALS_TABLE);
+        
+        if (!retryTableId) {
+          console.error('❌ SaveService - Falha definitiva ao encontrar/criar tabela');
+          tutorialLocalStorageService.saveTutorial(tutorial);
+          return;
+        }
+        
+        console.log('✅ SaveService - Tabela encontrada após retry:', retryTableId);
       }
 
-      console.log('✅ SaveService - Table ID obtido:', tableId);
+      const finalTableId = tableId || await nocodbService.getTableId(targetBaseId, this.TUTORIALS_TABLE);
+      console.log('✅ SaveService - Table ID final:', finalTableId);
 
       const tutorialData = {
         ID: tutorial.id,
@@ -67,7 +82,7 @@ class TutorialSaveService {
 
       console.log('📝 SaveService - Dados formatados para NocoDB:', tutorialData);
 
-      const saveUrl = `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}`;
+      const saveUrl = `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${finalTableId}`;
       console.log('🔗 SaveService - URL de salvamento:', saveUrl);
 
       console.log('📡 SaveService - Enviando requisição POST...');
