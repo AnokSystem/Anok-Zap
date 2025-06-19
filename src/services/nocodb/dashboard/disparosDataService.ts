@@ -1,3 +1,4 @@
+
 import { BaseNocodbService } from '../baseService';
 import { NocodbConfig } from '../types';
 import { TableDiscoveryService } from './tableDiscoveryService';
@@ -89,17 +90,25 @@ export class DisparosDataService extends BaseNocodbService {
         const allDisparos = data.list || [];
         
         console.log(`📊 ${allDisparos.length} disparos encontrados na tabela myx4lsmm5i02xcd`);
-        console.log('📋 Dados brutos da tabela:', allDisparos.slice(0, 2));
+        console.log('📋 Primeiro registro para análise:', allDisparos[0]);
         
-        // Apply strict server-side filtering - only return records belonging to current user
+        // Apply filtering using the correct field names from the table
         const userDisparos = allDisparos.filter(d => {
-          // Check multiple possible user identification fields
+          // Use exact field names as shown in console logs
           const recordUserId = d.user_id || d.User_id || d.userId;
-          const recordClientId = d.client_id || d.Client_id || d.clientId;
+          const recordClientId = d['Cliente ID'] || d.client_id || d.Client_id || d.clientId;
           const recordAccountId = d.account_id || d.Account_id || d.accountId;
           const recordOwnerId = d.owner_id || d.Owner_id || d.ownerId;
           
-          // Only include records that explicitly belong to the current user
+          console.log('🔍 Analisando registro:', {
+            recordId: d.ID,
+            recordClientId,
+            recordUserId,
+            currentUserId: userId,
+            currentClientId: clientId
+          });
+          
+          // Check if record belongs to current user
           const belongsToUser = 
             recordUserId === userId || 
             recordUserId === clientId ||
@@ -110,11 +119,11 @@ export class DisparosDataService extends BaseNocodbService {
             recordOwnerId === userId ||
             recordOwnerId === clientId;
           
-          // If no user identification field is present, exclude the record for security
-          if (!recordUserId && !recordClientId && !recordAccountId && !recordOwnerId) {
-            console.log('🚫 Registro rejeitado - sem identificação de usuário:', d.ID || d.id);
-            return false;
-          }
+          console.log('📋 Resultado da verificação:', {
+            recordId: d.ID,
+            belongsToUser,
+            reason: belongsToUser ? 'INCLUÍDO' : 'EXCLUÍDO'
+          });
           
           return belongsToUser;
         });
