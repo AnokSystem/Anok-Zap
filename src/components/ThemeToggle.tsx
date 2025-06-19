@@ -8,7 +8,7 @@ const ThemeToggle = () => {
   const { theme, toggleTheme, isDark } = useTheme();
 
   return (
-    <div className="flex items-center space-x-3 px-4 py-2 bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50">
+    <div className="flex items-center space-x-2">
       <Sun className={`w-4 h-4 transition-colors duration-300 ${!isDark ? 'text-orange-400' : 'text-gray-500'}`} />
       <Switch
         checked={isDark}
