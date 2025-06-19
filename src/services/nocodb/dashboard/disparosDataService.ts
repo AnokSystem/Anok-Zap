@@ -1,4 +1,3 @@
-
 import { BaseNocodbService } from '../baseService';
 import { NocodbConfig } from '../types';
 import { TableDiscoveryService } from './tableDiscoveryService';
@@ -92,37 +91,26 @@ export class DisparosDataService extends BaseNocodbService {
         console.log(`📊 ${allDisparos.length} disparos encontrados na tabela myx4lsmm5i02xcd`);
         console.log('📋 Primeiro registro para análise:', allDisparos[0]);
         
-        // Apply filtering using the correct field names from the table
+        // Apply filtering using the correct field name "Cliente ID"
         const userDisparos = allDisparos.filter(d => {
-          // Use exact field names as shown in console logs
-          const recordUserId = d.user_id || d.User_id || d.userId;
-          const recordClientId = d['Cliente ID'] || d.client_id || d.Client_id || d.clientId;
-          const recordAccountId = d.account_id || d.Account_id || d.accountId;
-          const recordOwnerId = d.owner_id || d.Owner_id || d.ownerId;
+          // Use exact field name "Cliente ID" as shown in console logs
+          const recordClientId = d['Cliente ID'];
           
           console.log('🔍 Analisando registro:', {
             recordId: d.ID,
             recordClientId,
-            recordUserId,
             currentUserId: userId,
             currentClientId: clientId
           });
           
-          // Check if record belongs to current user
-          const belongsToUser = 
-            recordUserId === userId || 
-            recordUserId === clientId ||
-            recordClientId === userId || 
-            recordClientId === clientId ||
-            recordAccountId === userId ||
-            recordAccountId === clientId ||
-            recordOwnerId === userId ||
-            recordOwnerId === clientId;
+          // Check if record belongs to current user using the "Cliente ID" field
+          const belongsToUser = recordClientId === userId || recordClientId === clientId;
           
           console.log('📋 Resultado da verificação:', {
             recordId: d.ID,
             belongsToUser,
-            reason: belongsToUser ? 'INCLUÍDO' : 'EXCLUÍDO'
+            reason: belongsToUser ? 'INCLUÍDO' : 'EXCLUÍDO',
+            matchedWith: recordClientId === userId ? 'userId' : recordClientId === clientId ? 'clientId' : 'nenhum'
           });
           
           return belongsToUser;
@@ -173,27 +161,11 @@ export class DisparosDataService extends BaseNocodbService {
         console.log(`📊 ${allDisparos.length} disparos totais na tabela myx4lsmm5i02xcd`);
         console.log('📋 Campos disponíveis:', Object.keys(allDisparos[0] || {}));
         
-        // Apply strict filtering - only return records belonging to current user
+        // Apply strict filtering using only the "Cliente ID" field
         const userDisparos = allDisparos.filter(d => {
-          const recordUserId = d.user_id || d.User_id || d.userId;
-          const recordClientId = d.client_id || d.Client_id || d.clientId;
-          const recordAccountId = d.account_id || d.Account_id || d.accountId;
-          const recordOwnerId = d.owner_id || d.Owner_id || d.ownerId;
+          const recordClientId = d['Cliente ID'];
           
-          const belongsToUser = 
-            recordUserId === userId || 
-            recordUserId === clientId ||
-            recordClientId === userId || 
-            recordClientId === clientId ||
-            recordAccountId === userId ||
-            recordAccountId === clientId ||
-            recordOwnerId === userId ||
-            recordOwnerId === clientId;
-          
-          // Exclude records without user identification for security
-          if (!recordUserId && !recordClientId && !recordAccountId && !recordOwnerId) {
-            return false;
-          }
+          const belongsToUser = recordClientId === userId || recordClientId === clientId;
           
           return belongsToUser;
         });

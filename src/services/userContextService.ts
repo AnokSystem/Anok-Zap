@@ -1,4 +1,3 @@
-
 import { authService } from './auth';
 
 class UserContextService {
@@ -10,12 +9,13 @@ class UserContextService {
       return 'anonymous';
     }
 
-    // Use the user's actual ID first, then fall back to email-based ID
+    // Use the user's actual ID as priority since disparos are now saved with ID
     let clientId = currentUser.ID || 
                    currentUser.Email?.split('@')[0] || 
                    'default';
 
     console.log('🔐 Client ID extraído para usuário:', currentUser.Email, '-> ID:', clientId);
+    console.log('🔍 Dados completos do usuário:', currentUser);
     return clientId;
   }
 
@@ -27,12 +27,13 @@ class UserContextService {
       return 'anonymous';
     }
 
-    // Primary user ID for database filtering
+    // Primary user ID for database filtering - use the actual ID
     const userId = currentUser.ID || 
                    currentUser.Email?.split('@')[0] || 
                    'default';
 
     console.log('👤 User ID extraído:', userId);
+    console.log('🔍 Dados completos do usuário para userId:', currentUser);
     return userId;
   }
 
