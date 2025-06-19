@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { nocodbService } from '@/services/nocodb';
+import { userContextService } from '@/services/userContextService';
 import { Notification, SyncStatus } from '../types';
 
 export const useNotificationLoading = () => {
@@ -19,14 +20,14 @@ export const useNotificationLoading = () => {
       console.log('📡 Carregando notificações do NocoDB...');
       
       // Verificar se o usuário está autenticado
-      const savedUser = localStorage.getItem('currentUser');
-      if (!savedUser) {
+      if (!userContextService.isAuthenticated()) {
         console.error('❌ Usuário não autenticado');
         throw new Error('Usuário não autenticado');
       }
       
-      const user = JSON.parse(savedUser);
-      console.log('👤 Usuário autenticado:', user.ID);
+      const userId = userContextService.getUserId();
+      const clientId = userContextService.getClientId();
+      console.log('👤 Usuário autenticado:', { userId, clientId });
       
       // Primeiro testar a conexão
       const connectionTest = await nocodbService.testConnection();
@@ -41,8 +42,28 @@ export const useNotificationLoading = () => {
       console.log('📋 Dados recebidos do NocoDB:', data);
       console.log(`📊 Total de notificações encontradas: ${data.length}`);
       
-      // Log das notificações encontradas para debug
-      data.forEach((notification, index) => {
+      // Aplicar filtragem por usuário
+      const userFilteredData = data.filter(notification => {
+        const recordUserId = notification['ID do Usuário'] || notification['ID_do_Usuario'] || notification['IDdoUsuario'] || notification['UserId'] || notification['user_id'] || notification['UserID'];
+        
+        // Só mostrar registros que pertencem ao usuário atual
+        const belongsToUser = recordUserId === userId || recordUserId === clientId;
+        
+        if (!belongsToUser && recordUserId) {
+          console.log('🚫 Notificação filtrada - não pertence ao usuário:', {
+            recordUserId,
+            currentUserId: userId,
+            currentClientId: clientId
+          });
+        }
+        
+        return belongsToUser;
+      });
+      
+      console.log(`✅ ${userFilteredData.length} notificações filtradas para usuário ${userId}/${clientId}`);
+      
+      // Log das notificações filtradas para debug
+      userFilteredData.forEach((notification, index) => {
         console.log(`📌 Notificação ${index + 1}:`, {
           ID: notification.ID,
           'Tipo de Evento': notification['Tipo de Evento'],
@@ -52,7 +73,7 @@ export const useNotificationLoading = () => {
       });
       
       // Ordenar notificações por data de criação (mais recentes primeiro)
-      const sortedData = data.sort((a, b) => {
+      const sortedData = userFilteredData.sort((a, b) => {
         const dateA = new Date(a.CreatedAt || a.created_at || 0);
         const dateB = new Date(b.CreatedAt || b.created_at || 0);
         return dateB.getTime() - dateA.getTime(); // Ordem decrescente (mais recente primeiro)
