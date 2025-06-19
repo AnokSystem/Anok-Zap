@@ -1,3 +1,4 @@
+
 import { BaseNocodbService } from '../baseService';
 import { NocodbConfig } from '../types';
 import { userContextService } from '../../userContextService';
@@ -173,13 +174,24 @@ export class StatsCalculationService extends BaseNocodbService {
         
         console.log(`📊 ${allNotifications.length} notificações totais encontradas`);
         
-        // Enhanced filtering with multiple user identification fields
+        // Filtrar notificações pelo usuário atual
         const userNotifications = allNotifications.filter(n => {
           const recordUserId = n.user_id || n.User_id || n.userId;
-          const recordClientId = n.client_id || n.Client_id || n.clientId;
+          const recordClientId = n['Cliente ID'] || n.client_id || n.Client_id || n.clientId;
           
-          // Match against both user_id and client_id for maximum compatibility
-          return recordUserId === userId || recordClientId === clientId || recordClientId === userId;
+          // Verificar se a notificação pertence ao usuário atual
+          const belongsToUser = recordUserId === userId || recordClientId === clientId || recordClientId === userId;
+          
+          console.log('🔍 Verificando notificação:', {
+            id: n.Id || n.id,
+            recordUserId,
+            recordClientId,
+            currentUserId: userId,
+            currentClientId: clientId,
+            belongsToUser
+          });
+          
+          return belongsToUser;
         });
         
         console.log(`📊 ${userNotifications.length} notificações filtradas para usuário ${userId}`);
@@ -190,9 +202,23 @@ export class StatsCalculationService extends BaseNocodbService {
           return eventDate && eventDate.startsWith(today);
         });
 
+        // Contar notificações ativas (últimos 30 dias)
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
+        const activeNotifications = userNotifications.filter(n => {
+          const eventDate = n.event_date || n.CreatedAt || n.created_at || n.createdAt;
+          if (!eventDate) return false;
+          
+          const notificationDate = new Date(eventDate);
+          return notificationDate >= thirtyDaysAgo;
+        });
+
         const stats = {
-          total: userNotifications.length,
-          today: notificationsToday.length
+          total: activeNotifications.length, // Mudança: usar notificações ativas em vez do total
+          today: notificationsToday.length,
+          active: activeNotifications.length, // Notificações dos últimos 30 dias
+          allTime: userNotifications.length // Total histórico
         };
 
         console.log('📈 Estatísticas de notificações para usuário', userId, ':', stats);
@@ -200,10 +226,10 @@ export class StatsCalculationService extends BaseNocodbService {
       }
 
       console.log('❌ Erro na resposta da API de notificações:', response.status);
-      return { total: 0, today: 0 };
+      return { total: 0, today: 0, active: 0, allTime: 0 };
     } catch (error) {
       console.error('❌ Erro ao buscar estatísticas de notificações:', error);
-      return { total: 0, today: 0 };
+      return { total: 0, today: 0, active: 0, allTime: 0 };
     }
   }
 }

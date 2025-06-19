@@ -22,7 +22,7 @@ export const DashboardStats = () => {
       icon: Bell,
       color: 'text-green-400',
       bgColor: 'bg-green-500/20',
-      description: 'Webhooks das plataformas'
+      description: 'Webhooks recebidos (30 dias)'
     },
     {
       title: 'Taxa de Sucesso',
