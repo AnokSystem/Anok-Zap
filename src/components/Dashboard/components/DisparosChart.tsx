@@ -74,8 +74,6 @@ export const DisparosChart = () => {
   }
 
   const totalDisparos = data.reduce((acc, item) => acc + (item.disparos || 0), 0);
-  const totalSucesso = data.reduce((acc, item) => acc + (item.sucesso || 0), 0);
-  const successRate = totalDisparos > 0 ? ((totalSucesso / totalDisparos) * 100).toFixed(1) : '0';
 
   return (
     <Card className="card-modern">
@@ -83,22 +81,13 @@ export const DisparosChart = () => {
         <CardTitle className="flex items-center gap-2 text-primary-contrast">
           <MessageSquare className="w-5 h-5 text-blue-400" />
           Disparos nos Últimos 7 Dias
-          <div className="ml-auto flex items-center gap-3">
-            <div className="text-sm text-gray-400">
-              Total: {totalDisparos} | Sucesso: {totalSucesso}
-            </div>
-            <div className="flex items-center gap-1 text-green-400">
-              <TrendingUp className="w-4 h-4" />
-              <span className="text-sm font-semibold">{successRate}% sucesso</span>
-            </div>
-            <button 
-              onClick={refetch}
-              className="p-1 hover:bg-gray-700 rounded"
-              title="Atualizar dados"
-            >
-              <RefreshCw className="w-4 h-4 text-blue-400" />
-            </button>
-          </div>
+          <button 
+            onClick={refetch}
+            className="ml-auto p-1 hover:bg-gray-700 rounded"
+            title="Atualizar dados"
+          >
+            <RefreshCw className="w-4 h-4 text-blue-400" />
+          </button>
         </CardTitle>
       </CardHeader>
       <CardContent>
