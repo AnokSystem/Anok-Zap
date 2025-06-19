@@ -28,6 +28,7 @@ export const useGroupData = () => {
     try {
       const instanceList = await evolutionApiService.getInstances();
       setInstances(instanceList);
+      // Notificação de instâncias carregadas removida
     } catch (error) {
       console.error('Erro ao carregar instâncias:', error);
     }

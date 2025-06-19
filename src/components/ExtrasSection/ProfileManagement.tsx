@@ -27,10 +27,7 @@ const ProfileManagement = () => {
       
       setInstances(instanceList);
       
-      toast({
-        title: "Instâncias Carregadas",
-        description: `${instanceList.length} instâncias encontradas`,
-      });
+      // Notificação de instâncias carregadas removida
     } catch (error) {
       console.error('❌ Erro ao carregar instâncias:', error);
       toast({
