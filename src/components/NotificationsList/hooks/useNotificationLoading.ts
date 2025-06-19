@@ -12,6 +12,55 @@ export const useNotificationLoading = () => {
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>(null);
 
+  // CORREÇÃO: Função para extrair userId do JSON de forma mais robusta
+  const extractUserIdFromRecord = (item: any): string | null => {
+    console.log('🔍 NOTIF-EXTRAÇÃO - Analisando item:', item);
+    
+    // Primeiro tentar campos diretos comuns
+    const directFields = [
+      item['ID do Usuário'],
+      item['ID_do_Usuario'],
+      item['IDdoUsuario'],
+      item['UserId'],
+      item['user_id'],
+      item['UserID'],
+      item['userId']
+    ];
+
+    for (const field of directFields) {
+      if (field && field !== 'undefined' && field !== null) {
+        console.log('✅ NOTIF-EXTRAÇÃO - UserId encontrado em campo direto:', field);
+        return String(field);
+      }
+    }
+
+    // Se não encontrou nos campos diretos, tentar extrair do JSON
+    const jsonField = item['Dados Completos (JSON)'];
+    if (jsonField) {
+      try {
+        console.log('🔍 NOTIF-EXTRAÇÃO - Tentando extrair do JSON:', jsonField);
+        const jsonData = JSON.parse(jsonField);
+        console.log('📋 NOTIF-EXTRAÇÃO - Dados do JSON parseados:', jsonData);
+        
+        if (jsonData.userId) {
+          console.log('✅ NOTIF-EXTRAÇÃO - UserId encontrado no JSON:', jsonData.userId);
+          return String(jsonData.userId);
+        }
+        
+        if (jsonData.user_id) {
+          console.log('✅ NOTIF-EXTRAÇÃO - user_id encontrado no JSON:', jsonData.user_id);
+          return String(jsonData.user_id);
+        }
+        
+      } catch (e) {
+        console.error('❌ NOTIF-EXTRAÇÃO - Erro ao fazer parse do JSON:', e);
+      }
+    }
+
+    console.log('❌ NOTIF-EXTRAÇÃO - UserId não encontrado');
+    return null;
+  };
+
   const loadNotifications = async () => {
     setIsLoading(true);
     setSyncStatus('loading');
@@ -42,9 +91,9 @@ export const useNotificationLoading = () => {
       console.log('📋 Dados recebidos do NocoDB:', data);
       console.log(`📊 Total de notificações encontradas: ${data.length}`);
       
-      // Aplicar filtragem por usuário
+      // CORREÇÃO: Aplicar filtragem usando a função de extração melhorada
       const userFilteredData = data.filter(notification => {
-        const recordUserId = notification['ID do Usuário'] || notification['ID_do_Usuario'] || notification['IDdoUsuario'] || notification['UserId'] || notification['user_id'] || notification['UserID'];
+        const recordUserId = extractUserIdFromRecord(notification);
         
         // Só mostrar registros que pertencem ao usuário atual
         const belongsToUser = recordUserId === userId || recordUserId === clientId;
@@ -64,10 +113,11 @@ export const useNotificationLoading = () => {
       
       // Log das notificações filtradas para debug
       userFilteredData.forEach((notification, index) => {
+        const recordUserId = extractUserIdFromRecord(notification);
         console.log(`📌 Notificação ${index + 1}:`, {
           ID: notification.ID,
           'Tipo de Evento': notification['Tipo de Evento'],
-          'ID do Usuário': notification['ID do Usuário'],
+          'ID do Usuário': recordUserId,
           'Perfil Hotmart': notification['Perfil Hotmart']
         });
       });

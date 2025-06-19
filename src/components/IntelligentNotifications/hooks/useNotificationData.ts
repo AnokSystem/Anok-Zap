@@ -52,6 +52,52 @@ export const useNotificationData = () => {
     }
   };
 
+  // CORREÇÃO: Função para extrair userId do JSON de forma mais robusta
+  const extractUserIdFromRecord = (item: any): string | null => {
+    console.log('🔍 EXTRAÇÃO - Analisando item:', item);
+    
+    // Primeiro tentar campos diretos
+    const directFields = [
+      item['userId'],
+      item['user_id'], 
+      item['ID do Usuário'],
+      item['UserId']
+    ];
+
+    for (const field of directFields) {
+      if (field && field !== 'undefined') {
+        console.log('✅ EXTRAÇÃO - UserId encontrado em campo direto:', field);
+        return String(field);
+      }
+    }
+
+    // Se não encontrou nos campos diretos, tentar extrair do JSON
+    const jsonField = item['Dados Completos (JSON)'];
+    if (jsonField) {
+      try {
+        console.log('🔍 EXTRAÇÃO - Tentando extrair do JSON:', jsonField);
+        const jsonData = JSON.parse(jsonField);
+        console.log('📋 EXTRAÇÃO - Dados do JSON parseados:', jsonData);
+        
+        if (jsonData.userId) {
+          console.log('✅ EXTRAÇÃO - UserId encontrado no JSON:', jsonData.userId);
+          return String(jsonData.userId);
+        }
+        
+        if (jsonData.user_id) {
+          console.log('✅ EXTRAÇÃO - user_id encontrado no JSON:', jsonData.user_id);
+          return String(jsonData.user_id);
+        }
+        
+      } catch (e) {
+        console.error('❌ EXTRAÇÃO - Erro ao fazer parse do JSON:', e);
+      }
+    }
+
+    console.log('❌ EXTRAÇÃO - UserId não encontrado');
+    return null;
+  };
+
   const loadRules = async () => {
     try {
       // Verificar se o usuário está autenticado antes de buscar dados
@@ -75,22 +121,19 @@ export const useNotificationData = () => {
         console.log('🔍 BUSCA - Primeiro registro para análise:', data[0]);
         console.log('🔍 BUSCA - Campos disponíveis:', Object.keys(data[0] || {}));
         
-        // Aplicar filtragem usando os mesmos campos que são salvos
+        // CORREÇÃO: Aplicar filtragem usando a função de extração melhorada
         const userFilteredData = data.filter(item => {
-          // CORREÇÃO: Usar os mesmos campos que são salvos no notificationSaveService
-          const recordUserId = item['userId'] || item['user_id'] || item['ID do Usuário'] || item['UserId'];
-          const recordClientId = item['client_id'] || item['ClientId'];
+          const recordUserId = extractUserIdFromRecord(item);
           
           console.log('🔍 FILTRO - Analisando notificação:', {
             itemId: item.id || item.ID,
             recordUserId,
-            recordClientId,
             currentUserId: userId,
             currentClientId: clientId
           });
           
           // Verificar se a notificação pertence ao usuário atual
-          const belongsToUser = recordUserId === userId || recordClientId === clientId || recordUserId === clientId;
+          const belongsToUser = recordUserId === userId || recordUserId === clientId;
           
           console.log('📋 FILTRO - Resultado:', {
             belongsToUser,
@@ -104,11 +147,12 @@ export const useNotificationData = () => {
         
         // Log das notificações filtradas
         userFilteredData.forEach((item, index) => {
+          const recordUserId = extractUserIdFromRecord(item);
           console.log(`📌 Notificação ${index + 1}:`, {
             id: item.id || item.ID,
             eventType: item.eventType || item['eventType'] || item['Tipo de Evento'],
-            userId: item.userId || item['userId'] || item['ID do Usuário'],
-            clientId: item.client_id || item['ClientId']
+            userId: recordUserId,
+            extractedFrom: recordUserId ? 'JSON ou campo direto' : 'não encontrado'
           });
         });
         
@@ -137,11 +181,10 @@ export const useNotificationData = () => {
         throw new Error('Regra não encontrada');
       }
       
-      // CORREÇÃO: Usar os mesmos campos para verificação
-      const recordUserId = rule['userId'] || rule['user_id'] || rule['ID do Usuário'] || rule['UserId'];
-      const recordClientId = rule['client_id'] || rule['ClientId'];
+      // CORREÇÃO: Usar a função de extração melhorada
+      const recordUserId = extractUserIdFromRecord(rule);
       
-      if (recordUserId !== userId && recordClientId !== clientId && recordUserId !== clientId) {
+      if (!recordUserId || (recordUserId !== userId && recordUserId !== clientId)) {
         throw new Error('Você não tem permissão para deletar esta regra');
       }
       

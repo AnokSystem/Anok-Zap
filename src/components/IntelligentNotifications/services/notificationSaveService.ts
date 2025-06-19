@@ -27,7 +27,7 @@ export const notificationSaveService = {
     const clientId = userContextService.getClientId();
     console.log('👤 SERVIÇO - Usuário atual:', { userId, clientId });
     
-    // CORREÇÃO: Obter webhook URL segmentado com valores validados
+    // Obter webhook URL segmentado com valores validados
     const webhookUrl = webhookService.getWebhookUrl(
       rule.eventType,
       rule.userRole,
@@ -41,7 +41,7 @@ export const notificationSaveService = {
       throw new Error('Não foi possível gerar a URL do webhook');
     }
     
-    // CORREÇÃO: Preparar dados garantindo campos consistentes de usuário
+    // CORREÇÃO: Preparar dados com campos consistentes e padronizados
     const notificationData: any = {
       eventType: rule.eventType,
       instance: rule.instanceId!,
@@ -52,13 +52,29 @@ export const notificationSaveService = {
       specificProductName: rule.specificProductName || '',
       messages: rule.messages,
       webhookUrl,
-      // IMPORTANTE: Garantir que os campos de usuário sejam salvos corretamente
+      // IMPORTANTE: Garantir que o userId seja salvo de forma consistente
       userId: userId,
       user_id: userId,
       client_id: clientId,
       ClientId: clientId,
       'ID do Usuário': userId,
       timestamp: new Date().toISOString(),
+      // NOVO: Salvar dados completos no JSON para facilitar a extração posterior
+      jsonData: JSON.stringify({
+        eventType: rule.eventType,
+        instance: rule.instanceId,
+        userRole: rule.userRole,
+        platform: rule.platform,
+        profileName: rule.profileName,
+        productScope: rule.productScope || 'all',
+        specificProductName: rule.specificProductName || '',
+        messages: rule.messages,
+        webhookUrl,
+        userId: userId,
+        user_id: userId,
+        timestamp: new Date().toISOString(),
+        saved_timestamp: new Date().toISOString()
+      })
     };
 
     // Se estamos editando, incluir o ID correto
