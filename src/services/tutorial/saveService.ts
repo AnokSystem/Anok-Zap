@@ -10,17 +10,29 @@ class TutorialSaveService {
 
   async saveTutorial(tutorial: TutorialData): Promise<void> {
     try {
-      console.log('💾 SaveService - Salvando metadata do tutorial:', tutorial.id);
+      console.log('💾 SaveService - INICIANDO salvamento do tutorial:', tutorial.id);
+      console.log('📝 SaveService - Dados do tutorial:', {
+        id: tutorial.id,
+        title: tutorial.title,
+        category: tutorial.category,
+        hasVideo: !!tutorial.videoUrl,
+        hasDocuments: tutorial.documentUrls.length > 0,
+        hasCover: !!tutorial.coverImageUrl
+      });
       
       // Testar conexão primeiro
+      console.log('🔗 SaveService - Testando conexão com NocoDB...');
       if (!(await tutorialConnectionService.testConnection())) {
         console.warn('❌ SaveService - Sem conexão com NocoDB, salvando apenas no localStorage');
         tutorialLocalStorageService.saveTutorial(tutorial);
         return;
       }
+      console.log('✅ SaveService - Conexão com NocoDB OK');
       
       // Garantir que a tabela existe
+      console.log('📋 SaveService - Verificando se tabela existe...');
       await tutorialDataService.ensureTutorialsTable();
+      console.log('✅ SaveService - Tabela verificada');
       
       const targetBaseId = tutorialConnectionService.getTargetBaseId();
       if (!targetBaseId) {
@@ -53,11 +65,12 @@ class TutorialSaveService {
         UpdatedAt: tutorial.updatedAt
       };
 
-      console.log('📝 SaveService - Dados a serem salvos:', tutorialData);
+      console.log('📝 SaveService - Dados formatados para NocoDB:', tutorialData);
 
       const saveUrl = `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${targetBaseId}/${tableId}`;
       console.log('🔗 SaveService - URL de salvamento:', saveUrl);
 
+      console.log('📡 SaveService - Enviando requisição POST...');
       const response = await fetch(saveUrl, {
         method: 'POST',
         headers: {
@@ -67,23 +80,44 @@ class TutorialSaveService {
         body: JSON.stringify(tutorialData),
       });
 
+      console.log('📥 SaveService - Status da resposta:', response.status);
+
       if (response.ok) {
         const result = await response.json();
-        console.log('✅ SaveService - Tutorial salvo no NocoDB com sucesso!');
-        console.log('✅ SaveService - Resposta:', result);
+        console.log('✅ SaveService - Tutorial salvo no NocoDB com SUCESSO!');
+        console.log('✅ SaveService - Dados salvos:', result);
+        
+        // Salvar também no localStorage como backup
         tutorialLocalStorageService.saveTutorial(tutorial);
+        console.log('✅ SaveService - Backup no localStorage realizado');
       } else {
         const errorText = await response.text();
-        console.error('❌ SaveService - Erro ao salvar no NocoDB:', response.status, errorText);
+        console.error('❌ SaveService - ERRO ao salvar no NocoDB!');
+        console.error('❌ SaveService - Status:', response.status);
+        console.error('❌ SaveService - Resposta:', errorText);
+        
+        // Tentar parsear a resposta de erro
+        try {
+          const errorData = JSON.parse(errorText);
+          console.error('❌ SaveService - Erro detalhado:', errorData);
+        } catch (parseError) {
+          console.error('❌ SaveService - Erro não é JSON válido');
+        }
+        
         console.log('📦 SaveService - Salvando no localStorage como fallback...');
         tutorialLocalStorageService.saveTutorial(tutorial);
+        
+        throw new Error(`Erro ao salvar no NocoDB: ${response.status} - ${errorText}`);
       }
     } catch (error) {
-      console.error('❌ SaveService - Erro ao salvar metadata no NocoDB:', error);
+      console.error('💥 SaveService - ERRO GERAL ao salvar tutorial:', error);
       
-      console.log('📦 SaveService - Salvando no localStorage como fallback...');
+      console.log('📦 SaveService - Salvando no localStorage como fallback de emergência...');
       tutorialLocalStorageService.saveTutorial(tutorial);
       console.log('✅ SaveService - Tutorial salvo no localStorage como fallback');
+      
+      // Re-throw o erro para que seja capturado pelos hooks
+      throw error;
     }
   }
 }

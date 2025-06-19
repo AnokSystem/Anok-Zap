@@ -13,41 +13,48 @@ export const useTutorialCreate = (
   const createTutorial = useCallback(async (data: CreateTutorialData): Promise<boolean> => {
     try {
       setUploading(true);
-      console.log('🚀 Iniciando criação de tutorial:', data.title);
+      console.log('🚀 useTutorialCreate - INICIANDO criação de tutorial:', data.title);
       
       const validation = validateTutorialData(data);
       if (!validation.isValid) {
+        console.error('❌ useTutorialCreate - Dados inválidos:', validation.error);
         toast({
-          title: "Erro",
+          title: "Erro de Validação",
           description: validation.error,
           variant: "destructive"
         });
         return false;
       }
 
-      console.log('📁 Criando tutorial...');
+      console.log('✅ useTutorialCreate - Validação OK, criando tutorial...');
       
       const newTutorial = await tutorialService.createTutorial(data);
       
-      console.log('✅ Tutorial criado, atualizando lista...');
+      console.log('✅ useTutorialCreate - Tutorial criado com sucesso:', newTutorial.id);
+      console.log('🔄 useTutorialCreate - Atualizando lista de tutoriais...');
       
       updateTutorialsList(newTutorial);
       
       toast({
-        title: "Sucesso",
-        description: `Tutorial "${newTutorial.title}" criado com sucesso`,
+        title: "Tutorial Criado",
+        description: `Tutorial "${newTutorial.title}" foi criado com sucesso!`,
         variant: "default"
       });
       
       return true;
     } catch (error) {
-      console.error('❌ Erro ao criar tutorial:', error);
+      console.error('❌ useTutorialCreate - ERRO ao criar tutorial:', error);
       
-      const errorMessage = getErrorMessage(error);
+      let errorMessage = "Não foi possível criar o tutorial";
+      
+      if (error instanceof Error) {
+        console.error('❌ useTutorialCreate - Mensagem do erro:', error.message);
+        errorMessage = error.message;
+      }
       
       toast({
-        title: "Erro",
-        description: errorMessage || "Não foi possível criar o tutorial",
+        title: "Erro ao Criar Tutorial",
+        description: errorMessage,
         variant: "destructive"
       });
       return false;
