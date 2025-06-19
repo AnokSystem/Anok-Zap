@@ -23,7 +23,6 @@ export const useRecentNotifications = (limit: number = 10) => {
     try {
       setIsLoading(true);
       
-      // Garantir que o usuário está autenticado antes de buscar dados
       if (!userContextService.isAuthenticated()) {
         console.log('❌ Usuário não autenticado - negando acesso às notificações');
         setNotifications([]);
@@ -35,36 +34,85 @@ export const useRecentNotifications = (limit: number = 10) => {
       const clientId = userContextService.getClientId();
       console.log('🔔 Buscando notificações para usuário autenticado:', { userId, clientId });
       
-      const data = await nocodbService.getRecentNotifications(limit);
-      
-      if (data && data.length > 0) {
-        // Aplicar filtragem adicional no cliente para segurança usando client_id
-        const userFilteredData = data.filter(item => {
-          const recordClientId = item.client_id;
-          
-          // Só mostrar registros que pertencem ao usuário atual
-          const belongsToUser = recordClientId === userId || recordClientId === clientId;
-          
-          if (!belongsToUser && recordClientId) {
-            console.log('🚫 Notificação filtrada - não pertence ao usuário:', {
-              recordClientId,
-              currentUserId: userId,
-              currentClientId: clientId
-            });
-          }
-          
-          return belongsToUser;
-        });
+      // CORREÇÃO: Buscar dados diretamente da tabela mzup2t8ygoiy5ub
+      const baseId = nocodbService.getTargetBaseId();
+      if (!baseId) {
+        throw new Error('Base ID não encontrado');
+      }
 
+      const timestamp = Date.now();
+      const response = await fetch(
+        `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${baseId}/mzup2t8ygoiy5ub?limit=${limit}&sort=-CreatedAt&_t=${timestamp}`,
+        {
+          headers: {
+            ...nocodbService.headers,
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Erro ${response.status}: ${await response.text()}`);
+      }
+
+      const data = await response.json();
+      const allNotifications = data.list || [];
+      
+      console.log(`📊 ${allNotifications.length} notificações encontradas na tabela mzup2t8ygoiy5ub`);
+      
+      if (allNotifications.length > 0) {
+        console.log('📋 Campos disponíveis:', Object.keys(allNotifications[0]));
+        console.log('📝 Primeiros registros:', allNotifications.slice(0, 3));
+      }
+
+      // CORREÇÃO: Filtrar por múltiplos campos de identificação do usuário
+      const userFilteredData = allNotifications.filter(item => {
+        const recordClientId = item.client_id || item['client_id'] || item['Cliente ID'] || item.ClientId;
+        const recordUserId = item.user_id || item['user_id'] || item['ID do Usuário'] || item.UserId;
+        
+        // Verificar também no JSON
+        let jsonUserId = null;
+        try {
+          const jsonData = item['Dados Completos (JSON)'];
+          if (jsonData && typeof jsonData === 'string') {
+            const parsed = JSON.parse(jsonData);
+            jsonUserId = parsed.userId || parsed.user_id;
+          }
+        } catch (e) {
+          // JSON inválido, ignorar
+        }
+        
+        const belongsToUser = recordClientId === userId || 
+                             recordClientId === clientId ||
+                             recordUserId === userId ||
+                             recordUserId === clientId ||
+                             jsonUserId === userId ||
+                             jsonUserId === clientId;
+        
+        console.log('🔍 NOTIF RECENTES - Análise:', {
+          recordId: item.Id || item.id,
+          recordClientId,
+          recordUserId,
+          jsonUserId,
+          userId,
+          clientId,
+          belongsToUser
+        });
+        
+        return belongsToUser;
+      });
+
+      if (userFilteredData.length > 0) {
         const transformedNotifications: Notification[] = userFilteredData.map((item: any) => ({
-          id: item.id || String(Math.random()),
-          eventType: item.event_type || 'unknown',
-          platform: item.platform || 'hotmart',
-          clientName: item.customer_name || 'Cliente não identificado',
-          clientEmail: item.customer_email || 'email@naoidentificado.com',
-          value: item.value || 0,
-          createdAt: item.event_date || item.created_at || new Date().toISOString(),
-          productName: item.product_name || 'Produto não identificado'
+          id: item.Id || item.id || String(Math.random()),
+          eventType: item.event_type || item['Tipo de Evento'] || 'unknown',
+          platform: item.platform || item.Platform || item.Plataforma || 'hotmart',
+          clientName: item.customer_name || item['Nome do Cliente'] || 'Cliente não identificado',
+          clientEmail: item.customer_email || item['Email do Cliente'] || 'email@naoidentificado.com',
+          value: parseFloat(item.value || item.Valor || '0'),
+          createdAt: item.event_date || item.CreatedAt || item.created_at || new Date().toISOString(),
+          productName: item.product_name || item['Nome do Produto'] || 'Produto não identificado'
         }));
         
         console.log(`✅ ${transformedNotifications.length} notificações filtradas para usuário ${userId}/${clientId}`);
