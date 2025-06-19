@@ -3,7 +3,7 @@ import React from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Eye, User, Mail, Phone, Package, CreditCard } from 'lucide-react';
-import { formatCurrency, formatEventType, getPlatformColor, getEventTypeColor } from './utils';
+import { formatCurrency, getPlatformColor, getEventTypeColor } from './utils';
 
 interface NotificationItemProps {
   notification: any;
@@ -36,7 +36,7 @@ export const NotificationItem = ({ notification, onViewDetails }: NotificationIt
               {notification.platform}
             </Badge>
             <Badge variant="outline" className={getEventTypeColor(notification.eventType)}>
-              {formatEventType(notification.eventType)}
+              {notification.eventType}
             </Badge>
           </div>
 
