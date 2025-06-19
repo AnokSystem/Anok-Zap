@@ -64,32 +64,57 @@ export const useNotificationData = () => {
       const userId = userContextService.getUserId();
       const clientId = userContextService.getClientId();
       console.log('🔔 Buscando notificações inteligentes para usuário autenticado:', { userId, clientId });
+      console.log('🔍 BUSCA - userId:', userId, 'clientId:', clientId);
       
       const data = await nocodbService.getHotmartNotifications();
+      console.log('📋 BUSCA - Dados retornados do NocoDB:', data);
+      console.log('📊 BUSCA - Total de notificações encontradas:', data?.length || 0);
       
       if (data && data.length > 0) {
-        // Aplicar filtragem adicional no cliente para segurança usando client_id
+        // Log dos primeiros registros para debug
+        console.log('🔍 BUSCA - Primeiro registro para análise:', data[0]);
+        console.log('🔍 BUSCA - Campos disponíveis:', Object.keys(data[0] || {}));
+        
+        // Aplicar filtragem usando os mesmos campos que são salvos
         const userFilteredData = data.filter(item => {
-          const recordClientId = item['client_id'] || item['ClientId'] || item['ID do Cliente'] || item['user_id'] || item['UserId'] || item['UserID'];
+          // CORREÇÃO: Usar os mesmos campos que são salvos no notificationSaveService
+          const recordUserId = item['userId'] || item['user_id'] || item['ID do Usuário'] || item['UserId'];
+          const recordClientId = item['client_id'] || item['ClientId'];
           
-          // Só mostrar registros que pertencem ao usuário atual (usando client_id como prioridade)
-          const belongsToUser = recordClientId === clientId || recordClientId === userId;
+          console.log('🔍 FILTRO - Analisando notificação:', {
+            itemId: item.id || item.ID,
+            recordUserId,
+            recordClientId,
+            currentUserId: userId,
+            currentClientId: clientId
+          });
           
-          if (!belongsToUser && recordClientId) {
-            console.log('🚫 Notificação inteligente filtrada - não pertence ao usuário:', {
-              recordClientId,
-              currentUserId: userId,
-              currentClientId: clientId
-            });
-          }
+          // Verificar se a notificação pertence ao usuário atual
+          const belongsToUser = recordUserId === userId || recordClientId === clientId || recordUserId === clientId;
+          
+          console.log('📋 FILTRO - Resultado:', {
+            belongsToUser,
+            reason: belongsToUser ? 'INCLUÍDA' : 'EXCLUÍDA'
+          });
           
           return belongsToUser;
         });
 
-        console.log(`✅ ${userFilteredData.length} notificações inteligentes filtradas para usuário ${clientId}/${userId}`);
+        console.log(`✅ ${userFilteredData.length} notificações inteligentes filtradas para usuário ${userId}/${clientId}`);
+        
+        // Log das notificações filtradas
+        userFilteredData.forEach((item, index) => {
+          console.log(`📌 Notificação ${index + 1}:`, {
+            id: item.id || item.ID,
+            eventType: item.eventType || item['eventType'] || item['Tipo de Evento'],
+            userId: item.userId || item['userId'] || item['ID do Usuário'],
+            clientId: item.client_id || item['ClientId']
+          });
+        });
+        
         setRules(userFilteredData);
       } else {
-        console.log('⚠️ Nenhuma notificação inteligente encontrada para o usuário');
+        console.log('⚠️ Nenhuma notificação encontrada no NocoDB');
         setRules([]);
       }
     } catch (error) {
@@ -104,16 +129,19 @@ export const useNotificationData = () => {
       console.log('🗑️ Deletando regra:', ruleId);
       
       // Verificar se o usuário tem permissão para deletar esta regra
+      const userId = userContextService.getUserId();
       const clientId = userContextService.getClientId();
-      const rule = rules.find(r => r.id === ruleId); // CORRIGIDO: usar 'id' em vez de 'ID'
+      const rule = rules.find(r => r.id === ruleId);
       
       if (!rule) {
         throw new Error('Regra não encontrada');
       }
       
-      const recordClientId = rule['client_id'] || rule['ClientId'] || rule['ID do Cliente'] || rule['user_id'] || rule['UserId'] || rule['UserID'];
+      // CORREÇÃO: Usar os mesmos campos para verificação
+      const recordUserId = rule['userId'] || rule['user_id'] || rule['ID do Usuário'] || rule['UserId'];
+      const recordClientId = rule['client_id'] || rule['ClientId'];
       
-      if (recordClientId !== clientId) {
+      if (recordUserId !== userId && recordClientId !== clientId && recordUserId !== clientId) {
         throw new Error('Você não tem permissão para deletar esta regra');
       }
       

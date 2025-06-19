@@ -2,6 +2,7 @@
 import { nocodbService } from '@/services/nocodb';
 import { NotificationRule } from '../types';
 import { webhookService } from './webhookService';
+import { userContextService } from '@/services/userContextService';
 
 export const notificationSaveService = {
   saveNotification: async (
@@ -21,6 +22,11 @@ export const notificationSaveService = {
       throw new Error('Tipo de evento e função do usuário são obrigatórios');
     }
     
+    // Obter informações do usuário atual
+    const userId = userContextService.getUserId();
+    const clientId = userContextService.getClientId();
+    console.log('👤 SERVIÇO - Usuário atual:', { userId, clientId });
+    
     // CORREÇÃO: Obter webhook URL segmentado com valores validados
     const webhookUrl = webhookService.getWebhookUrl(
       rule.eventType,
@@ -35,10 +41,10 @@ export const notificationSaveService = {
       throw new Error('Não foi possível gerar a URL do webhook');
     }
     
-    // CORREÇÃO: Preparar dados garantindo mapeamento correto
+    // CORREÇÃO: Preparar dados garantindo campos consistentes de usuário
     const notificationData: any = {
       eventType: rule.eventType,
-      instance: rule.instanceId!, // IMPORTANTE: Converter instanceId para instance
+      instance: rule.instanceId!,
       userRole: rule.userRole,
       platform: rule.platform!,
       profileName: rule.profileName!,
@@ -46,6 +52,12 @@ export const notificationSaveService = {
       specificProductName: rule.specificProductName || '',
       messages: rule.messages,
       webhookUrl,
+      // IMPORTANTE: Garantir que os campos de usuário sejam salvos corretamente
+      userId: userId,
+      user_id: userId,
+      client_id: clientId,
+      ClientId: clientId,
+      'ID do Usuário': userId,
       timestamp: new Date().toISOString(),
     };
 
