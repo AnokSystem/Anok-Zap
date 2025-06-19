@@ -1,7 +1,7 @@
-
 import { BaseNocodbService } from '../baseService';
 import { NocodbConfig } from '../types';
 import { TableDiscoveryService } from './tableDiscoveryService';
+import { userContextService } from '@/services/userContextService';
 
 export class NotificationsDataService extends BaseNocodbService {
   private tableDiscovery: TableDiscoveryService;
@@ -10,16 +10,6 @@ export class NotificationsDataService extends BaseNocodbService {
   constructor(config: NocodbConfig) {
     super(config);
     this.tableDiscovery = new TableDiscoveryService(config);
-  }
-
-  private async getClientId(): Promise<string> {
-    const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    return user.ID || user.client_id || user.Email?.split('@')[0] || 'default';
-  }
-
-  private async getUserId(): Promise<string> {
-    const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    return user.ID || user.user_id || user.Email?.split('@')[0] || 'default';
   }
 
   private async getNotificationsTableId(baseId: string): Promise<string | null> {
@@ -55,8 +45,8 @@ export class NotificationsDataService extends BaseNocodbService {
 
   async getRecentNotifications(baseId: string, limit: number = 10): Promise<any[]> {
     try {
-      const clientId = await this.getClientId();
-      const userId = await this.getUserId();
+      const userId = userContextService.getUserId();
+      const clientId = userContextService.getClientId();
       const tableId = await this.getNotificationsTableId(baseId);
       
       if (!tableId) {
@@ -68,7 +58,7 @@ export class NotificationsDataService extends BaseNocodbService {
 
       const timestamp = Date.now();
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=${limit}&_t=${timestamp}`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=${limit * 3}&sort=-CreatedAt&_t=${timestamp}`,
         {
           headers: {
             ...this.headers,
@@ -85,22 +75,22 @@ export class NotificationsDataService extends BaseNocodbService {
         console.log(`📊 ${allNotifications.length} notificações encontradas na tabela mzup2t8ygoiy5ub`);
         console.log('📋 Primeiro registro para análise:', allNotifications[0]);
         
-        // Aplicar filtragem usando o campo "client_id" corretamente
+        // Aplicar filtragem usando o campo "Cliente ID" corretamente
         const userNotifications = allNotifications.filter(n => {
-          const recordClientId = n.client_id;
+          const recordClientId = n['Cliente ID'] || n.client_id;
           
           console.log('🔍 Analisando notificação:', {
-            recordId: n.id,
+            recordId: n.id || n.Id,
             recordClientId,
             currentUserId: userId,
             currentClientId: clientId
           });
           
-          // Verificar se a notificação pertence ao usuário atual usando o campo "client_id"
+          // Verificar se a notificação pertence ao usuário atual usando o campo "Cliente ID"
           const belongsToUser = recordClientId === userId || recordClientId === clientId;
           
           console.log('📋 Resultado da verificação:', {
-            recordId: n.id,
+            recordId: n.id || n.Id,
             belongsToUser,
             reason: belongsToUser ? 'INCLUÍDA' : 'EXCLUÍDA',
             matchedWith: recordClientId === userId ? 'userId' : recordClientId === clientId ? 'clientId' : 'nenhum'
@@ -110,7 +100,7 @@ export class NotificationsDataService extends BaseNocodbService {
         });
         
         console.log(`✅ ${userNotifications.length} notificações filtradas para usuário ${userId}/${clientId}`);
-        return userNotifications;
+        return userNotifications.slice(0, limit);
       } else {
         const errorText = await response.text();
         console.log(`❌ Erro na resposta (${response.status}):`, errorText);
@@ -124,8 +114,8 @@ export class NotificationsDataService extends BaseNocodbService {
 
   async getAllNotifications(baseId: string): Promise<any[]> {
     try {
-      const clientId = await this.getClientId();
-      const userId = await this.getUserId();
+      const userId = userContextService.getUserId();
+      const clientId = userContextService.getClientId();
       const tableId = await this.getNotificationsTableId(baseId);
       
       if (!tableId) {
@@ -137,7 +127,7 @@ export class NotificationsDataService extends BaseNocodbService {
       
       const timestamp = Date.now();
       const response = await fetch(
-        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=10000&_t=${timestamp}`,
+        `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=10000&sort=-CreatedAt&_t=${timestamp}`,
         {
           headers: {
             ...this.headers,
@@ -154,9 +144,9 @@ export class NotificationsDataService extends BaseNocodbService {
         console.log(`📊 ${allNotifications.length} notificações totais na tabela mzup2t8ygoiy5ub`);
         console.log('📋 Campos disponíveis:', Object.keys(allNotifications[0] || {}));
         
-        // Aplicar filtragem estrita usando apenas o campo "client_id"
+        // Aplicar filtragem usando apenas o campo "Cliente ID"
         const userNotifications = allNotifications.filter(n => {
-          const recordClientId = n.client_id;
+          const recordClientId = n['Cliente ID'] || n.client_id;
           const belongsToUser = recordClientId === userId || recordClientId === clientId;
           return belongsToUser;
         });
@@ -228,8 +218,8 @@ export class NotificationsDataService extends BaseNocodbService {
   async createSampleData(baseId: string): Promise<boolean> {
     try {
       const tableId = await this.getNotificationsTableId(baseId);
-      const clientId = await this.getClientId();
-      const userId = await this.getUserId();
+      const userId = userContextService.getUserId();
+      const clientId = userContextService.getClientId();
       
       if (!tableId) {
         console.error('❌ Tabela não disponível para criar dados de exemplo');
@@ -241,7 +231,7 @@ export class NotificationsDataService extends BaseNocodbService {
 
       const sampleData = [
         {
-          client_id: userId, // Usar o ID do usuário atual
+          'Cliente ID': userId, // Usar o ID do usuário atual
           platform: 'hotmart',
           event_type: 'purchase',
           transaction_id: `TXN_${Date.now()}_001`,
@@ -264,7 +254,7 @@ export class NotificationsDataService extends BaseNocodbService {
           updated_at: new Date().toISOString()
         },
         {
-          client_id: userId, // Usar o ID do usuário atual
+          'Cliente ID': userId, // Usar o ID do usuário atual
           platform: 'eduzz',
           event_type: 'subscription',
           transaction_id: `TXN_${Date.now()}_002`,
@@ -287,7 +277,7 @@ export class NotificationsDataService extends BaseNocodbService {
           updated_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
         },
         {
-          client_id: userId, // Usar o ID do usuário atual
+          'Cliente ID': userId, // Usar o ID do usuário atual
           platform: 'monetizze',
           event_type: 'purchase',
           transaction_id: `TXN_${Date.now()}_003`,

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Bell, RefreshCw, ExternalLink, Eye } from 'lucide-react';
-import { useAdvancedNotifications } from '../hooks/useAdvancedNotifications';
+import { useRecentNotifications } from '../hooks/useRecentNotifications';
 import { NotificationDetailsModal } from './RecentNotifications/NotificationDetailsModal';
 
 interface RecentNotificationsProps {
@@ -20,9 +20,9 @@ export const RecentNotifications = ({ showAll = false }: RecentNotificationsProp
     isLoading, 
     error, 
     refetch 
-  } = useAdvancedNotifications();
+  } = useRecentNotifications(showAll ? 50 : 10);
 
-  const displayNotifications = showAll ? notifications : notifications.slice(0, 10);
+  const displayNotifications = notifications;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {

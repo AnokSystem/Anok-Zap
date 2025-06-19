@@ -1,4 +1,3 @@
-
 import { BaseNocodbService } from '../baseService';
 import { NocodbConfig } from '../types';
 import { userContextService } from '@/services/userContextService';
@@ -171,37 +170,16 @@ export class ChartDataService extends BaseNocodbService {
         console.log('📝 GRÁFICO NOTIF - Primeiros 3 registros:', allNotifications.slice(0, 3));
       }
       
-      // CORREÇÃO: Filtro mais específico para encontrar notificações do usuário
+      // Filtrar usando a coluna "Cliente ID" específica
       const clientNotifications = allNotifications.filter(n => {
-        // Verificar diferentes campos que podem conter o ID do usuário
-        const recordClientId = n.client_id || n['client_id'] || n['Cliente ID'] || n.ClientId;
-        const recordUserId = n.user_id || n['user_id'] || n['ID do Usuário'] || n.UserId;
+        const recordClientId = n['Cliente ID'] || n.client_id;
         
-        // CORREÇÃO: Verificar se o campo ID do Usuário no JSON contém o userId
-        let jsonUserId = null;
-        try {
-          const jsonData = n['Dados Completos (JSON)'];
-          if (jsonData && typeof jsonData === 'string') {
-            const parsed = JSON.parse(jsonData);
-            jsonUserId = parsed.userId || parsed.user_id;
-          }
-        } catch (e) {
-          // JSON inválido, ignorar
-        }
-        
-        // Verificar se pertence ao usuário atual usando qualquer dos campos
-        const belongsToUser = recordClientId === userId || 
-                             recordClientId === clientId ||
-                             recordUserId === userId ||
-                             recordUserId === clientId ||
-                             jsonUserId === userId ||
-                             jsonUserId === clientId;
+        // Verificar se pertence ao usuário atual usando Cliente ID
+        const belongsToUser = recordClientId === userId || recordClientId === clientId;
         
         console.log('🔍 GRÁFICO NOTIF - Análise do registro:', { 
           recordId: n.Id || n.id,
           recordClientId, 
-          recordUserId,
-          jsonUserId,
           userId, 
           clientId, 
           belongsToUser

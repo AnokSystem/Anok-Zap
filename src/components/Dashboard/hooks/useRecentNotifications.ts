@@ -34,7 +34,7 @@ export const useRecentNotifications = (limit: number = 10) => {
       const clientId = userContextService.getClientId();
       console.log('🔔 Buscando notificações para usuário autenticado:', { userId, clientId });
       
-      // CORREÇÃO: Buscar dados diretamente da tabela mzup2t8ygoiy5ub
+      // Buscar dados diretamente da tabela mzup2t8ygoiy5ub
       const baseId = nocodbService.getTargetBaseId();
       if (!baseId) {
         throw new Error('Base ID não encontrado');
@@ -42,7 +42,7 @@ export const useRecentNotifications = (limit: number = 10) => {
 
       const timestamp = Date.now();
       const response = await fetch(
-        `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${baseId}/mzup2t8ygoiy5ub?limit=${limit}&sort=-CreatedAt&_t=${timestamp}`,
+        `${nocodbService.config.baseUrl}/api/v1/db/data/noco/${baseId}/mzup2t8ygoiy5ub?limit=${limit * 3}&sort=-CreatedAt&_t=${timestamp}`,
         {
           headers: {
             ...nocodbService.headers,
@@ -66,35 +66,16 @@ export const useRecentNotifications = (limit: number = 10) => {
         console.log('📝 Primeiros registros:', allNotifications.slice(0, 3));
       }
 
-      // CORREÇÃO: Filtrar por múltiplos campos de identificação do usuário
+      // Filtrar por Cliente ID - campo específico para identificar o usuário
       const userFilteredData = allNotifications.filter(item => {
-        const recordClientId = item.client_id || item['client_id'] || item['Cliente ID'] || item.ClientId;
-        const recordUserId = item.user_id || item['user_id'] || item['ID do Usuário'] || item.UserId;
+        const recordClientId = item['Cliente ID'] || item.client_id;
         
-        // Verificar também no JSON
-        let jsonUserId = null;
-        try {
-          const jsonData = item['Dados Completos (JSON)'];
-          if (jsonData && typeof jsonData === 'string') {
-            const parsed = JSON.parse(jsonData);
-            jsonUserId = parsed.userId || parsed.user_id;
-          }
-        } catch (e) {
-          // JSON inválido, ignorar
-        }
-        
-        const belongsToUser = recordClientId === userId || 
-                             recordClientId === clientId ||
-                             recordUserId === userId ||
-                             recordUserId === clientId ||
-                             jsonUserId === userId ||
-                             jsonUserId === clientId;
+        // Verificar se pertence ao usuário atual
+        const belongsToUser = recordClientId === userId || recordClientId === clientId;
         
         console.log('🔍 NOTIF RECENTES - Análise:', {
           recordId: item.Id || item.id,
           recordClientId,
-          recordUserId,
-          jsonUserId,
           userId,
           clientId,
           belongsToUser
@@ -104,16 +85,19 @@ export const useRecentNotifications = (limit: number = 10) => {
       });
 
       if (userFilteredData.length > 0) {
-        const transformedNotifications: Notification[] = userFilteredData.map((item: any) => ({
-          id: item.Id || item.id || String(Math.random()),
-          eventType: item.event_type || item['Tipo de Evento'] || 'unknown',
-          platform: item.platform || item.Platform || item.Plataforma || 'hotmart',
-          clientName: item.customer_name || item['Nome do Cliente'] || 'Cliente não identificado',
-          clientEmail: item.customer_email || item['Email do Cliente'] || 'email@naoidentificado.com',
-          value: parseFloat(item.value || item.Valor || '0'),
-          createdAt: item.event_date || item.CreatedAt || item.created_at || new Date().toISOString(),
-          productName: item.product_name || item['Nome do Produto'] || 'Produto não identificado'
-        }));
+        // Transformar os dados para o formato esperado pelo componente
+        const transformedNotifications: Notification[] = userFilteredData
+          .slice(0, limit) // Aplicar limite após filtrar
+          .map((item: any) => ({
+            id: item.Id || item.id || String(Math.random()),
+            eventType: item.event_type || item['Tipo de Evento'] || 'purchase',
+            platform: item.platform || item.Platform || item.Plataforma || 'hotmart',
+            clientName: item.customer_name || item['Nome do Cliente'] || 'Cliente não identificado',
+            clientEmail: item.customer_email || item['Email do Cliente'] || 'email@naoidentificado.com',
+            value: parseFloat(item.value || item.Valor || '0'),
+            createdAt: item.event_date || item.CreatedAt || item.created_at || new Date().toISOString(),
+            productName: item.product_name || item['Nome do Produto'] || 'Produto não identificado'
+          }));
         
         console.log(`✅ ${transformedNotifications.length} notificações filtradas para usuário ${userId}/${clientId}`);
         setNotifications(transformedNotifications);
@@ -135,8 +119,10 @@ export const useRecentNotifications = (limit: number = 10) => {
   useEffect(() => {
     fetchNotifications();
     
+    // Atualizar a cada 30 segundos
     const interval = setInterval(fetchNotifications, 30000);
     
+    // Escutar eventos de refresh do dashboard
     const handleDashboardRefresh = () => {
       console.log('🔄 Evento de refresh recebido, atualizando notificações...');
       fetchNotifications();
