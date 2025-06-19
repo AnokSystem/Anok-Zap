@@ -19,12 +19,7 @@ export const useInstances = () => {
       console.log('Instâncias carregadas:', instancesData);
       setInstances(instancesData);
       
-      if (instancesData.length > 0) {
-        toast({
-          title: "Sucesso",
-          description: `${instancesData.length} instâncias encontradas`,
-        });
-      }
+      // Notificação de instâncias carregadas removida
     } catch (error) {
       console.error('Erro ao carregar instâncias:', error);
       toast({

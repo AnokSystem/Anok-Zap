@@ -54,10 +54,7 @@ export const useGroups = ({ selectedInstance, contactType }: UseGroupsProps) => 
           variant: "destructive",
         });
       } else {
-        toast({
-          title: "Grupos carregados",
-          description: `${formattedGroups.length} grupos encontrados`,
-        });
+        // Notificação de grupos carregados removida
       }
     } catch (error) {
       console.error('❌ Erro ao carregar grupos:', error);
