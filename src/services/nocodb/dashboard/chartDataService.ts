@@ -1,4 +1,3 @@
-
 import { BaseNocodbService } from '../baseService';
 import { NocodbConfig } from '../types';
 import { userContextService } from '@/services/userContextService';
@@ -10,6 +9,7 @@ export class ChartDataService extends BaseNocodbService {
 
   // ID fixo da tabela de disparos em massa
   private MASS_MESSAGING_TABLE_ID = 'myx4lsmm5i02xcd';
+  // CORREÇÃO: Usar o mesmo ID da tabela de notificações que está funcionando em outros serviços
   private NOTIFICACOES_PLATAFORMAS_TABLE_ID = 'mzup2t8ygoiy5ub';
 
   private async getClientId(): Promise<string> {
@@ -162,6 +162,7 @@ export class ChartDataService extends BaseNocodbService {
       const userClientId = userContextService.getClientId();
       
       console.log('🔍 GRÁFICO NOTIF - Dados do usuário:', { userId, userClientId, clientId });
+      console.log('🎯 GRÁFICO NOTIF - Usando tabela ID:', this.NOTIFICACOES_PLATAFORMAS_TABLE_ID);
       
       // Adicionar timestamp para evitar cache
       const timestamp = Date.now();
@@ -176,37 +177,34 @@ export class ChartDataService extends BaseNocodbService {
         }
       );
 
+      console.log('📡 GRÁFICO NOTIF - Status da resposta:', response.status);
+
       if (response.ok) {
         const data = await response.json();
         const allNotifications = data.list || [];
         
         console.log(`📊 ${allNotifications.length} notificações totais encontradas`);
         
-        // CORREÇÃO: Filtro mais robusto usando a mesma lógica das outras partes
+        if (allNotifications.length > 0) {
+          console.log('📋 GRÁFICO NOTIF - Campos disponíveis:', Object.keys(allNotifications[0]));
+          console.log('📝 GRÁFICO NOTIF - Primeiro registro:', allNotifications[0]);
+        }
+        
+        // CORREÇÃO: Filtro mais robusto usando client_id
         const clientNotifications = allNotifications.filter(n => {
-          // Extrair userId da mesma forma que outras partes do sistema
-          const recordUserId = n.userId || n.user_id || n['ID do Usuário'] || 
-                              n.client_id || n.Client_id || n.clientId;
-          
-          // Tentar extrair do JSON se não encontrou nos campos diretos
-          if (!recordUserId && n['Dados Completos (JSON)']) {
-            try {
-              const jsonData = JSON.parse(n['Dados Completos (JSON)']);
-              const jsonUserId = jsonData.userId || jsonData.user_id;
-              if (jsonUserId) {
-                const belongsToUser = jsonUserId === userId || jsonUserId === userClientId;
-                console.log('🔍 GRÁFICO NOTIF - Filtro JSON:', { jsonUserId, userId, userClientId, belongsToUser });
-                return belongsToUser;
-              }
-            } catch (e) {
-              console.error('❌ Erro ao extrair JSON:', e);
-            }
-          }
+          // Usar o campo client_id diretamente
+          const recordClientId = n.client_id;
           
           // Verificar se pertence ao usuário atual
-          const belongsToUser = recordUserId === userId || recordUserId === userClientId;
+          const belongsToUser = recordClientId === userId || recordClientId === userClientId;
           
-          console.log('🔍 GRÁFICO NOTIF - Filtro direto:', { recordUserId, userId, userClientId, belongsToUser });
+          console.log('🔍 GRÁFICO NOTIF - Filtro:', { 
+            recordId: n.Id || n.id,
+            recordClientId, 
+            userId, 
+            userClientId, 
+            belongsToUser 
+          });
           
           return belongsToUser;
         });
@@ -226,18 +224,15 @@ export class ChartDataService extends BaseNocodbService {
           
           // Contar notificações por plataforma
           const hotmart = dayNotifications.filter(n => 
-            (n.platform || '').toLowerCase().includes('hotmart') ||
-            (n.source || '').toLowerCase().includes('hotmart')
+            (n.platform || '').toLowerCase().includes('hotmart')
           ).length;
           
           const eduzz = dayNotifications.filter(n => 
-            (n.platform || '').toLowerCase().includes('eduzz') ||
-            (n.source || '').toLowerCase().includes('eduzz')
+            (n.platform || '').toLowerCase().includes('eduzz')
           ).length;
           
           const monetizze = dayNotifications.filter(n => 
-            (n.platform || '').toLowerCase().includes('monetizze') ||
-            (n.source || '').toLowerCase().includes('monetizze')
+            (n.platform || '').toLowerCase().includes('monetizze')
           ).length;
           
           const outras = dayNotifications.length - (hotmart + eduzz + monetizze);
@@ -252,9 +247,11 @@ export class ChartDataService extends BaseNocodbService {
 
         console.log('📊 Dados do gráfico de notificações calculados:', chartData);
         return chartData;
+      } else {
+        const errorText = await response.text();
+        console.error('❌ GRÁFICO NOTIF - Erro na resposta:', response.status, errorText);
+        return [];
       }
-
-      return [];
     } catch (error) {
       console.error('❌ Erro ao buscar dados do gráfico de notificações:', error);
       return [];
