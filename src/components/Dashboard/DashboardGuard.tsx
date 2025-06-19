@@ -2,7 +2,7 @@
 import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent } from "@/components/ui/card";
-import { Shield, User } from 'lucide-react';
+import { Shield, User, Lock } from 'lucide-react';
 
 interface DashboardGuardProps {
   children: React.ReactNode;
@@ -48,18 +48,26 @@ export const DashboardGuard: React.FC<DashboardGuardProps> = ({ children }) => {
     );
   }
 
+  const userDisplayId = user.id || user.ID || user.user_id || user.Email?.split('@')[0] || 'N/A';
+
   return (
     <div className="dashboard-container">
-      {/* User Context Indicator */}
+      {/* Enhanced User Context Indicator with Security Info */}
       <div className="mb-4 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
         <div className="flex items-center gap-2 text-blue-400">
           <User className="w-4 h-4" />
           <span className="text-sm">
             Dashboard de <strong>{user.Nome || user.Email}</strong>
           </span>
-          <span className="text-xs text-gray-400 ml-auto">
-            ID: {user.ID || user.Email?.split('@')[0]}
-          </span>
+          <div className="flex items-center gap-2 ml-auto">
+            <Lock className="w-3 h-3 text-green-400" />
+            <span className="text-xs text-gray-400">
+              ID: {userDisplayId}
+            </span>
+            <span className="text-xs text-green-400">
+              Dados Privados
+            </span>
+          </div>
         </div>
       </div>
       

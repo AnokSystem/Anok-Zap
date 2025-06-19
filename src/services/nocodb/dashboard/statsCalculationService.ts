@@ -15,10 +15,15 @@ export class StatsCalculationService extends BaseNocodbService {
     return userContextService.getClientId();
   }
 
+  private getUserId(): string {
+    return userContextService.getUserId();
+  }
+
   async getCalculatedStats(baseId: string): Promise<any> {
     try {
+      const userId = this.getUserId();
       const clientId = this.getClientId();
-      console.log('🔄 Calculando estatísticas para cliente:', clientId);
+      console.log('🔄 Calculando estatísticas para usuário:', { userId, clientId });
       
       const [disparosStats, notificationsStats] = await Promise.all([
         this.getDisparosStats(baseId),
@@ -33,10 +38,11 @@ export class StatsCalculationService extends BaseNocodbService {
         disparos_today: disparosStats.today,
         notifications_today: notificationsStats.today,
         date: new Date().toISOString().split('T')[0],
-        client_id: clientId // Include client ID for debugging
+        user_id: userId,
+        client_id: clientId
       };
 
-      console.log('✅ Estatísticas calculadas para cliente', clientId, ':', stats);
+      console.log('✅ Estatísticas calculadas para usuário', userId, ':', stats);
       return stats;
     } catch (error) {
       console.error('❌ Erro ao calcular estatísticas:', error);
@@ -47,6 +53,7 @@ export class StatsCalculationService extends BaseNocodbService {
         unique_contacts: 0,
         disparos_today: 0,
         notifications_today: 0,
+        user_id: this.getUserId(),
         client_id: this.getClientId()
       };
     }
@@ -54,9 +61,10 @@ export class StatsCalculationService extends BaseNocodbService {
 
   async getDisparosStats(baseId: string): Promise<any> {
     try {
+      const userId = this.getUserId();
       const clientId = this.getClientId();
       
-      console.log('📡 Buscando estatísticas de disparos para cliente:', clientId);
+      console.log('📡 Buscando estatísticas de disparos para usuário:', { userId, clientId });
       
       const timestamp = Date.now();
       const response = await fetch(
@@ -76,36 +84,39 @@ export class StatsCalculationService extends BaseNocodbService {
         
         console.log(`📊 ${allDisparos.length} disparos totais encontrados`);
         
-        // Filtrar rigorosamente por cliente
-        const clientDisparos = allDisparos.filter(d => {
+        // Enhanced filtering with multiple user identification fields
+        const userDisparos = allDisparos.filter(d => {
+          const recordUserId = d.user_id || d.User_id || d.userId;
           const recordClientId = d['Cliente ID'] || d.client_id || d.Client_id || d.clientId;
-          return recordClientId === clientId;
+          
+          // Match against both user_id and client_id for maximum compatibility
+          return recordUserId === userId || recordClientId === clientId || recordClientId === userId;
         });
 
-        console.log(`📊 ${clientDisparos.length} disparos filtrados para cliente ${clientId}`);
+        console.log(`📊 ${userDisparos.length} disparos filtrados para usuário ${userId}`);
         
-        if (clientDisparos.length === 0) {
-          console.log('⚠️ Nenhum disparo encontrado para este cliente');
+        if (userDisparos.length === 0) {
+          console.log('⚠️ Nenhum disparo encontrado para este usuário');
           return { total: 0, today: 0, successRate: 0, uniqueContacts: 0, totalSent: 0, totalRecipients: 0 };
         }
         
         const today = new Date().toISOString().split('T')[0];
-        const disparosToday = clientDisparos.filter(d => {
+        const disparosToday = userDisparos.filter(d => {
           const createdAt = d.CreatedAt || d['Criado em'] || d.created_at;
           return createdAt && createdAt.startsWith(today);
         });
 
         // Calcular estatísticas usando os campos corretos da tabela
-        const totalCampaigns = clientDisparos.length;
+        const totalCampaigns = userDisparos.length;
         
         // Somar total de destinatários de todas as campanhas
-        const totalRecipients = clientDisparos.reduce((acc, d) => {
+        const totalRecipients = userDisparos.reduce((acc, d) => {
           const count = parseInt(d['Total de Destinatários'] || d.recipient_count || '0');
           return acc + count;
         }, 0);
 
         // Somar mensagens enviadas com sucesso
-        const totalSent = clientDisparos.reduce((acc, d) => {
+        const totalSent = userDisparos.reduce((acc, d) => {
           const sent = parseInt(d['Mensagens Enviadas'] || d.sent_count || '0');
           return acc + sent;
         }, 0);
@@ -125,7 +136,7 @@ export class StatsCalculationService extends BaseNocodbService {
           totalRecipients: totalRecipients // Total de destinatários
         };
 
-        console.log('📈 Estatísticas de disparos para cliente', clientId, ':', stats);
+        console.log('📈 Estatísticas de disparos para usuário', userId, ':', stats);
         return stats;
       }
 
@@ -139,9 +150,10 @@ export class StatsCalculationService extends BaseNocodbService {
 
   async getNotificationsStats(baseId: string): Promise<any> {
     try {
+      const userId = this.getUserId();
       const clientId = this.getClientId();
       
-      console.log('📡 Buscando estatísticas de notificações para cliente:', clientId);
+      console.log('📡 Buscando estatísticas de notificações para usuário:', { userId, clientId });
       
       const timestamp = Date.now();
       const response = await fetch(
@@ -161,26 +173,29 @@ export class StatsCalculationService extends BaseNocodbService {
         
         console.log(`📊 ${allNotifications.length} notificações totais encontradas`);
         
-        // Filtrar rigorosamente por cliente
-        const clientNotifications = allNotifications.filter(n => {
+        // Enhanced filtering with multiple user identification fields
+        const userNotifications = allNotifications.filter(n => {
+          const recordUserId = n.user_id || n.User_id || n.userId;
           const recordClientId = n.client_id || n.Client_id || n.clientId;
-          return recordClientId === clientId;
+          
+          // Match against both user_id and client_id for maximum compatibility
+          return recordUserId === userId || recordClientId === clientId || recordClientId === userId;
         });
         
-        console.log(`📊 ${clientNotifications.length} notificações filtradas para cliente ${clientId}`);
+        console.log(`📊 ${userNotifications.length} notificações filtradas para usuário ${userId}`);
         
         const today = new Date().toISOString().split('T')[0];
-        const notificationsToday = clientNotifications.filter(n => {
+        const notificationsToday = userNotifications.filter(n => {
           const eventDate = n.event_date || n.CreatedAt || n.created_at || n.createdAt;
           return eventDate && eventDate.startsWith(today);
         });
 
         const stats = {
-          total: clientNotifications.length,
+          total: userNotifications.length,
           today: notificationsToday.length
         };
 
-        console.log('📈 Estatísticas de notificações para cliente', clientId, ':', stats);
+        console.log('📈 Estatísticas de notificações para usuário', userId, ':', stats);
         return stats;
       }
 
