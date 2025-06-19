@@ -13,7 +13,7 @@ export const useTutorialUpdate = (
   const updateTutorial = useCallback(async (tutorialId: string, data: CreateTutorialData): Promise<boolean> => {
     try {
       setUploading(true);
-      console.log('🔄 Iniciando atualização de tutorial:', tutorialId, data.title);
+      console.log('🔄 useTutorialUpdate - INICIANDO atualização de tutorial:', tutorialId, data.title);
       
       const validation = validateTutorialData(data);
       if (!validation.isValid) {
@@ -25,7 +25,7 @@ export const useTutorialUpdate = (
         return false;
       }
 
-      // Get existing tutorial data first
+      // Buscar tutorial existente
       const tutorials = await tutorialService.getTutorials();
       const existingTutorial = tutorials.find(t => t.id === tutorialId);
       
@@ -33,19 +33,30 @@ export const useTutorialUpdate = (
         throw new Error('Tutorial não encontrado');
       }
 
-      // Create updated tutorial data
+      console.log('📋 useTutorialUpdate - Tutorial existente encontrado:', existingTutorial.title);
+
+      // Criar dados do tutorial atualizado mantendo dados existentes
       const updatedTutorial: TutorialData = {
-        ...existingTutorial,
+        ...existingTutorial, // Manter todos os dados existentes
         title: data.title,
         description: data.description,
         category: data.category,
         updatedAt: new Date().toISOString()
+        // Manter videoUrl, documentUrls, coverImageUrl do tutorial existente
+        // pois o modal de edição atual não permite alterar arquivos
       };
 
-      // Update tutorial
+      console.log('💾 useTutorialUpdate - Dados para atualização:', {
+        id: updatedTutorial.id,
+        title: updatedTutorial.title,
+        description: updatedTutorial.description,
+        category: updatedTutorial.category
+      });
+
+      // Atualizar tutorial
       await tutorialService.updateTutorial(updatedTutorial);
       
-      console.log('✅ Tutorial atualizado, atualizando lista...');
+      console.log('✅ useTutorialUpdate - Tutorial atualizado, atualizando interface...');
       
       replaceTutorial(tutorialId, updatedTutorial);
       
@@ -57,7 +68,7 @@ export const useTutorialUpdate = (
       
       return true;
     } catch (error) {
-      console.error('❌ Erro ao atualizar tutorial:', error);
+      console.error('❌ useTutorialUpdate - Erro ao atualizar tutorial:', error);
       
       const errorMessage = getErrorMessage(error);
       

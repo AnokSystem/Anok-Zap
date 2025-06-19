@@ -8,13 +8,13 @@ class TutorialDeleteService {
 
   async deleteTutorial(tutorialId: string): Promise<void> {
     try {
-      console.log('🗑️ DeleteService.deleteTutorial - INICIANDO exclusão:', tutorialId);
+      console.log('🗑️ DeleteService - INICIANDO exclusão do tutorial:', tutorialId);
       
       // Sempre remove do localStorage primeiro
       tutorialLocalStorageService.deleteTutorial(tutorialId);
       console.log('✅ DeleteService - Tutorial removido do localStorage');
       
-      // Testar conexão e obter Base ID
+      // Testar conexão
       if (!(await tutorialConnectionService.testConnection())) {
         console.warn('❌ DeleteService - Sem conexão com NocoDB, mas localStorage já foi atualizado');
         return;
@@ -31,7 +31,7 @@ class TutorialDeleteService {
       const tableId = await nocodbService.getTableId(targetBaseId, this.TUTORIALS_TABLE);
       
       if (!tableId) {
-        console.error('❌ DeleteService - Tabela não encontrada, mas localStorage já foi atualizado');
+        console.error('❌ DeleteService - Tabela não encontrada');
         return;
       }
 
@@ -50,8 +50,6 @@ class TutorialDeleteService {
 
       if (!searchResponse.ok) {
         console.error('❌ DeleteService - Erro ao buscar tutorial:', searchResponse.status);
-        const errorText = await searchResponse.text();
-        console.error('❌ DeleteService - Detalhes:', errorText);
         return; // localStorage já foi atualizado
       }
 
@@ -59,20 +57,18 @@ class TutorialDeleteService {
       const records = searchData.list || [];
       
       console.log('📊 DeleteService - Registros encontrados:', records.length);
-      console.log('📋 DeleteService - Dados dos registros:', records);
       
       if (records.length === 0) {
         console.warn('⚠️ DeleteService - Tutorial não encontrado no NocoDB');
         return; // localStorage já foi atualizado
       }
 
-      // Pegar o ID interno do NocoDB do primeiro registro encontrado
+      // Pegar o ID interno do NocoDB
       const record = records[0];
       const nocodbRecordId = record.Id || record.id;
       
       if (!nocodbRecordId) {
         console.error('❌ DeleteService - ID interno do NocoDB não encontrado');
-        console.error('❌ DeleteService - Estrutura do registro:', record);
         return; // localStorage já foi atualizado
       }
       
@@ -94,8 +90,6 @@ class TutorialDeleteService {
         return; // localStorage já foi atualizado
       }
 
-      const deleteResult = await deleteResponse.json();
-      console.log('✅ DeleteService - Resposta do delete:', deleteResult);
       console.log('✅ DeleteService - Tutorial deletado do NocoDB com sucesso');
       
     } catch (error) {
