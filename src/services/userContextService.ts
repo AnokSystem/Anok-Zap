@@ -11,9 +11,7 @@ class UserContextService {
     }
 
     // Use the user's actual ID first, then fall back to email-based ID
-    let clientId = currentUser.id || 
-                   currentUser.ID || 
-                   currentUser.user_id ||
+    let clientId = currentUser.ID || 
                    currentUser.Email?.split('@')[0] || 
                    'default';
 
@@ -30,9 +28,7 @@ class UserContextService {
     }
 
     // Primary user ID for database filtering
-    const userId = currentUser.id || 
-                   currentUser.ID || 
-                   currentUser.user_id ||
+    const userId = currentUser.ID || 
                    currentUser.Email?.split('@')[0] || 
                    'default';
 

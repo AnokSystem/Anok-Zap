@@ -48,7 +48,7 @@ export const DashboardGuard: React.FC<DashboardGuardProps> = ({ children }) => {
     );
   }
 
-  const userDisplayId = user.id || user.ID || user.user_id || user.Email?.split('@')[0] || 'N/A';
+  const userDisplayId = user.ID || user.Email?.split('@')[0] || 'N/A';
 
   return (
     <div className="dashboard-container">
