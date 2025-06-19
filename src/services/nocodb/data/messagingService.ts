@@ -11,13 +11,12 @@ export class MessagingService extends ClientService {
   async saveMassMessagingLog(baseId: string, campaignData: any): Promise<boolean> {
     try {
       console.log('💾 Salvando log de disparo em massa no NocoDB...');
-      console.log('📋 Dados recebidos:', campaignData);
       
       const clientId = this.getClientId();
       console.log('🏢 Client ID identificado:', clientId);
       
       const data = {
-        client_id: clientId,
+        client_id: clientId, // Always ensure client_id is set
         campaign_id: campaignData.campaign_id || `campanha_${Date.now()}`,
         campaign_name: campaignData.campaign_name || `Campanha ${new Date().toLocaleString('pt-BR')}`,
         instance_id: campaignData.instance_id || campaignData.instance,
@@ -36,22 +35,20 @@ export class MessagingService extends ClientService {
         updated_at: new Date().toISOString()
       };
       
-      console.log('📝 Dados formatados para salvar:', data);
-      console.log('🎯 Usando tabela específica ID:', this.DISPARO_EM_MASSA_TABLE_ID);
+      console.log('📝 Dados formatados para cliente', clientId, ':', data);
       
       const success = await this.saveToTable(baseId, this.DISPARO_EM_MASSA_TABLE_ID, data);
       if (success) {
-        console.log('✅ Log de disparo em massa salvo com sucesso na tabela específica');
+        console.log('✅ Log de disparo salvo com sucesso para cliente:', clientId);
         
-        // Forçar atualização do cache/dados no dashboard
+        // Trigger dashboard refresh
         setTimeout(() => {
-          console.log('🔄 Disparando evento de atualização do dashboard...');
           window.dispatchEvent(new CustomEvent('dashboardRefresh'));
         }, 1000);
         
         return true;
       } else {
-        console.log('❌ Falha ao salvar na tabela específica');
+        console.log('❌ Falha ao salvar no NocoDB');
         return false;
       }
     } catch (error) {
@@ -121,55 +118,6 @@ export class MessagingService extends ClientService {
   }
 
   async getRecentDisparos(baseId: string, limit: number = 10): Promise<any[]> {
-    try {
-      const clientId = this.getClientId();
-      
-      console.log('📨 Buscando TODOS os disparos recentes para cliente:', clientId);
-      console.log('🎯 Usando tabela específica ID:', this.DISPARO_EM_MASSA_TABLE_ID);
-
-      // Buscar TODOS os disparos com cache-busting e ordenação
-      const timestamp = Date.now();
-      const url = `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${this.DISPARO_EM_MASSA_TABLE_ID}?limit=${limit}&sort=-Id&_t=${timestamp}`;
-      console.log('📡 URL de busca:', url);
-      
-      const response = await fetch(url, {
-        headers: {
-          ...this.headers,
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const allDisparos = data.list || [];
-        
-        console.log(`📊 ${allDisparos.length} disparos totais encontrados na tabela`);
-        console.log('📋 Campos disponíveis no primeiro registro:', Object.keys(allDisparos[0] || {}));
-        console.log('📝 Primeiros 2 registros para debug:', allDisparos.slice(0, 2));
-        
-        // Filtro mais flexível para client_id
-        const clientDisparos = allDisparos.filter(d => {
-          if (!d.client_id && !d.Client_id && !d.clientId) {
-            return true; // Incluir disparos sem client_id
-          }
-          const hasClientId = d.client_id === clientId || 
-                             d.Client_id === clientId || 
-                             d.clientId === clientId;
-          return hasClientId;
-        });
-        
-        console.log(`✅ ${clientDisparos.length} disparos encontrados para cliente ${clientId}`);
-        return clientDisparos;
-      } else {
-        const errorText = await response.text();
-        console.log(`❌ Erro ao buscar disparos (${response.status}):`, errorText);
-        return [];
-      }
-    } catch (error) {
-      console.error('❌ Erro ao buscar disparos recentes:', error);
-      return [];
-    }
+    return await this.getClientFilteredData(baseId, this.DISPARO_EM_MASSA_TABLE_ID, limit);
   }
 }
