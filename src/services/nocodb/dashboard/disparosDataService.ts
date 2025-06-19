@@ -1,4 +1,3 @@
-
 import { BaseNocodbService } from '../baseService';
 import { NocodbConfig } from '../types';
 import { TableDiscoveryService } from './tableDiscoveryService';
@@ -20,7 +19,12 @@ export class DisparosDataService extends BaseNocodbService {
 
   private async getClientId(): Promise<string> {
     const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    return user.client_id || user.Email?.split('@')[0] || 'default';
+    return user.ID || user.client_id || user.Email?.split('@')[0] || 'default';
+  }
+
+  private async getUserId(): Promise<string> {
+    const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    return user.ID || user.user_id || user.Email?.split('@')[0] || 'default';
   }
 
   private async getDisparosTableId(baseId: string): Promise<string | null> {
@@ -57,6 +61,7 @@ export class DisparosDataService extends BaseNocodbService {
   async getRecentDisparos(baseId: string, limit: number = 10): Promise<any[]> {
     try {
       const clientId = await this.getClientId();
+      const userId = await this.getUserId();
       const tableId = await this.getDisparosTableId(baseId);
       
       if (!tableId) {
@@ -64,9 +69,9 @@ export class DisparosDataService extends BaseNocodbService {
         return [];
       }
 
-      console.log('📨 Buscando disparos recentes da tabela myx4lsmm5i02xcd para cliente:', clientId);
+      console.log('📨 Buscando disparos recentes da tabela myx4lsmm5i02xcd para usuário:', { userId, clientId });
 
-      // Adicionar timestamp para evitar cache e garantir dados atualizados
+      // Add timestamp to prevent caching and ensure fresh data
       const timestamp = Date.now();
       const response = await fetch(
         `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=${limit}&_t=${timestamp}`,
@@ -86,16 +91,36 @@ export class DisparosDataService extends BaseNocodbService {
         console.log(`📊 ${allDisparos.length} disparos encontrados na tabela myx4lsmm5i02xcd`);
         console.log('📋 Dados brutos da tabela:', allDisparos.slice(0, 2));
         
-        // Filtrar por cliente se necessário
-        const clientDisparos = allDisparos.filter(d => {
-          if (!d.client_id && !d.Client_id && !d.clientId) {
-            return true;
+        // Apply strict server-side filtering - only return records belonging to current user
+        const userDisparos = allDisparos.filter(d => {
+          // Check multiple possible user identification fields
+          const recordUserId = d.user_id || d.User_id || d.userId;
+          const recordClientId = d.client_id || d.Client_id || d.clientId;
+          const recordAccountId = d.account_id || d.Account_id || d.accountId;
+          const recordOwnerId = d.owner_id || d.Owner_id || d.ownerId;
+          
+          // Only include records that explicitly belong to the current user
+          const belongsToUser = 
+            recordUserId === userId || 
+            recordUserId === clientId ||
+            recordClientId === userId || 
+            recordClientId === clientId ||
+            recordAccountId === userId ||
+            recordAccountId === clientId ||
+            recordOwnerId === userId ||
+            recordOwnerId === clientId;
+          
+          // If no user identification field is present, exclude the record for security
+          if (!recordUserId && !recordClientId && !recordAccountId && !recordOwnerId) {
+            console.log('🚫 Registro rejeitado - sem identificação de usuário:', d.ID || d.id);
+            return false;
           }
-          return d.client_id === clientId || d.Client_id === clientId || d.clientId === clientId;
+          
+          return belongsToUser;
         });
         
-        console.log(`✅ ${clientDisparos.length} disparos para cliente ${clientId}`);
-        return clientDisparos;
+        console.log(`✅ ${userDisparos.length} disparos filtrados para usuário ${userId}/${clientId}`);
+        return userDisparos;
       } else {
         const errorText = await response.text();
         console.log(`❌ Erro ao buscar disparos (${response.status}):`, errorText);
@@ -110,6 +135,7 @@ export class DisparosDataService extends BaseNocodbService {
   async getAllDisparos(baseId: string): Promise<any[]> {
     try {
       const clientId = await this.getClientId();
+      const userId = await this.getUserId();
       const tableId = await this.getDisparosTableId(baseId);
       
       if (!tableId) {
@@ -117,9 +143,8 @@ export class DisparosDataService extends BaseNocodbService {
         return [];
       }
 
-      console.log('📋 Buscando TODOS os disparos da tabela myx4lsmm5i02xcd para cliente:', clientId);
+      console.log('📋 Buscando TODOS os disparos da tabela myx4lsmm5i02xcd para usuário:', { userId, clientId });
       
-      // Adicionar timestamp para evitar cache e garantir dados atualizados
       const timestamp = Date.now();
       const response = await fetch(
         `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=10000&_t=${timestamp}`,
@@ -139,16 +164,33 @@ export class DisparosDataService extends BaseNocodbService {
         console.log(`📊 ${allDisparos.length} disparos totais na tabela myx4lsmm5i02xcd`);
         console.log('📋 Campos disponíveis:', Object.keys(allDisparos[0] || {}));
         
-        // Filtrar por cliente se necessário
-        const filteredDisparos = allDisparos.filter(d => {
-          if (!d.client_id && !d.Client_id && !d.clientId) {
-            return true;
+        // Apply strict filtering - only return records belonging to current user
+        const userDisparos = allDisparos.filter(d => {
+          const recordUserId = d.user_id || d.User_id || d.userId;
+          const recordClientId = d.client_id || d.Client_id || d.clientId;
+          const recordAccountId = d.account_id || d.Account_id || d.accountId;
+          const recordOwnerId = d.owner_id || d.Owner_id || d.ownerId;
+          
+          const belongsToUser = 
+            recordUserId === userId || 
+            recordUserId === clientId ||
+            recordClientId === userId || 
+            recordClientId === clientId ||
+            recordAccountId === userId ||
+            recordAccountId === clientId ||
+            recordOwnerId === userId ||
+            recordOwnerId === clientId;
+          
+          // Exclude records without user identification for security
+          if (!recordUserId && !recordClientId && !recordAccountId && !recordOwnerId) {
+            return false;
           }
-          return d.client_id === clientId || d.Client_id === clientId || d.clientId === clientId;
+          
+          return belongsToUser;
         });
         
-        console.log(`✅ ${filteredDisparos.length} disparos para o cliente ${clientId}`);
-        return filteredDisparos;
+        console.log(`✅ ${userDisparos.length} disparos para o usuário ${userId}/${clientId}`);
+        return userDisparos;
       }
 
       return [];

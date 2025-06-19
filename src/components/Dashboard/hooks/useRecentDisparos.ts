@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { nocodbService } from '@/services/nocodb';
 import { userContextService } from '@/services/userContextService';
@@ -31,26 +32,42 @@ export const useRecentDisparos = (limit: number = 10) => {
       }
 
       const userId = userContextService.getUserId();
-      console.log('📨 Buscando disparos para usuário autenticado:', userId);
+      const clientId = userContextService.getClientId();
+      console.log('📨 Buscando disparos para usuário autenticado:', { userId, clientId });
       
       const data = await nocodbService.getRecentDisparos(limit);
       
       if (data && data.length > 0) {
         console.log('📋 Dados brutos recebidos do NocoDB:', data);
         
-        // Apply additional client-side filtering for security
+        // Apply strict client-side filtering for security - only show records belonging to current user
         const userFilteredData = data.filter(item => {
+          // Check multiple possible user identification fields
           const recordUserId = item.user_id || item.User_id || item.userId;
           const recordClientId = item['Cliente ID'] || item.client_id || item.Client_id || item.clientId;
+          const recordAccountId = item.account_id || item.Account_id || item.accountId;
+          const recordOwnerId = item.owner_id || item.Owner_id || item.ownerId;
           
-          // Only show records that belong to the current user
-          const belongsToUser = recordUserId === userId || recordClientId === userId;
+          // Only show records that explicitly belong to the current user
+          const belongsToUser = 
+            recordUserId === userId || 
+            recordUserId === clientId ||
+            recordClientId === userId || 
+            recordClientId === clientId ||
+            recordAccountId === userId ||
+            recordAccountId === clientId ||
+            recordOwnerId === userId ||
+            recordOwnerId === clientId;
           
-          if (!belongsToUser && (recordUserId || recordClientId)) {
+          // Log filtered records for debugging
+          if (!belongsToUser && (recordUserId || recordClientId || recordAccountId || recordOwnerId)) {
             console.log('🚫 Registro filtrado - não pertence ao usuário:', {
               recordUserId,
               recordClientId,
-              currentUserId: userId
+              recordAccountId,
+              recordOwnerId,
+              currentUserId: userId,
+              currentClientId: clientId
             });
           }
           
@@ -95,10 +112,8 @@ export const useRecentDisparos = (limit: number = 10) => {
                                   item.enviados ||
                                   0);
           
-          // Mapear status usando o campo correto
           const status = mapStatus(item.Status || item.status || 'pendente');
           
-          // Mapear data de criação
           const createdAt = item['Hora de Início'] ||
                            item['Criado em'] ||
                            item.start_time || 
