@@ -23,7 +23,7 @@ export const useRecentNotifications = (limit: number = 10) => {
     try {
       setIsLoading(true);
       
-      // Ensure user is authenticated before fetching data
+      // Garantir que o usuário está autenticado antes de buscar dados
       if (!userContextService.isAuthenticated()) {
         console.log('❌ Usuário não autenticado - negando acesso às notificações');
         setNotifications([]);
@@ -32,24 +32,24 @@ export const useRecentNotifications = (limit: number = 10) => {
       }
 
       const userId = userContextService.getUserId();
-      console.log('🔔 Buscando notificações para usuário autenticado:', userId);
+      const clientId = userContextService.getClientId();
+      console.log('🔔 Buscando notificações para usuário autenticado:', { userId, clientId });
       
       const data = await nocodbService.getRecentNotifications(limit);
       
       if (data && data.length > 0) {
-        // Apply additional client-side filtering for security
+        // Aplicar filtragem adicional no cliente para segurança usando client_id
         const userFilteredData = data.filter(item => {
-          const recordUserId = item.user_id || item.User_id || item.userId;
-          const recordClientId = item.client_id || item.Client_id || item.clientId;
+          const recordClientId = item.client_id;
           
-          // Only show records that belong to the current user
-          const belongsToUser = recordUserId === userId || recordClientId === userId;
+          // Só mostrar registros que pertencem ao usuário atual
+          const belongsToUser = recordClientId === userId || recordClientId === clientId;
           
-          if (!belongsToUser && (recordUserId || recordClientId)) {
+          if (!belongsToUser && recordClientId) {
             console.log('🚫 Notificação filtrada - não pertence ao usuário:', {
-              recordUserId,
               recordClientId,
-              currentUserId: userId
+              currentUserId: userId,
+              currentClientId: clientId
             });
           }
           
@@ -57,17 +57,17 @@ export const useRecentNotifications = (limit: number = 10) => {
         });
 
         const transformedNotifications: Notification[] = userFilteredData.map((item: any) => ({
-          id: item.Id || item.id || String(Math.random()),
+          id: item.id || String(Math.random()),
           eventType: item.event_type || 'unknown',
           platform: item.platform || 'hotmart',
           clientName: item.customer_name || 'Cliente não identificado',
           clientEmail: item.customer_email || 'email@naoidentificado.com',
           value: item.value || 0,
-          createdAt: item.event_date || item.CreatedAt || item.created_at || new Date().toISOString(),
+          createdAt: item.event_date || item.created_at || new Date().toISOString(),
           productName: item.product_name || 'Produto não identificado'
         }));
         
-        console.log(`✅ ${transformedNotifications.length} notificações filtradas para usuário ${userId}`);
+        console.log(`✅ ${transformedNotifications.length} notificações filtradas para usuário ${userId}/${clientId}`);
         setNotifications(transformedNotifications);
         setError(null);
       } else {

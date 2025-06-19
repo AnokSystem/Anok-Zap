@@ -14,7 +14,12 @@ export class NotificationsDataService extends BaseNocodbService {
 
   private async getClientId(): Promise<string> {
     const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    return user.client_id || user.Email?.split('@')[0] || 'default';
+    return user.ID || user.client_id || user.Email?.split('@')[0] || 'default';
+  }
+
+  private async getUserId(): Promise<string> {
+    const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    return user.ID || user.user_id || user.Email?.split('@')[0] || 'default';
   }
 
   private async getNotificationsTableId(baseId: string): Promise<string | null> {
@@ -51,6 +56,7 @@ export class NotificationsDataService extends BaseNocodbService {
   async getRecentNotifications(baseId: string, limit: number = 10): Promise<any[]> {
     try {
       const clientId = await this.getClientId();
+      const userId = await this.getUserId();
       const tableId = await this.getNotificationsTableId(baseId);
       
       if (!tableId) {
@@ -58,9 +64,8 @@ export class NotificationsDataService extends BaseNocodbService {
         return [];
       }
 
-      console.log('🔔 Buscando notificações recentes da tabela mzup2t8ygoiy5ub para cliente:', clientId);
-      
-      // Adicionar timestamp para evitar cache e garantir dados atualizados
+      console.log('🔔 Buscando notificações recentes da tabela mzup2t8ygoiy5ub para usuário:', { userId, clientId });
+
       const timestamp = Date.now();
       const response = await fetch(
         `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=${limit}&_t=${timestamp}`,
@@ -78,18 +83,34 @@ export class NotificationsDataService extends BaseNocodbService {
         const allNotifications = data.list || [];
         
         console.log(`📊 ${allNotifications.length} notificações encontradas na tabela mzup2t8ygoiy5ub`);
-        console.log('📋 Dados brutos da tabela:', allNotifications.slice(0, 2));
+        console.log('📋 Primeiro registro para análise:', allNotifications[0]);
         
-        // Filtrar por cliente se necessário
-        const clientNotifications = allNotifications.filter(n => {
-          if (!n.client_id && !n.Client_id && !n.clientId) {
-            return true;
-          }
-          return n.client_id === clientId || n.Client_id === clientId || n.clientId === clientId;
+        // Aplicar filtragem usando o campo "client_id" corretamente
+        const userNotifications = allNotifications.filter(n => {
+          const recordClientId = n.client_id;
+          
+          console.log('🔍 Analisando notificação:', {
+            recordId: n.id,
+            recordClientId,
+            currentUserId: userId,
+            currentClientId: clientId
+          });
+          
+          // Verificar se a notificação pertence ao usuário atual usando o campo "client_id"
+          const belongsToUser = recordClientId === userId || recordClientId === clientId;
+          
+          console.log('📋 Resultado da verificação:', {
+            recordId: n.id,
+            belongsToUser,
+            reason: belongsToUser ? 'INCLUÍDA' : 'EXCLUÍDA',
+            matchedWith: recordClientId === userId ? 'userId' : recordClientId === clientId ? 'clientId' : 'nenhum'
+          });
+          
+          return belongsToUser;
         });
         
-        console.log(`✅ ${clientNotifications.length} notificações para cliente ${clientId}`);
-        return clientNotifications;
+        console.log(`✅ ${userNotifications.length} notificações filtradas para usuário ${userId}/${clientId}`);
+        return userNotifications;
       } else {
         const errorText = await response.text();
         console.log(`❌ Erro na resposta (${response.status}):`, errorText);
@@ -104,6 +125,7 @@ export class NotificationsDataService extends BaseNocodbService {
   async getAllNotifications(baseId: string): Promise<any[]> {
     try {
       const clientId = await this.getClientId();
+      const userId = await this.getUserId();
       const tableId = await this.getNotificationsTableId(baseId);
       
       if (!tableId) {
@@ -111,9 +133,8 @@ export class NotificationsDataService extends BaseNocodbService {
         return [];
       }
 
-      console.log('📋 Buscando TODAS as notificações da tabela mzup2t8ygoiy5ub para cliente:', clientId);
+      console.log('📋 Buscando TODAS as notificações da tabela mzup2t8ygoiy5ub para usuário:', { userId, clientId });
       
-      // Adicionar timestamp para evitar cache e garantir dados atualizados
       const timestamp = Date.now();
       const response = await fetch(
         `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}?limit=10000&_t=${timestamp}`,
@@ -133,16 +154,15 @@ export class NotificationsDataService extends BaseNocodbService {
         console.log(`📊 ${allNotifications.length} notificações totais na tabela mzup2t8ygoiy5ub`);
         console.log('📋 Campos disponíveis:', Object.keys(allNotifications[0] || {}));
         
-        // Filtrar por cliente se necessário
-        const filteredNotifications = allNotifications.filter(n => {
-          if (!n.client_id && !n.Client_id && !n.clientId) {
-            return true;
-          }
-          return n.client_id === clientId || n.Client_id === clientId || n.clientId === clientId;
+        // Aplicar filtragem estrita usando apenas o campo "client_id"
+        const userNotifications = allNotifications.filter(n => {
+          const recordClientId = n.client_id;
+          const belongsToUser = recordClientId === userId || recordClientId === clientId;
+          return belongsToUser;
         });
         
-        console.log(`✅ ${filteredNotifications.length} notificações para o cliente ${clientId}`);
-        return filteredNotifications;
+        console.log(`✅ ${userNotifications.length} notificações para o usuário ${userId}/${clientId}`);
+        return userNotifications;
       }
 
       return [];
@@ -209,6 +229,7 @@ export class NotificationsDataService extends BaseNocodbService {
     try {
       const tableId = await this.getNotificationsTableId(baseId);
       const clientId = await this.getClientId();
+      const userId = await this.getUserId();
       
       if (!tableId) {
         console.error('❌ Tabela não disponível para criar dados de exemplo');
@@ -216,46 +237,106 @@ export class NotificationsDataService extends BaseNocodbService {
       }
 
       console.log('📝 Criando dados de exemplo para notificações na tabela mzup2t8ygoiy5ub...');
+      console.log('👤 Usando client_id:', userId);
 
       const sampleData = [
         {
+          client_id: userId, // Usar o ID do usuário atual
+          platform: 'hotmart',
           event_type: 'purchase',
-          platform: 'Hotmart',
-          customer_name: 'João Silva',
-          customer_email: 'joao.silva@email.com',
+          transaction_id: `TXN_${Date.now()}_001`,
+          product_id: 'PROD_001',
           product_name: 'Curso de Marketing Digital',
+          customer_name: 'João Silva Teste',
+          customer_email: 'joao.teste@email.com',
+          customer_phone: '+5511999888777',
           value: 197.50,
-          transaction_id: 'TXN_001',
-          status: 'Aprovado',
+          currency: 'BRL',
+          commission_value: 39.50,
+          status: 'approved',
           event_date: new Date().toISOString(),
-          client_id: clientId
+          processed: false,
+          webhook_data: JSON.stringify({
+            source: 'test_data',
+            created_at: new Date().toISOString()
+          }),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         },
         {
+          client_id: userId, // Usar o ID do usuário atual
+          platform: 'eduzz',
           event_type: 'subscription',
-          platform: 'Eduzz',
-          customer_name: 'Maria Santos',
-          customer_email: 'maria.santos@email.com',
-          product_name: 'Assinatura Premium',
+          transaction_id: `TXN_${Date.now()}_002`,
+          product_id: 'PROD_002',
+          product_name: 'Assinatura Premium Teste',
+          customer_name: 'Maria Santos Teste',
+          customer_email: 'maria.teste@email.com',
+          customer_phone: '+5511888777666',
           value: 29.90,
-          transaction_id: 'TXN_002',
-          status: 'Aprovado',
+          currency: 'BRL',
+          commission_value: 8.97,
+          status: 'approved',
           event_date: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          client_id: clientId
+          processed: false,
+          webhook_data: JSON.stringify({
+            source: 'test_data',
+            created_at: new Date().toISOString()
+          }),
+          created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+          updated_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          client_id: userId, // Usar o ID do usuário atual
+          platform: 'monetizze',
+          event_type: 'purchase',
+          transaction_id: `TXN_${Date.now()}_003`,
+          product_id: 'PROD_003',
+          product_name: 'E-book Vendas Online',
+          customer_name: 'Carlos Oliveira Teste',
+          customer_email: 'carlos.teste@email.com',
+          customer_phone: '+5511777666555',
+          value: 47.00,
+          currency: 'BRL',
+          commission_value: 14.10,
+          status: 'approved',
+          event_date: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+          processed: false,
+          webhook_data: JSON.stringify({
+            source: 'test_data',
+            created_at: new Date().toISOString()
+          }),
+          created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+          updated_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()
         }
       ];
 
+      console.log('📤 Enviando dados de teste:', sampleData);
+
       for (const data of sampleData) {
-        await fetch(
-          `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}`,
-          {
-            method: 'POST',
-            headers: this.headers,
-            body: JSON.stringify(data)
+        try {
+          const response = await fetch(
+            `${this.config.baseUrl}/api/v1/db/data/noco/${baseId}/${tableId}`,
+            {
+              method: 'POST',
+              headers: this.headers,
+              body: JSON.stringify(data)
+            }
+          );
+
+          if (response.ok) {
+            const result = await response.json();
+            console.log('✅ Notificação de exemplo criada:', result);
+          } else {
+            const errorText = await response.text();
+            console.error('❌ Erro ao criar notificação:', errorText);
           }
-        );
+        } catch (error) {
+          console.error('❌ Erro na requisição:', error);
+        }
       }
 
-      console.log('✅ Dados de exemplo criados para notificações');
+      console.log('✅ Processo de criação de dados de exemplo concluído');
       return true;
     } catch (error) {
       console.error('❌ Erro ao criar dados de exemplo:', error);
