@@ -6,7 +6,8 @@ import { validateTutorialData, getErrorMessage } from './validationUtils';
 
 export const useTutorialCreate = (
   setUploading: (uploading: boolean) => void,
-  updateTutorialsList: (tutorial: any) => void
+  updateTutorialsList: (tutorial: any) => void,
+  refreshTutorials?: () => Promise<any>
 ) => {
   const { toast } = useToast();
 
@@ -35,6 +36,14 @@ export const useTutorialCreate = (
       
       updateTutorialsList(newTutorial);
       
+      // Aguardar um pouco e então forçar refresh da lista para garantir sincronização
+      if (refreshTutorials) {
+        console.log('🔄 useTutorialCreate - Fazendo refresh da lista para garantir sincronização...');
+        setTimeout(() => {
+          refreshTutorials();
+        }, 1000);
+      }
+      
       toast({
         title: "Tutorial Criado",
         description: `Tutorial "${newTutorial.title}" foi criado com sucesso!`,
@@ -61,7 +70,7 @@ export const useTutorialCreate = (
     } finally {
       setUploading(false);
     }
-  }, [toast, setUploading, updateTutorialsList]);
+  }, [toast, setUploading, updateTutorialsList, refreshTutorials]);
 
   return { createTutorial };
 };

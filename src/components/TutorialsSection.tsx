@@ -45,7 +45,10 @@ const TutorialsSection = () => {
 
   const handleCreateModalClose = useCallback(() => {
     setIsCreateModalOpen(false);
-  }, []);
+    // Atualizar a lista quando o modal de criação for fechado
+    console.log('🔄 TutorialsSection - Modal de criação fechado, atualizando lista...');
+    refreshTutorials();
+  }, [refreshTutorials]);
 
   const handleEditTutorial = useCallback((tutorial: TutorialData) => {
     setEditingTutorial(tutorial);
@@ -53,7 +56,10 @@ const TutorialsSection = () => {
 
   const handleEditModalClose = useCallback(() => {
     setEditingTutorial(null);
-  }, []);
+    // Atualizar a lista quando o modal de edição for fechado
+    console.log('🔄 TutorialsSection - Modal de edição fechado, atualizando lista...');
+    refreshTutorials();
+  }, [refreshTutorials]);
 
   const handleCreateClick = useCallback(() => {
     setIsCreateModalOpen(true);
@@ -67,7 +73,7 @@ const TutorialsSection = () => {
     setSelectedTutorial(null);
   }, []);
 
-  // Executar apenas na montagem inicial - sem interval automático
+  // Executar apenas na montagem inicial
   useEffect(() => {
     console.log('🔄 TutorialsSection montado, carregando tutoriais inicial...');
     refreshTutorials();

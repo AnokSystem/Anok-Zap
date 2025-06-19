@@ -23,7 +23,7 @@ export const useTutorials = () => {
     setTutorials
   );
 
-  const { createTutorial } = useTutorialCreate(setUploading, updateTutorialsList);
+  const { createTutorial } = useTutorialCreate(setUploading, updateTutorialsList, fetchTutorials);
   const { updateTutorial } = useTutorialUpdate(setUploading, replaceTutorial);
   const { deleteTutorial } = useTutorialDelete(tutorials, removeTutorial);
 
