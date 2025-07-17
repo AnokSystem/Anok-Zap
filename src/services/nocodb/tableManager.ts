@@ -6,7 +6,7 @@ import { TableCreation } from './tableCreation';
 export class NocodbTableManager {
   private tableDiscovery: TableDiscovery;
   private tableCreation: TableCreation;
-  private TARGET_BASE_ID = 'pddywozzup2sc85'; // ID fixo da base "Notificação Inteligente"
+  private TARGET_BASE_ID = 'pry2rly2dtgdfo5'; // ID fixo da base "Notificação Inteligente"
 
   constructor(config: NocodbConfig) {
     this.tableDiscovery = new TableDiscovery(config);
@@ -18,7 +18,7 @@ export class NocodbTableManager {
   }
 
   async createAllTables() {
-    console.log('🏗️ Criando todas as tabelas na base pddywozzup2sc85...');
+    console.log('🏗️ Criando todas as tabelas na base pry2rly2dtgdfo5...');
     return await this.tableCreation.createAllTables(this.TARGET_BASE_ID);
   }
 
@@ -26,7 +26,7 @@ export class NocodbTableManager {
     // Primeiro descobre as bases se ainda não foram descobertas
     await this.tableDiscovery.discoverBases();
     
-    console.log(`🔧 Garantindo que a tabela ${tableName} existe na base pddywozzup2sc85...`);
+    console.log(`🔧 Garantindo que a tabela ${tableName} existe na base pry2rly2dtgdfo5...`);
     return await this.tableCreation.ensureTableExists(this.TARGET_BASE_ID, tableName);
   }
 

@@ -48,7 +48,7 @@ const IntegrationStatus = () => {
         },
         {
           id: '3',
-          name: 'MinIO Storage',
+          name: 'NocoDB Storage',
           status: 'warning',
           description: 'Armazenamento com alta utilização',
           lastCheck: new Date().toLocaleString('pt-BR'),

@@ -1,6 +1,6 @@
 
-const API_BASE_URL = 'https://api.novahagencia.com.br';
-const API_KEY = '26bda82495a95caeae71f96534841285';
+const API_BASE_URL = 'https://api.anok.com.br';
+const API_KEY = 'ANOKAPI0209';
 
 class EvolutionApiService {
   private headers = {

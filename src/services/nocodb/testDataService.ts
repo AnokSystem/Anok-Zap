@@ -17,7 +17,7 @@ export class TestDataService {
       console.log('👤 TESTE - Criando notificações para usuário ID:', userId);
       
       // Usar o serviço de dados de notificações para criar exemplos
-      const baseId = 'pddywozzup2sc85'; // Base ID do projeto
+      const baseId = 'pry2rly2dtgdfo5'; // Base ID do projeto
       const result = await nocodbService.notificationsDataService.createSampleData(baseId);
       
       if (result) {
@@ -52,7 +52,7 @@ export class TestDataService {
       console.log('👤 TESTE - Criando disparos para usuário ID:', userId);
       
       // Usar o serviço de dados de disparos para criar exemplos
-      const baseId = 'pddywozzup2sc85'; // Base ID do projeto
+      const baseId = 'pry2rly2dtgdfo5'; // Base ID do projeto
       const result = await nocodbService.disparosDataService.createSampleData(baseId);
       
       if (result) {

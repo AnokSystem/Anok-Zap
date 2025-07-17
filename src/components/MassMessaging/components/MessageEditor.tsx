@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, Plus, Trash2, Wand2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { minioService } from '@/services/minio';
+import { fileUploadService } from '@/services/fileUpload';
 import { Message } from '../types';
 import { VariableProcessor } from '../utils/variableProcessor';
 
@@ -110,7 +110,7 @@ export const MessageEditor: React.FC<MessageEditorProps> = ({
   const handleFileUpload = async (messageId: string, file: File) => {
     try {
       setIsLoading(true);
-      const fileUrl = await minioService.uploadFile(file);
+      const fileUrl = await fileUploadService.uploadFile(file);
       updateMessage(messageId, { file, fileUrl });
       toast({
         title: "Sucesso",

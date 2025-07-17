@@ -4,6 +4,7 @@ import { ContactsReachedService } from './data/contactsReachedService';
 import { ChartDataService } from './dashboard/chartDataService';
 import { NotificationsDataService } from './dashboard/notificationsDataService';
 import { DisparosDataService } from './dashboard/disparosDataService';
+import { NocodbFileUploadService } from './fileUploadService';
 
 // Criar instância principal do serviço
 const coreService = new CoreNocodbService();
@@ -17,6 +18,9 @@ const chartDataService = new ChartDataService(coreService.config);
 // Criar instâncias dos serviços de dados específicos
 const notificationsDataService = new NotificationsDataService(coreService.config);
 const disparosDataService = new DisparosDataService(coreService.config);
+
+// Criar instância do serviço de upload
+const fileUploadService = new NocodbFileUploadService(coreService.config);
 
 // Exportar serviço principal
 export const nocodbService = {
@@ -92,7 +96,10 @@ export const nocodbService = {
 
   // Expor os serviços de dados específicos
   notificationsDataService,
-  disparosDataService
+  disparosDataService,
+  
+  // Serviço de upload de arquivos
+  fileUploadService
 };
 
 // Expor também o serviço principal para casos específicos

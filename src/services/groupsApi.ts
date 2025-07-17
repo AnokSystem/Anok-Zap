@@ -417,13 +417,13 @@ class GroupsApiService {
 
       const processedActions = await Promise.all(actions.map(async (action) => {
         if (action.action === 'update_group_picture' && action.data.profileImage instanceof File) {
-          console.log('Fazendo upload da imagem para MinIO...');
+          console.log('Fazendo upload da imagem para NocoDB...');
           
-          const { minioService } = await import('@/services/minio');
+          const { fileUploadService } = await import('@/services/fileUpload');
           
           try {
-            const imageUrl = await minioService.uploadFile(action.data.profileImage);
-            console.log('Imagem enviada para MinIO com sucesso:', imageUrl);
+            const imageUrl = await fileUploadService.uploadFile(action.data.profileImage);
+            console.log('Imagem enviada para NocoDB com sucesso:', imageUrl);
             
             return {
               ...action,
@@ -434,7 +434,7 @@ class GroupsApiService {
               }
             };
           } catch (uploadError) {
-            console.error('Erro no upload da imagem para MinIO:', uploadError);
+            console.error('Erro no upload da imagem para NocoDB:', uploadError);
             throw new Error('Falha no upload da imagem de perfil');
           }
         }

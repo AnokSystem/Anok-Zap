@@ -7,8 +7,8 @@ import { DashboardService } from './dashboardService';
 
 export class CoreNocodbService {
   private _config: NocodbConfig = {
-    baseUrl: 'https://kovalski.novahagencia.com.br',
-    apiToken: 'aY4YYKsICfBJXDtjLj4GWlwwaFIOkwSsOy64gslJ'
+    baseUrl: 'https://kovalski.anok.com.br/dashboard',
+    apiToken: '_x6qvRgXdAbrzSYzDrph-OaQtgCyXoAM71uxhthN'
   };
 
   private tableManager: NocodbTableManager;
@@ -16,7 +16,7 @@ export class CoreNocodbService {
   private dataService: DataService;
   private fallbackService: FallbackService;
   private dashboardService: DashboardService;
-  private TARGET_BASE_ID = 'pddywozzup2sc85'; // ID fixo da base "Notificação Inteligente"
+  private TARGET_BASE_ID = 'pry2rly2dtgdfo5'; // ID fixo da base "Notificação Inteligente"
   private initialized = false;
 
   constructor() {
@@ -260,8 +260,8 @@ export class CoreNocodbService {
             tablesVerified 
           };
         } else {
-          console.warn('⚠️ Base com ID pddywozzup2sc85 não encontrada');
-          return { success: false, error: 'Base com ID pddywozzup2sc85 não encontrada' };
+          console.warn('⚠️ Base com ID pry2rly2dtgdfo5 não encontrada');
+          return { success: false, error: 'Base com ID pry2rly2dtgdfo5 não encontrada' };
         }
       }
       

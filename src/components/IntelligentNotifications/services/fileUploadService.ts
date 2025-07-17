@@ -1,18 +1,18 @@
 
-import { minioService } from '@/services/minio';
+import { fileUploadService as nocodbUploadService } from '@/services/fileUpload';
 
 export const fileUploadService = {
   uploadFile: async (file: File): Promise<string> => {
     try {
-      console.log('🚀 FILEUPLOAD - Iniciando upload via MinIO service...');
+      console.log('🚀 FILEUPLOAD - Iniciando upload via NocoDB service...');
       console.log('📋 FILEUPLOAD - Arquivo:', {
         name: file.name,
         size: file.size,
         type: file.type
       });
       
-      // Chamar o serviço MinIO para fazer o upload
-      const fileUrl = await minioService.uploadFile(file);
+      // Chamar o serviço NocoDB para fazer o upload
+      const fileUrl = await nocodbUploadService.uploadFile(file);
       
       console.log('✅ FILEUPLOAD - Upload concluído com sucesso:', fileUrl);
       return fileUrl;
@@ -29,11 +29,11 @@ export const fileUploadService = {
     }
   },
 
-  // Função para testar a conexão MinIO
+  // Função para testar a conexão NocoDB
   testConnection: async (): Promise<boolean> => {
     try {
-      console.log('🔧 FILEUPLOAD - Testando conexão MinIO...');
-      const isConnected = await minioService.testConnection();
+      console.log('🔧 FILEUPLOAD - Testando conexão NocoDB...');
+      const isConnected = await nocodbUploadService.testConnection();
       console.log(`🔧 FILEUPLOAD - Resultado do teste: ${isConnected ? 'SUCESSO' : 'FALHA'}`);
       return isConnected;
     } catch (error) {

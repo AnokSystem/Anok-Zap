@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { groupsApiService } from '@/services/groupsApi';
-import { minioService } from '@/services/minio';
+import { fileUploadService } from '@/services/fileUpload';
 import { GroupData, EditGroupData, AddParticipantsData } from '../types';
 
 export const useGroupActions = (
@@ -78,11 +78,11 @@ export const useGroupActions = (
       };
 
       if (groupData.profileImage) {
-        console.log('🖼️ Fazendo upload da imagem de perfil para MinIO...');
+        console.log('🖼️ Fazendo upload da imagem de perfil para NocoDB...');
         
         try {
-          const imageUrl = await minioService.uploadFile(groupData.profileImage);
-          console.log('✅ Imagem enviada para MinIO com sucesso:', imageUrl);
+          const imageUrl = await fileUploadService.uploadFile(groupData.profileImage);
+          console.log('✅ Imagem enviada para NocoDB com sucesso:', imageUrl);
           
           const base64Data = await fileToBase64(groupData.profileImage);
           
@@ -91,7 +91,7 @@ export const useGroupActions = (
           data.fileType = groupData.profileImage.type;
           data.imageUrl = imageUrl;
         } catch (uploadError) {
-          console.error('❌ Erro no upload da imagem para MinIO:', uploadError);
+          console.error('❌ Erro no upload da imagem para NocoDB:', uploadError);
           toast({
             title: "Aviso",
             description: "Erro no upload da imagem, mas o grupo será criado sem foto de perfil",
@@ -158,11 +158,11 @@ export const useGroupActions = (
       }
 
       if (editData.pictureFile) {
-        console.log('🖼️ Fazendo upload da imagem de perfil para MinIO...');
+        console.log('🖼️ Fazendo upload da imagem de perfil para NocoDB...');
         
         try {
-          const imageUrl = await minioService.uploadFile(editData.pictureFile);
-          console.log('✅ Imagem enviada para MinIO com sucesso:', imageUrl);
+          const imageUrl = await fileUploadService.uploadFile(editData.pictureFile);
+          console.log('✅ Imagem enviada para NocoDB com sucesso:', imageUrl);
           
           updateActions.push({
             action: 'update_group_picture',
@@ -173,7 +173,7 @@ export const useGroupActions = (
             }
           });
         } catch (uploadError) {
-          console.error('❌ Erro no upload da imagem para MinIO:', uploadError);
+          console.error('❌ Erro no upload da imagem para NocoDB:', uploadError);
           toast({
             title: "Erro",
             description: "Falha no upload da imagem de perfil",

@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { minioService } from '@/services/minio';
+import { fileUploadService } from '@/services/fileUpload';
 
 const WEBHOOK_URL = 'https://webhook.novahagencia.com.br/webhook/9941ecf6-76bf-441b-83a3-1bdadc58eefb';
 
@@ -99,8 +99,8 @@ export const useStoriesWebhook = () => {
     setIsPosting(true);
 
     try {
-      // 1. Primeiro, fazer upload do arquivo para MinIO
-      console.log('📤 Fazendo upload do arquivo para MinIO...');
+      // 1. Primeiro, fazer upload do arquivo para NocoDB
+      console.log('📤 Fazendo upload do arquivo para NocoDB...');
       const timestamp = Date.now();
       const fileExtension = storyData.file.name.split('.').pop() || 'jpg';
       const fileName = `stories/${isScheduled ? 'scheduled_' : ''}${timestamp}_story.${fileExtension}`;
@@ -109,8 +109,8 @@ export const useStoriesWebhook = () => {
         type: storyData.file.type 
       });
       
-      const fileUrl = await minioService.uploadFile(renamedFile);
-      console.log('✅ Arquivo enviado para MinIO:', fileUrl);
+      const fileUrl = await fileUploadService.uploadFile(renamedFile);
+      console.log('✅ Arquivo enviado para NocoDB:', fileUrl);
 
       // 2. Enviar para todas as instâncias em uma única chamada do webhook
       console.log(`🔄 Enviando para ${selectedInstances.length} instâncias via webhook...`);
@@ -139,7 +139,7 @@ export const useStoriesWebhook = () => {
       console.error('💥 Erro durante o processo:', error);
       toast({
         title: "Erro",
-        description: "Erro ao fazer upload do arquivo para MinIO",
+        description: "Erro ao fazer upload do arquivo para NocoDB",
         variant: "destructive"
       });
       return false;

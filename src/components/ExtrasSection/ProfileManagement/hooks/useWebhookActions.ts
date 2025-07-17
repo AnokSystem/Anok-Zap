@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { minioService } from '@/services/minio';
+import { fileUploadService } from '@/services/fileUpload';
 import type { Instance, PrivacySettingsType, ProfileData } from '../types';
 
 const WEBHOOK_URL = 'https://webhook.novahagencia.com.br/webhook/307e0a28-8c14-4fdd-8d64-45c54ac6a247';
@@ -160,9 +160,9 @@ export const useWebhookActions = (
     setIsUpdating(true);
 
     try {
-      console.log('📷 Iniciando upload da foto para MinIO...');
+      console.log('📷 Iniciando upload da foto para NocoDB...');
       
-      // 1. Upload da imagem para MinIO
+      // 1. Upload da imagem para NocoDB
       const timestamp = Date.now();
       const fileExtension = profileData.profilePhoto.name.split('.').pop() || 'jpg';
       const fileName = `profile_photos/${selectedInstance}/profile_${timestamp}.${fileExtension}`;
@@ -171,8 +171,8 @@ export const useWebhookActions = (
         type: profileData.profilePhoto.type 
       });
       
-      const imageUrl = await minioService.uploadFile(renamedFile);
-      console.log('✅ Imagem enviada para MinIO:', imageUrl);
+      const imageUrl = await fileUploadService.uploadFile(renamedFile);
+      console.log('✅ Imagem enviada para NocoDB:', imageUrl);
       
       // 2. Enviar URL via webhook em formato de fila
       await sendWebhookAction('update_profile_photo', { 
@@ -185,7 +185,7 @@ export const useWebhookActions = (
       
       toast({
         title: "Foto Enviada para Processamento",
-        description: "Foto enviada para MinIO e adicionada à fila de processamento",
+        description: "Foto enviada para NocoDB e adicionada à fila de processamento",
       });
       
       // Limpar foto local após envio
@@ -200,7 +200,7 @@ export const useWebhookActions = (
       console.error('❌ Erro ao processar foto:', error);
       toast({
         title: "Erro",
-        description: "Erro ao fazer upload da foto para MinIO",
+        description: "Erro ao fazer upload da foto para NocoDB",
         variant: "destructive"
       });
     } finally {
