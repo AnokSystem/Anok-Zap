@@ -4,6 +4,7 @@ import { NotificationService } from './notificationService';
 import { DataService } from './dataService';
 import { FallbackService } from './fallbackService';
 import { DashboardService } from './dashboardService';
+import { TableCreationService } from './dashboard/tableCreationService';
 
 export class CoreNocodbService {
   private _config: NocodbConfig = {
@@ -121,11 +122,13 @@ export class CoreNocodbService {
   }
 
   private async ensureInitialized(): Promise<void> {
-    // Forçar reinicialização para criar tabelas
-    this.initialized = false;
+    if (this.initialized) return;
     
     console.log('🔧 Inicializando NocoDB Service...');
     console.log('🎯 Base target:', this.TARGET_BASE_ID);
+    
+    // Forçar criação de todas as tabelas
+    await this.forceCreateAllTables();
     
     // Verificar se a base está acessível
     const baseAccessible = await this.testBaseAccess();
@@ -152,6 +155,16 @@ export class CoreNocodbService {
     
     this.initialized = true;
     console.log('✅ NocoDB Service inicializado com sucesso');
+  }
+
+  private async forceCreateAllTables(): Promise<void> {
+    try {
+      console.log('🚀 Forçando criação de todas as tabelas...');
+      const tableCreation = new TableCreationService(this._config);
+      await tableCreation.createAllTables(this.TARGET_BASE_ID);
+    } catch (error) {
+      console.error('❌ Erro ao forçar criação das tabelas:', error);
+    }
   }
 
   private async testBaseAccess(): Promise<boolean> {
@@ -301,6 +314,18 @@ export class CoreNocodbService {
   async createAllTables() {
     await this.ensureInitialized();
     return await this.tableManager.createAllTables();
+  }
+
+  async forcedCreateAllTables() {
+    console.log('🚨 FORÇANDO CRIAÇÃO DE TODAS AS TABELAS...');
+    const tableCreation = new TableCreationService(this._config);
+    await tableCreation.createAllTables(this.TARGET_BASE_ID);
+    
+    // Resetar inicialização para verificar novamente as tabelas
+    this.initialized = false;
+    await this.ensureInitialized();
+    
+    return true;
   }
 
   async syncLocalData() {

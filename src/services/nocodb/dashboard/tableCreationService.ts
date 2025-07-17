@@ -8,6 +8,26 @@ export class TableCreationService extends BaseNocodbService {
     super(config);
   }
 
+  async createAllTables(baseId: string): Promise<boolean> {
+    try {
+      console.log('🏗️ Criando todas as tabelas no NocoDB...');
+      
+      const disparosResult = await this.createDisparosTable(baseId);
+      const notificationsResult = await this.createNotificationsTable(baseId);
+      
+      if (disparosResult && notificationsResult) {
+        console.log('✅ Todas as tabelas foram criadas com sucesso!');
+        return true;
+      } else {
+        console.log('⚠️ Algumas tabelas podem já existir ou falharam na criação');
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Erro ao criar tabelas:', error);
+      return false;
+    }
+  }
+
   async createDisparosTable(baseId: string): Promise<string | null> {
     try {
       console.log('🏗️ Criando tabela de Disparos em Massa...');

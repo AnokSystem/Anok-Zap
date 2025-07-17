@@ -34,6 +34,7 @@ export const nocodbService = {
   saveMassMessagingLog: (campaignData: any) => coreService.saveMassMessagingLog(campaignData),
   syncLocalData: () => coreService.syncLocalData(),
   createAllTables: () => coreService.createAllTables(),
+  forcedCreateAllTables: () => coreService.forcedCreateAllTables(),
   initializeDashboardTables: () => coreService.initializeDashboardTables(),
   
   // Métodos de dashboard
