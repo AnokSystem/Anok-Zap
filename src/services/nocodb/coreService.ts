@@ -121,7 +121,8 @@ export class CoreNocodbService {
   }
 
   private async ensureInitialized(): Promise<void> {
-    if (this.initialized) return;
+    // Forçar reinicialização para criar tabelas
+    this.initialized = false;
     
     console.log('🔧 Inicializando NocoDB Service...');
     console.log('🎯 Base target:', this.TARGET_BASE_ID);
